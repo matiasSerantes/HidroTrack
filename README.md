@@ -32,7 +32,8 @@ En esta computadora también se puede ejecutar `powershell -ExecutionPolicy Bypa
 - Entregas demo con precio fijo, envases recuperados, pagos parciales, efectivo, transferencia y saldo pendiente. Importes en centavos enteros; no se pueden reabrir entregas.
 - Persistencia local únicamente para datos ficticios. No representa sincronización offline de producción.
 - Resumen calculado de jornada; no simula envío ni aprobación de un cierre real.
-- Acceso con contraseña de Supabase preparado. Después del login se informa que el panel conectado sigue pendiente. No habilita el panel demo como si fueran datos reales.
+- Acceso con contraseña de Supabase y recuperación de sesión. Panel conectado del titular con consulta de membresía/licencia, listado, búsqueda, alta y archivo de clientes; archivo lógico mediante `active=false`. Choferes y cuentas sin titular asignado reciben un estado explícito. Suspensión o vencimiento impiden cargar clientes desde la interfaz; RLS sigue siendo la autoridad en el servidor.
+- Esta integración está probada con un cliente Supabase simulado, pero falta validarla contra Auth/PostgREST y la base remota. El panel requiere migración aplicada, usuario, membresía owner y licencia válidos, además de URL y clave pública en el entorno.
 - Migración inicial con titulares, membresías, licencias, auditoría automática de cambios de licencia, clientes, productos, programación y preferencias. Roles derivados de tablas protegidas, RLS y claves compuestas entre tablas comerciales.
 
 ## Supabase
@@ -43,7 +44,7 @@ Crear usuarios con Supabase Auth. El alta inicial de tenant, membresía owner, l
 
 ## Próximo trabajo
 
-Conectar el panel al tenant de la sesión, completar administración segura de altas y límites de choferes, probar RLS contra Supabase local, sumar rutas/asignaciones y MapLibre. Luego implementar ventas/pagos transaccionales e idempotentes, inventario, cierres calculados en servidor e IndexedDB. Ninguna operación comercial de producción debe basarse en la lógica de la demo.
+Validar el panel conectado contra el proyecto Supabase, completar administración segura de altas y límites de choferes, sumar productos, rutas/asignaciones y MapLibre. Luego implementar ventas/pagos transaccionales e idempotentes, inventario, cierres calculados en servidor e IndexedDB. Ninguna operación comercial de producción debe basarse en la lógica de la demo.
 
 `npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. La migración inicial pasó esta validación local; falta ejecutarla e inspeccionarla en el proyecto remoto. No hay cuentas de producción configuradas desde este repositorio.
 
