@@ -52,4 +52,31 @@ do $$begin
  if exists(select 1 from public.customers) then raise exception 'Licencia suspendida conserva acceso'; end if;
 end$$;
 reset role;
+-- Relaciones compuestas: un producto ajeno no se puede asociar a un cliente propio.
+insert into public.products(id,tenant_id,name,price) values
+ ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','Sifón B',2000);
+do $$begin
+ begin
+  insert into public.customer_product_preferences(tenant_id,customer_id,product_id,quantity)
+  select tenant_id,id,'30000000-0000-0000-0000-000000000002',2 from public.customers where tenant_id='20000000-0000-0000-0000-000000000001';
+  raise exception 'Se permitió relación entre tenants';
+ exception when foreign_key_violation then null;
+ end;
+end$$;
+update public.licenses set status='active',kind='monthly',expires_at=now()-interval '1 second' where tenant_id='20000000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $$begin
+ if exists(select 1 from public.customers) then raise exception 'Licencia vencida conserva acceso'; end if;
+end$$;
+reset role;
+set local role anon;
+do $$begin
+ begin
+  perform * from public.customers;
+  raise exception 'Anónimo tiene acceso comercial';
+ exception when insufficient_privilege then null;
+ end;
+end$$;
+reset role;
 rollback;

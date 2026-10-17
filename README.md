@@ -2,6 +2,10 @@
 
 Repositorio: https://github.com/matiasSerantes/HidroTrack.git
 
+## Plan de acción
+
+Abrir `public/plan.html` directamente en el navegador o visitar `/plan.html` al ejecutar Vite. Incluye estado verificado, próximas entregas, seis etapas, criterios de aceptación, dependencias y decisiones pendientes. Los estados son un registro manual del desarrollo, no una consulta en vivo a Supabase.
+
 ## Cloudflare Pages
 
 Conectar el repositorio con al menos un commit en `main`. Configuración: rama de producción `main`, directorio raíz del repositorio, comando de compilación `npm run build`, salida `dist`, Node.js 24 (`.node-version`). Sin Supabase configurado funciona el modo demo. Para habilitar el acceso real, configurar las variables públicas de `.env.example` en Cloudflare y volver a desplegar.
@@ -41,6 +45,6 @@ Crear usuarios con Supabase Auth. El alta inicial de tenant, membresía owner, l
 
 Conectar el panel al tenant de la sesión, completar administración segura de altas y límites de choferes, probar RLS contra Supabase local, sumar rutas/asignaciones y MapLibre. Luego implementar ventas/pagos transaccionales e idempotentes, inventario, cierres calculados en servidor e IndexedDB. Ninguna operación comercial de producción debe basarse en la lógica de la demo.
 
-Las pruebas del frontend verifican dinero, separación de medios de cobro y restricciones de entregas. La migración necesita ejecución y pruebas de aislamiento en PostgreSQL antes de usar datos reales. No hay despliegue ni cuentas de producción configuradas.
+`npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. La migración inicial pasó esta validación local; falta ejecutarla e inspeccionarla en el proyecto remoto. No hay cuentas de producción configuradas desde este repositorio.
 
-La prueba `supabase/tests/isolation.sql` prepara fixtures y los revierte. Ejecutarla únicamente en Supabase local descartable: `psql "$DATABASE_URL" -f supabase/tests/isolation.sql`. Verifica lectura/escritura entre titulares, autoasignación de membresías, chofer sin asignaciones, privacidad comercial frente al superadmin, suspensión y auditoría de licencias. Falta ampliar cobertura para expiración, relaciones compuestas y flujos administrativos futuros.
+La prueba `supabase/tests/isolation.sql` prepara fixtures y los revierte. Para ejecutarla manualmente usar únicamente Supabase local descartable: `psql "$DATABASE_URL" -f supabase/tests/isolation.sql`. Verifica lectura/escritura entre titulares, autoasignación de membresías, chofer sin asignaciones, privacidad comercial frente al superadmin, suspensión, expiración, relaciones compuestas, acceso anónimo y auditoría de licencias. Los flujos administrativos futuros necesitarán sus propias pruebas.
