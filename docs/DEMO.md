@@ -12,6 +12,8 @@ La empresa de ejemplo es **Agua Clara**. El día operativo es el **19/10/2026**;
 
 ## Qué se puede probar
 
+La demo mantiene barra lateral y disposición amplia para PC, y navegación inferior y controles táctiles para celular. Ambos formatos forman parte del producto; el celular tiene prioridad. La revisión visual en ambos dispositivos sigue pendiente.
+
 | Apartado | Operaciones de la demo |
 | --- | --- |
 | Mi jornada | Ventas, cobros, visitas, clientes, equipo, siguiente parada, avisos y plano. |

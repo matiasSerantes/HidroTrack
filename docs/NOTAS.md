@@ -2,6 +2,8 @@
 
 ## Acuerdos vigentes
 
+- 2026-10-19, aclaración del usuario: la web también debe verse y funcionar bien desde PC. Mantener una experiencia adaptada y cuidada en ambos dispositivos, con prioridad de diseño, rapidez y simplicidad para el celular. La demo ya tiene disposición amplia/barra lateral en PC y navegación inferior en móvil; ambas necesitan revisión visual real.
+
 - **Prioridad principal confirmada el 2026-10-19:** el uso habitual será desde celulares durante los repartos. Diseñar primero para móvil, con respuesta ágil, pasos cortos para los choferes y estética cuidada. Evaluar cada pantalla por su utilidad en la calle; no limitarse a achicar una vista de escritorio.
 - **Orden de trabajo de seguridad:** avanzar primero hasta una beta funcional y realizar allí la revisión completa y el endurecimiento de seguridad, antes de habilitarla con datos reales. Mantener mientras tanto las protecciones básicas existentes y la separación demo/producción. Este acuerdo no habilita desactivar RLS, exponer secretos ni usar la demo como autenticación real.
 
@@ -57,6 +59,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: aclarada y reflejada en instrucciones, requisitos, guía y plan la compatibilidad visual/funcional de PC y celular, con prioridad móvil. Cambio documental; verificado con `git diff --check`.
 
 - 2026-10-19: priorizado el uso móvil como criterio principal en instrucciones, requisitos y plan. Incorporada a la demo una barra inferior con Hoy, Mi ruta/Repartos, Clientes y Mi carga; ampliados controles táctiles y campos en celular y retirado el pedido externo de fuentes. La revisión completa de seguridad se agenda para la beta. Rendimiento, teclado y estética en dispositivos reales siguen pendientes de validar.
 
