@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261019180000_inventory_incidents']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -228,10 +228,52 @@ describe('stock transaccional PostgreSQL', () => {
     const id='30000000-0000-0000-0000-000000000003';
     const create=(price=3500) => db.query("select public.inventory_create_product($1,$2,'Bidón 12',$3,'unidad',true)",[tenant,id,price]);
     await create(); await create();
+    const model='30000000-0000-0000-0000-000000000004';
+    await db.query("select public.inventory_create_product($1,$2,'Dispenser básico',0,'unidad',false)",[tenant,model]);
+    await db.query("update public.products set name='Modelo básico' where id=$1",[model]);
+    expect((await db.query('select family from public.products where id=$1',[model])).rows[0].family).toBe('dispenser');
     await rejected(() => create(4000), /ya utilizado/);
     await rejected(() => create(3.555), /inválido/);
     await as(driver); await rejected(() => create(), /Solo el jefe/);
     await db.exec('reset role'); await db.exec(`update public.licenses set status='suspended' where tenant_id='${tenant}'`);
     await as(owner); await rejected(() => create(), /Solo el jefe/);
+  });
+  it('conserva fecha del hecho y fecha de registro y rechaza un reintento con otra fecha',async()=>{
+    const id=op(),record=(date)=>db.query('select public.inventory_record_stock($1,$2,$3,null,null,$4::jsonb,$5,$6::date)',[tenant,id,'receive_empty',JSON.stringify(items(10)),'Apertura',date]);
+    await record('2026-10-18');await record('2026-10-18');
+    const {rows}=await db.query('select occurred_on::text,created_at from public.inventory_operations where id=$1',[id]);
+    expect(rows[0].occurred_on).toBe('2026-10-18');expect(rows[0].created_at).toBeTruthy();
+    expect(Number((await db.query('select depot_empty from public.inventory_owned_stock')).rows[0].depot_empty)).toBe(10);
+    await rejected(()=>record('2026-10-17'),/otra fecha/);
+  });
+  it('descuenta roturas del cliente y conserva autor y persona involucrada, sin repetir la baja',async()=>{
+    await db.query('select public.inventory_owner_stock($1,$2,$3,$4,$5::jsonb,$6)',[tenant,op(),'opening_customer',customer,JSON.stringify(items(3)),'Inicial']);
+    const id=op(),remove=(quantity=1)=>db.query('select public.inventory_remove($1,$2,$3,$4,$5,$6,null,$7,$8::date,$9,$10,$11)',[tenant,id,'damage',product,quantity,'customer_held',customer,'2026-10-18','customer',customer,'Se cayó']);
+    await remove();await remove();
+    const event=(await db.query('select * from public.inventory_operations where id=$1',[id])).rows[0];
+    expect(event.actor_id).toBe(owner);expect(event.involved_id).toBe(customer);expect(event.involved_kind).toBe('customer');
+    expect(Number((await db.query('select in_customers,total_owned from public.inventory_owned_stock')).rows[0].in_customers)).toBe(2);
+    await rejected(()=>remove(2),/otros datos/);
+    await rejected(()=>db.query('select public.inventory_remove($1,$2,$3,$4,5,$5,null,null,$6::date,$7,$8,$9)',[tenant,op(),'damage',product,'depot_empty','2026-10-18','driver',driver,'Rotura']),/suficientes/);
+    await as(driver);await rejected(()=>remove(),/Solo el jefe/);
+  });
+  it('registra bajas del camión sin alterar el depósito y aísla personas de otras empresas',async()=>{
+    await post('receive',items(10));await createTrip();await post('load',items(4));
+    const remove=(person=driver)=>db.query('select public.inventory_remove($1,$2,$3,$4,1,$5,$6,null,$7::date,$8,$9,$10)',[tenant,op(),'damage',product,'truck_ready',trip,'2026-10-18','driver',person,'Rotura en viaje']);
+    await remove();
+    const b=(await db.query('select * from public.inventory_owned_stock')).rows[0];
+    expect(Number(b.depot_ready)).toBe(6);expect(Number(b.truck_ready)).toBe(3);expect(Number(b.total_owned)).toBe(9);
+    await rejected(()=>remove(stranger),/Usuario no válido/);
+    await as(stranger);await rejected(()=>remove(),/Solo el jefe/);
+  });
+  it('da de baja un dispenser identificado con auditoría y evita volver a asignarlo',async()=>{
+    const asset='70000000-0000-0000-0000-000000000009';
+    const save=()=>db.query("select public.inventory_save_dispenser($1,$2,$3,'Frío calor','FC-9','company','depot',null,null,null,0)",[tenant,op(),asset]);
+    await save();const id=op();
+    const retire=()=>db.query('select public.inventory_retire_dispenser($1,$2,$3,$4::date,$5,$6,$7)',[tenant,id,asset,'2026-10-18','owner',owner,'Se rompió']);
+    await retire();await retire();
+    expect((await db.query('select retired from public.dispensers where id=$1',[asset])).rows[0].retired).toBe(true);
+    expect((await db.query('select incident from public.dispenser_events where id=$1',[id])).rows[0].incident).toMatchObject({kind:'damage',involved_kind:'owner',involved_id:owner});
+    await rejected(()=>save(),/dado de baja/);
   });
 });

@@ -80,3 +80,13 @@ Para empezar con Darío: [datos iniciales y corte de inventario](DATOS_INICIALES
 ## Primer acceso real habilitado
 
 El primer jefe ya tiene Auth, perfil, empresa inicial y licencia activa sin asistentes. Se comprobó inicio de sesión y lectura REST de catálogo, patrimonio y dispenser con su JWT real. No se insertaron productos, clientes ni movimientos de prueba. El siguiente paso es el conteo inicial desde la pantalla conectada. La función administrativa temporal se deshabilitó después del alta y las credenciales no están en Git.
+
+## Fechas y roturas — migración local pendiente
+
+`20261019180000_inventory_incidents.sql` está probada localmente, **sin aplicar aún al proyecto remoto** por falta de conexión MCP en esta sesión. Aplicar por MCP y verificar con sesión real antes de considerar disponible. No ejecutar inferencias de cantidades desde el campo Unidad.
+
+Agrega familia de producto (artículo/dispenser), fecha de hecho y persona involucrada. `inventory_record_stock` envuelve las entradas y carga única con fecha; `inventory_remove` registra baja/rotura desde una ubicación concreta y descuenta del libro; `inventory_retire_dispenser` retira un equipo identificado conservando ubicación e historial. Autor autenticado y persona involucrada se conservan por separado. Se rechazan fechas futuras, cantidades insuficientes y personas de otra empresa. Reintentos con igual ID no repiten el descuento. No hay cargos automáticos.
+
+La pantalla conserva las RPC anteriores para entradas mientras no exista la nueva columna y muestra que bajas/fechas editables requieren actualizar la base. Los modelos reconocidos como dispenser se muestran en esa sección con el mismo ID y libro; no se convierten en equipos individuales ni duplican stock. Tras aplicar, familia conserva la clasificación aun si se renombra el modelo. Equipos retirados no aparecen como disponibles en la ficha del cliente.
+
+Validación actual: 95 pruebas, incluidas 17 de PostgreSQL; compilación aprobada. Nuevas RPC aún sin comprobación remota; revisión visual y concurrencia multiconexión pendientes.

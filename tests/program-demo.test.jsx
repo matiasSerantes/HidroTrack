@@ -15,6 +15,20 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('registra la rotura de un bidón en un cliente con fecha y persona involucrada',()=>{
+    enter();fireEvent.click(screen.getByRole('button',{name:'Carga y rendición',exact:true}));
+    fireEvent.change(screen.getByLabelText('Artículo afectado'),{target:{value:'b20'}});
+    fireEvent.change(screen.getByLabelText('Fecha del hecho'),{target:{value:'2026-10-18'}});
+    fireEvent.change(screen.getByLabelText('Dónde estaba'),{target:{value:'customer_held'}});
+    fireEvent.change(screen.getByLabelText('Cliente que tenía los envases'),{target:{value:'c1'}});
+    fireEvent.change(screen.getByLabelText('A quién le ocurrió'),{target:{value:'customer'}});
+    fireEvent.change(screen.getByLabelText('Persona involucrada'),{target:{value:'c1'}});
+    fireEvent.change(screen.getByLabelText('Motivo / detalle'),{target:{value:'Se cayó al moverlo'}});
+    fireEvent.click(screen.getByText('Registrar rotura'));
+    const saved=JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.stockEvents[0]).toMatchObject({date:'2026-10-18',kind:'damage',involvedId:'c1',actorId:'owner',quantity:1});
+    expect(saved.clients[0].held.b20).toBe(1);
+  });
   it('editar desde la ficha conserva envases, deuda y equipos del cliente demo',()=>{
     const initial=seedProgram();localStorage.setItem(DEMO_KEY,JSON.stringify(initial));enter();
     fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));

@@ -1,4 +1,5 @@
 import { currency, parseMoney } from './demo';
+import type {StockEvent} from './stockIncidentDemo';
 
 export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
@@ -12,7 +13,7 @@ export type Trip = { id: string; name: string; driverId: string; stops: Stop[]; 
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
-export type DemoProgramState = { version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
+export type DemoProgramState = { stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export function demoOwnedStock(s: DemoProgramState, productId: string) {
   const product=s.products.find(p=>p.id===productId);
