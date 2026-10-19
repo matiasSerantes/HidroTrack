@@ -150,3 +150,5 @@ En la planilla demo se informa qué dispenser quedan disponibles en el reparto d
 Eliminar artículo/modelo: disponible para el jefe en tarjetas demo y reales y en Stock de bidones. Retira de activos con confirmación conservando historial; con unidades pendientes muestra que deben resolverse primero. En la demo se conserva el registro ficticio; en cuenta real se actualiza active=false. La protección atómica de servidor requiere además la tercera migración pendiente, product_archive_guard.
 
 Cuenta real: el bloqueo de Eliminar con unidades muestra un aviso inmediato. El reinicio administrativo autorizado está preparado y probado localmente; no se ejecutó en Supabase por falta de conexión MCP autenticada.
+
+Actualización 19/10: MCP conectado y proyecto verificado. Limpieza remota sin ejecutar porque existe un reparto pendiente de rendición; resolverlo antes del reinicio. Migraciones adicionales pendientes.

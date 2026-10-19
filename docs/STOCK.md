@@ -110,3 +110,5 @@ La planilla combina modelos disponibles del libro y equipos individualizados pre
 Botón Eliminar en stock de bidones y tarjetas de catálogo/dispenser: vuelve a consultar saldos, rechaza existencias positivas y confirma active=false conservando filas e historial. Opera con los permisos de actualización ya existentes. `20261019200000_product_archive_guard.sql` agrega la protección atómica del servidor usando el mismo bloqueo de empresa que las RPC de inventario. Pendiente de aplicar remotamente después de las migraciones 180000 y 190000. Hasta entonces la comprobación de interfaz no cubre una modificación concurrente desde otro dispositivo.
 
 El verificador de solo lectura requiere las tres migraciones y comprueba también este trigger. 107 pruebas locales aprobadas, 22 PostgreSQL. Nuevo OAuth exitoso; cliente MCP de esta conversación aún responde Auth required, sin cambios remotos.
+
+Actualización 19/10: MCP conectado y proyecto verificado. Limpieza remota sin ejecutar porque existe un reparto pendiente de rendición; resolverlo antes del reinicio. Migraciones adicionales pendientes.
