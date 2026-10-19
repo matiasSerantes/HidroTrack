@@ -57,9 +57,8 @@ describe('panel conectado del titular', () => {
     const menu=screen.getByRole('navigation',{name:'Secciones del jefe'});
     fireEvent.click(within(menu).getByRole('button',{name:'Stock'}));
     await screen.findByText('Dónde están los artículos');
-    fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'product-a'}});
-    fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'2'}});
-    fireEvent.click(screen.getByText('Registrar movimiento'));
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'2'}});
+    fireEvent.click(screen.getByText('Registrar stock'));
     await screen.findByText('Reintentar misma operación');
     await waitFor(()=>expect(within(menu).getByRole('button',{name:'Clientes'}).disabled).toBe(true));
     expect(screen.getByRole('button',{name:'Ver clientes'}).disabled).toBe(true);

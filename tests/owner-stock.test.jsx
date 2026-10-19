@@ -16,18 +16,48 @@ function fixture(section) {
     const chain={select:()=>chain,eq:(key,value)=>{filters.push([table,key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table]||[],error:null}).then(resolve,reject)};return chain;
   })};
   render(<OwnerStock section={section} client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
-  return {client,filters};
+  return {client,filters,records};
 }
 describe('inventario conectado del jefe',()=>{
+  it('carga varios artículos juntos y retira el formulario al confirmar el reparto',async()=>{
+    const {client,records}=fixture('trips');
+    records.products.push({id:'b4',name:'Bidón 4 litros',unit:'unidad',price:1000,returnable:true,active:true},{id:'dispenser',name:'Surtidor básico',unit:'unidad',price:0,returnable:false,active:true});
+    records.inventory_owned_stock.push({product_id:'b4',depot_ready:20},{product_id:'dispenser',depot_ready:4});
+    await screen.findByRole('heading',{name:'Carga de camión'});
+    fireEvent.change(screen.getByLabelText('Cargar Bidón 20'),{target:{value:'6'}});
+    fireEvent.change(screen.getByLabelText('Cargar Bidón 4 litros'),{target:{value:'12'}});
+    fireEvent.change(screen.getByLabelText('Cargar Surtidor básico'),{target:{value:'2'}});
+    expect(screen.getByText('20 unidades')).toBeTruthy();
+    client.rpc.mockImplementation(async()=>{records.inventory_trips[0].status='active';return {data:'ok',error:null};});
+    fireEvent.click(screen.getByText('Registrar carga'));
+    await screen.findByText(/Carga única confirmada/);
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+    expect(client.rpc).toHaveBeenCalledWith('inventory_post',expect.objectContaining({p_kind:'load',p_trip:'t1',p_items:[{product_id:'b20',quantity:6},{product_id:'b4',quantity:12},{product_id:'dispenser',quantity:2}]}));
+    expect(screen.queryByRole('button',{name:'Registrar carga'})).toBeNull();
+    expect(screen.getByText(/No hay repartos pendientes de carga/)).toBeTruthy();
+  });
+  it('registra inventario de varios artículos en una sola operación y rechaza listas vacías',async()=>{
+    const {client,records}=fixture();
+    records.products.push({id:'b4',name:'Bidón 4 litros',unit:'unidad',price:1000,returnable:true,active:true});
+    await screen.findByLabelText('Cantidad de Bidón 4 litros');
+    fireEvent.click(screen.getByText('Registrar stock'));
+    await screen.findByText('Ingresá la cantidad de al menos un artículo.');
+    expect(client.rpc).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'600'}});
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 4 litros'),{target:{value:'80'}});
+    fireEvent.click(screen.getByText('Registrar stock'));
+    await screen.findByText(/Inventario registrado/);
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+    expect(client.rpc).toHaveBeenCalledWith('inventory_owner_stock',expect.objectContaining({p_kind:'receive_empty',p_items:[{product_id:'b20',quantity:600},{product_id:'b4',quantity:80}]}));
+  });
   it('registra 600 bidones iniciales como vacíos y separa el detalle del camión',async()=>{
     const {client}=fixture(); await screen.findByText('Dónde están los artículos');
     expect(screen.getByLabelText('Movimiento').value).toBe('receive_empty');
     expect(screen.queryByRole('columnheader',{name:'Camión llenos'})).toBeNull();
     expect(screen.queryByRole('button',{name:'Preparar reparto y cargar camión'})).toBeNull();
     expect(screen.queryByRole('button',{name:'Agregar artículo al catálogo'})).toBeNull();
-    fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'b20'}});
-    fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'600'}});
-    fireEvent.click(screen.getByText('Registrar movimiento'));
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'600'}});
+    fireEvent.click(screen.getByText('Registrar stock'));
     await screen.findByText(/Inventario registrado/);
     expect(client.rpc).toHaveBeenCalledWith('inventory_owner_stock',expect.objectContaining({p_kind:'receive_empty',p_items:[{product_id:'b20',quantity:600}]}));
   });
@@ -50,7 +80,7 @@ describe('inventario conectado del jefe',()=>{
     expect(client.rpc).toHaveBeenCalledWith('inventory_create_trip',expect.objectContaining({p_tenant:'tenant-a',p_driver:'owner',p_customers:['c1'],p_name:'Ruta propia'}));
     fireEvent.change(screen.getByLabelText('Reparto para cargar'),{target:{value:'t1'}});
     fireEvent.change(screen.getByLabelText('Cargar Bidón 20'),{target:{value:'2'}});
-    fireEvent.click(screen.getByText('Confirmar carga del camión'));
+    fireEvent.click(screen.getByText('Registrar carga'));
     await screen.findByText(/Carga única confirmada/);
     expect(client.rpc).toHaveBeenCalledWith('inventory_post',expect.objectContaining({p_kind:'load',p_trip:'t1',p_customer:null,p_items:[{product_id:'b20',quantity:2}]}));
   });
@@ -59,21 +89,19 @@ describe('inventario conectado del jefe',()=>{
     expect(filters.every(([,key,value])=>key!=='tenant_id'||value==='tenant-a')).toBe(true);
     expect(screen.queryByText('Registrar o ubicar surtidor')).toBeNull();
     fireEvent.change(screen.getByLabelText('Movimiento'),{target:{value:'refill'}});
-    fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'b20'}});
-    fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'2'}});
-    fireEvent.click(screen.getByText('Registrar movimiento'));
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'2'}});
+    fireEvent.click(screen.getByText('Registrar stock'));
     await screen.findByText(/Recarga registrada:/);
     expect(client.rpc).toHaveBeenCalledWith('inventory_owner_stock',expect.objectContaining({p_tenant:'tenant-a',p_kind:'refill',p_customer:null,p_items:[{product_id:'b20',quantity:2}]}));
-    expect(screen.getByLabelText('Cantidad').value).toBe('');
+    expect(screen.getByLabelText('Cantidad de Bidón 20').value).toBe('0');
   });
   it('un corte de conexión conserva el mismo identificador al reintentar',async()=>{
     const {client}=fixture(); await screen.findByText('Dónde están los artículos');
     client.rpc.mockResolvedValueOnce({error:{message:'Sin respuesta'}}).mockResolvedValueOnce({error:null,data:'ok'});
-    fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'b20'}});
-    fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'4'}});
-    fireEvent.click(screen.getByText('Registrar movimiento'));
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'4'}});
+    fireEvent.click(screen.getByText('Registrar stock'));
     await screen.findByText('Reintentar misma operación');
-    expect(screen.getByLabelText('Cantidad').closest('fieldset').disabled).toBe(true);
+    expect(screen.getByLabelText('Cantidad de Bidón 20').closest('fieldset').disabled).toBe(true);
     fireEvent.click(screen.getByText('Reintentar misma operación'));
     await screen.findByText(/Inventario registrado/);
     expect(client.rpc.mock.calls[1]).toEqual(client.rpc.mock.calls[0]);

@@ -174,3 +174,5 @@ Reutilizar Supabase Auth para credenciales y perfiles públicos protegidos para 
 La cuenta real debe conservar la estructura visual aprobada de la demo: misma paleta, navegación lateral en PC e inferior en celular. Mostrar únicamente datos reales y módulos conectados.
 
 Catálogo visible con artículos y precios; cantidades separadas en inventario. La apertura inicial permite registrar los bidones vacíos antes de rellenarlos. Carga y detalle de llenos/vacíos del camión pertenecen a Repartos; Stock solo resume el total en camiones para conservar la distribución del patrimonio.
+
+Carga de camión: lista de artículos del catálogo, cantidad por fila, disponibles en depósito y total. Registrar carga confirma todos los artículos juntos, una sola vez por reparto. Stock del depósito también admite listas de cantidades por movimiento, sin confundir recarga de vacíos con salida al camión. Los equipos individualizados se gestionan por su identificación en Surtidores.

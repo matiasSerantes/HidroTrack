@@ -97,7 +97,7 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar reparto' }));
     const load = screen.getByRole('dialog');
     fireEvent.change(within(load).getByLabelText(/Bidón 20 litros/), { target: { value: '10' } });
-    fireEvent.click(within(load).getByText('Confirmar carga e iniciar'));
+    fireEvent.click(within(load).getByText('Registrar carga'));
     await screen.findByText('Tu ubicación actual · DEMO');
     fireEvent.click(screen.getByRole('button', { name: 'Stock del camión' }));
     expect(screen.getByText('Confirmada · bloqueada')).toBeTruthy();
