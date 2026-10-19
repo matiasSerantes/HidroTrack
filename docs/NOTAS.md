@@ -2,6 +2,9 @@
 
 ## Acuerdos vigentes
 
+- 2026-10-19: procedimiento ampliado y guardado en `AGENTS.md`: primero registrar cada idea en Git; después representarla en la demo visual HTML o mejorar la función existente y su demo; actualizar estado/plan; verificar, hacer commit y push al finalizar cada edición. Estas instrucciones y el contexto deben viajar en el repositorio para trabajar desde otra PC o sesión con acceso al mismo proyecto.
+- Al cierre del proyecto indicado por el usuario, retirar las notas temporales de desarrollo y referencias del árbol versionado/entrega, corregir sus enlaces y mantener documentación final de uso/mantenimiento. Hasta ese cierre, conservarlas en Git. No se pidió borrar ni reescribir el historial de commits; los commits antiguos seguirán conteniendo las versiones anteriores.
+
 - 2026-10-19: el usuario pidió mantener notas de ideas y trabajo realizado, y hacer commits y push de los avances terminados.
 - Registrar propuestas como ideas hasta que se decida implementarlas. No guardar secretos ni datos personales en este documento.
 
@@ -51,6 +54,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: persistido el procedimiento de ideas → demo/función existente → actualización de estado → validación/commit/push, con continuidad entre equipos y limpieza de notas al cierre del proyecto. Cambio documental verificado con `git diff --check`.
 
 - 2026-10-19: implementada la demo integral y documentada la guía de prueba. Validación: 27 pruebas aprobadas y build de producción correcto; incluye pruebas de coherencia de operaciones, aprobación de solicitudes y navegación de módulos/roles. No se pudo verificar visualmente en navegador: no había ninguno conectado a las herramientas. Se conserva el acceso conectado anterior fuera de la demo.
 
