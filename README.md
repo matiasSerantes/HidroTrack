@@ -52,4 +52,6 @@ La prueba `supabase/tests/isolation.sql` prepara fixtures y los revierte. Para e
 
 ## Notas y estado verificado
 
+Los [requisitos funcionales](docs/REQUISITOS.md) reúnen los pedidos de artículos, alquileres, equipo, recorridos, cobros, stock y aprobaciones, con criterios de aceptación y decisiones pendientes.
+
 Consultar [notas de trabajo](docs/NOTAS.md) y [revisión remota de Supabase del 19/10/2026](docs/REVISION_SUPABASE_2026-10-19.md). La inspección remota ya se realizó; las referencias anteriores a validación pendiente siguen aplicando a las pruebas completas de Auth/PostgREST y de la aplicación. Los acuerdos de continuidad están en AGENTS.md.

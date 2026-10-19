@@ -22,6 +22,12 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Pedidos recibidos el 2026-10-19
+
+Se registró el detalle en [requisitos funcionales](REQUISITOS.md): artículos de venta/alquiler (sifones, cajones, soda suelta, bidones de 12/20 litros, máquinas frío/calor y otros), autenticador, búsqueda por localidad/cliente y vista de cuadra, jefe/asistentes con aprobaciones, recorridos diarios asignables y editables en marcha, calculadora/cobros, alquileres por cliente, baja con motivo/devoluciones/estado y aprobación, stock del transporte y vacíos, múltiples repartos por día, ausentes pendientes, identidad de empresa y seguimiento/notificaciones al jefe.
+
+Son requisitos solicitados, todavía sin implementar. Quedan por precisar: método de autenticador, alcance de las creaciones del asistente, tarifas de alquiler, devoluciones pendientes/daños al aprobar bajas, ubicaciones de stock, definición de cuadra, seguimiento por visita o GPS y canales de notificación. El orden de implementación sugerido está en el documento.
+
 - Reconciliar el historial remoto y local y versionar la migración administrativa antes de nuevos cambios de esquema.
 - Preparar y revisar una migración con los cuatro índices faltantes y la optimización de las dos políticas.
 - Evaluar la protección contra contraseñas filtradas según el plan de Supabase.
@@ -31,5 +37,7 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: incorporados los nuevos pedidos con identificadores y criterios de aceptación; actualizado el plan visible con el alcance recibido y el estado remoto ya verificado. Validación documental, correspondencia de requisitos y `git diff --check`. No se implementaron funciones nuevas ni se modificó Supabase en esta actualización.
 
 - 2026-10-19: incorporados los acuerdos persistentes en `AGENTS.md`, esta bitácora y el informe de Supabase. Validación: revisión documental y `git diff --check`; no se cambió código de ejecución ni se corrieron pruebas de aplicación para esta actualización documental.
