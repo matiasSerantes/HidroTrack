@@ -1,6 +1,6 @@
 # Base de stock — primera etapa
 
-Aplicada al proyecto de HidroTrack por MCP el 19/10/2026: `20261019160747_inventory`. Se reutilizó `products` y se agregaron cuatro tablas; hay 13 tablas públicas con RLS. Sin datos operativos de ejemplo. La interfaz de stock continúa en demo local: todavía no llama a estas funciones.
+Aplicada al proyecto de HidroTrack por MCP el 19/10/2026: `20261019160747_inventory`. Se reutilizó `products` y se agregaron cuatro tablas; hay 13 tablas públicas con RLS. Sin datos operativos de ejemplo. Esta sección describe la primera migración. La ampliación y la pantalla real del jefe se detallan más abajo.
 
 ## Modelo
 
@@ -48,12 +48,31 @@ Se niega escritura directa del libro a `anon` y `authenticated`. Las funciones v
 
 Las escrituras se serializan mediante bloqueo de la empresa durante la transacción para evitar saldos negativos por operaciones simultáneas. Es una primera implementación para volúmenes pequeños; no se midió rendimiento ni concurrencia con varias conexiones reales. No hay edición/borrado de movimientos desde la API de usuario.
 
-Verificación local: 9 pruebas de PostgreSQL (59 en toda la aplicación), incluyendo aislamiento, ingreso/carga/entrega/regreso, repetición, rollback, cantidades, permisos, precio histórico y siguiente reparto. MCP confirmó migración, tablas con RLS, vistas, funciones sin ejecución anónima y cero operaciones demo. Falta integración con JWT reales de Auth/PostgREST y prueba de concurrencia sobre el servidor.
+Verificación local inicial: 9 pruebas de PostgreSQL (69 en toda la aplicación), incluyendo aislamiento, ingreso/carga/entrega/regreso, repetición, rollback, cantidades, permisos, precio histórico y siguiente reparto. MCP confirmó migración, tablas con RLS, vistas, funciones sin ejecución anónima y cero operaciones demo. Falta integración con JWT reales de Auth/PostgREST y prueba de concurrencia sobre el servidor.
 
 El asesor remoto señala las tres funciones de stock por ser `SECURITY DEFINER` ejecutables por usuarios autenticados. Es deliberado: son la entrada transaccional y contienen sus propios controles de autorización; no otorgan escritura libre. Se mantiene el pendiente anterior de protección de contraseñas filtradas, además de los hallazgos previos descritos en el informe.
 
 Referencias técnicas: [funciones de Supabase](https://supabase.com/docs/guides/database/functions) y [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
-## Siguiente parte
+## Pendientes al cerrar la primera etapa (ampliación abajo)
 
 Conectar una pantalla real del jefe para catálogo e ingreso inicial al depósito; provisionar empresa/membresías/licencia de prueba. Después conectar carga única y consulta de camión con estos IDs y funciones. Completar lectura de catálogo y saldo completo de envases para asistentes autorizados, gestión de paradas, conteo declarado y diferencias. Ventas, cobros, cuotas/series de equipos, inventario inicial de clientes, conversión lleno/vacío y ajustes de depósito quedan fuera de esta primera base. El importe entregado no es un libro contable ni el dinero cobrado.
+
+## Ampliación: patrimonio y pantalla del jefe
+
+Aplicada por MCP `20261019162655_owned_inventory`. Ahora hay 15 tablas públicas con RLS; no se crearon empresas ni operaciones ficticias en el servidor.
+
+- `inventory_owner_stock`: recibe vacíos comprados (`receive_empty`), registra envases que ya estaban en un cliente (`opening_customer`) y rellena vacíos del depósito (`refill`). Conserva el ID al reintentar. La apertura en cliente solo se permite antes de cualquier movimiento de ese cliente/artículo; no sirve para ajustar entregas posteriores.
+- `inventory_owned_stock`: total físico y distribución por artículo. Recargar suma llenos y resta vacíos, sin modificar el total. Envases del cliente = en su poder, con contenido consumido o sin consumir desconocido.
+- `inventory_create_product`: catálogo del jefe con alta idempotente, precio de entrega y retornabilidad.
+- `dispensers` y `dispenser_events`: unidades identificadas e historial de ubicación. `inventory_save_dispenser` registra/traslada equipos con un ID de operación. Propiedad company/customer; ubicación depósito/camión/cliente; modalidad préstamo gratuito/alquiler/propiedad del cliente. El equipo del cliente no se suma a los propios. No se cambia la propiedad mediante un traslado.
+
+`OwnerStock.tsx`, accesible desde Stock y surtidores dentro de OwnerWorkspace, consulta datos reales y llama a estas RPC. Incluye preparación de reparto/asignación básica, carga única y regreso exacto con las funciones anteriores. Un reparto se finaliza, queda submitted y el jefe confirma cantidades de regreso. Las cantidades declaradas deben coincidir con el libro; pérdidas/diferencias quedan pendientes.
+
+El frontend conserva el comando y su UUID mientras una escritura no obtiene respuesta; bloquea edición y navegación interna hasta reintentar. Los errores SQL confirmados liberan el formulario para corregirlo. Tras una confirmación se limpian campos; si falla la actualización posterior, se informa que la operación ya se guardó. Ese comando incierto no es una cola offline persistente: no cerrar la pestaña durante un reintento; falta recuperación durable al recargar.
+
+Pruebas actuales: 12 PostgreSQL y 69 totales. Incluyen el ciclo apertura→carga→entrega/devolución→regreso→recarga con conservación del patrimonio, equipos del cliente, préstamos gratuitos, alquileres, permisos y reintentos. Pantalla probada con cliente simulado; todavía falta Auth/PostgREST real, concurrencia con varias conexiones y revisión visual en teléfono/PC. Se confirmó por MCP RLS y que las nuevas funciones no son ejecutables por anon. La base remota continúa sin empresas provisionadas.
+
+La pantalla real de ventas/cobros de choferes, aprobaciones de deuda, bajas con revisión, inventario de pérdidas y cuentas corrientes siguen pendientes. Los surtidores registran una cuota pactada; no generan facturas ni cobran alquileres automáticamente. El precio del artículo es el precio de entrega, no el costo de adquirir el envase. Los envases nuevos adquiridos se ingresan; rellenar los propios no es una compra.
+
+Para empezar con Darío: [datos iniciales y corte de inventario](DATOS_INICIALES.md). Las pantallas demo y las conectadas permanecen separadas.

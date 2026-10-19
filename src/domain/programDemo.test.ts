@@ -1,9 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { approveClose, closeTrip, decideRequest, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
+import { approveClose, closeTrip, decideRequest, demoOwnedStock, demoRefill, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
 
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('conserva los envases propios al entregar y rellenar; solo el jefe registra recargas', () => {
+    const original=seedProgram(), total=demoOwnedStock(original,'b20').total;
+    const delivered=recordVisit(original,input);
+    expect(demoOwnedStock(delivered,'b20').total).toBe(total);
+    const filled=demoRefill(delivered,'b20',2,'owner');
+    expect(demoOwnedStock(filled,'b20').total).toBe(total);
+    expect(filled.products[0].depot).toBe(original.products[0].depot+2);
+    expect(() => demoRefill(delivered,'b20',2,'luz')).toThrow(/Solo el jefe/);
+    expect(() => demoRefill(delivered,'b20',100000,'owner')).toThrow(/vacíos/);
+  });
+  it('la baja no devuelve al depósito un surtidor que pertenece al cliente', () => {
+    const original=seedProgram(),client=original.clients.find(c=>c.id==='c6');
+    expect(client?.rentals[0].mode).toBe('customer_owned');
+    original.requests.push({id:'own-leave',kind:'deactivation',clientId:'c6',authorId:'nico',status:'pending',title:'Baja',returns:[]});
+    const after=decideRequest(original,'own-leave',true);
+    expect(after.products.find(p=>p.id==='bomba')?.depot).toBe(original.products.find(p=>p.id==='bomba')?.depot);
+    expect(after.clients.find(c=>c.id==='c6')?.rentals).toEqual(client?.rentals);
+  });
   it('solo el jefe edita paradas pendientes y conserva clientes y movimientos', () => {
     const s = seedProgram();
     expect(() => editDemoStop(s, 'luz', 't1', 'c1', 'down')).toThrow(/Solo el jefe/);

@@ -16,12 +16,13 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
         select: () => chain,
         eq: (key, value) => { call.filters.push([key, value]); return chain; },
         order: () => chain,
+        limit: () => chain,
         insert: value => { call.operation = 'insert'; call.value = value; return chain; },
         update: value => { call.operation = 'update'; call.value = value; return chain; },
         single: () => chain,
         maybeSingle: () => chain,
         then: (resolve, reject) => {
-          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : [...records];
+          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : table==='customers' ? [...records] : [];
           return Promise.resolve({ data, error: null }).then(resolve, reject);
         },
       };
@@ -31,6 +32,15 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   return { client, calls };
 }
 describe('panel conectado del titular', () => {
+  it('abre el inventario real del jefe solo después de validar acceso y licencia', async()=>{
+    const {client,calls}=clientFixture();
+    render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');
+    expect(calls.some(c=>c.table==='inventory_owned_stock')).toBe(false);
+    fireEvent.click(screen.getByRole('button',{name:'Stock y surtidores'}));
+    await screen.findByText('Dónde están los artículos');
+    expect(calls.find(c=>c.table==='inventory_owned_stock').filters).toContainEqual(['tenant_id','tenant-a']);
+  });
   it('no consulta información comercial para un chofer', async () => {
     const { client, calls } = clientFixture({ role: 'driver' });
     render(<OwnerWorkspace client={client} userId="user-a"/>);

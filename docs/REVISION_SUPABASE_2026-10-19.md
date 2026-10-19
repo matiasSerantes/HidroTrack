@@ -39,3 +39,7 @@ La credencial OAuth existe y un cliente nuevo logró listar e invocar las herram
 ## Actualización posterior: base de stock
 
 Después de la revisión de solo lectura anterior, el usuario priorizó implementar stock. Se aplicó por MCP `20261019160747_inventory`: cuatro tablas, tres vistas y tres RPC; total 13 tablas públicas con RLS. Sin operaciones demo ni datos comerciales insertados. Se recuperaron y versionaron foundation y admin_portal con las versiones reales, resolviendo el historial local incompleto sin modificar el historial remoto. Ver [contrato, pruebas y límites](STOCK.md). Las RPC nuevas son SECURITY DEFINER de forma deliberada y verifican autorización; el asesor las señala como ejecutables por authenticated. Las pruebas completas con Auth/PostgREST y los otros pendientes de la revisión siguen abiertos.
+
+## Actualización: patrimonio físico y surtidores
+
+Aplicada por MCP `20261019162655_owned_inventory`: recarga sin aumentar envases propios, apertura de envases en clientes, catálogo y surtidores con propiedad/ubicación e historial. Verificación remota: 15 tablas con RLS, nuevas RPC no ejecutables por anon y search_path vacío; cero empresas, surtidores y operaciones. Hay pantalla conectada del jefe y pruebas con cliente simulado; todavía no existe la cuenta de Darío y falta validación con Auth/PostgREST real. No se insertó información personal ni inventario de ejemplo.

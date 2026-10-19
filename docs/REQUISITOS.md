@@ -160,3 +160,7 @@ La ficha no repite clientes de la misma cuadra: esa selección queda en el mapa.
 ### Ajuste visual confirmado — 19/10/2026
 
 Mantener paleta celeste clara en tarjetas, cuenta y stock; deuda en naranja suave. Baja aprobada en recuadro rojo suave con su fecha, incluido aviso del día en el reparto del asistente sin ofrecer atención. No confundir ausencia o deuda con baja. La fecha se registra al aprobar; bajas históricas sin fecha no deben inventarla. Preferencia vigente sobre los fondos oscuros introducidos anteriormente.
+
+### Patrimonio físico confirmado — 19/10/2026
+
+El jefe compra un parque propio de envases. Entregar, recuperar vacíos y rellenar solo cambia ubicación/condición; no aumenta el total. Compra y apertura inicial sí agregan unidades conocidas. Mostrar depósito lleno/vacío, camión lleno/vacío, envases en clientes y total por artículo. No afirmar si el cliente ya consumió el agua. Surtidores propios en préstamo gratuito o alquiler, separados de surtidores del cliente (no suman al patrimonio). Primera pantalla conectada del jefe implementada junto con base, carga única y regreso exacto; todavía falta validar con cuenta real e integrar ventas/cobros del chofer. Darío aportará datos luego; no crear su cuenta ni inventario con datos inventados.

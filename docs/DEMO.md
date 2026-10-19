@@ -97,7 +97,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 59 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 69 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
 
@@ -109,7 +109,7 @@ La Lucía inicial ya tiene un reparto activo con carga confirmada. Para probar e
 
 ### Base real de stock
 
-Desde el 19/10/2026 hay una base de stock aplicada en Supabase. Sus funciones y saldos están documentados en [STOCK.md](STOCK.md). Esta demostración sigue usando datos locales: no carga ni consulta inventario real. La próxima parte es conectar catálogo/ingreso del depósito.
+Desde el 19/10/2026 hay una base de stock aplicada en Supabase. Sus funciones y saldos están documentados en [STOCK.md](STOCK.md). Esta demostración sigue usando datos locales: no carga ni consulta inventario real. Catálogo/ingreso del depósito ya están conectados en el acceso real del jefe; falta validar con su cuenta provisionada.
 
 ### Deuda autorizada por el jefe
 
@@ -122,3 +122,9 @@ El pago se aplica primero a lo vendido hoy y el excedente a deuda anterior; esta
 ### Celestes y señalización de bajas
 
 Tarjetas de paradas y cuenta en celeste; deuda con naranja suave. Se corrigió una colisión del estilo global pending que oscurecía las paradas. Al aprobar una baja, se guarda fecha/motivo y aparece un recuadro rojo en los repartos de ese día y en la ficha/archivo del jefe. El aviso de baja no permite atender ni vuelve a incorporar al cliente al recorrido. Para la demo, el día operativo es 19/10/2026. Bajas anteriores sin fecha dicen fecha sin registrar. La baja requiere aprobación; una solicitud todavía pendiente no se pinta como baja definitiva. Revisión visual en teléfonos/PC reales pendiente.
+
+### Parque de envases y recargas
+
+Como jefe, abrir Carga y rendición → Tu parque de envases. Muestra total propio y distribución entre depósito, camión y clientes. Registrar recarga demo transforma vacíos del depósito en llenos conservando el total. La ficha de Estudio Robles, en una demo nueva, incluye equipo del cliente: no se devuelve al reparto al aprobar la baja. Las demos guardadas conservan sus equipos anteriores.
+
+En el acceso con cuenta real existe ahora Stock y surtidores: catálogo, inventario inicial, recargas, camión y equipos. Esa pantalla usa Supabase; la demostración sigue guardando únicamente datos ficticios locales. Se requiere empresa, usuario owner y licencia vigente para abrir el espacio conectado. No se creó aún la cuenta de Darío. Ver [datos para el inicio](DATOS_INICIALES.md).

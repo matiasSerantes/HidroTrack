@@ -4,7 +4,7 @@ export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
-export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' };
+export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' | 'customer_owned' };
 export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean };
 export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
@@ -14,6 +14,19 @@ export type Sale = { id: string; clientId: string; tripId: string; actorId: stri
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
 export type DemoProgramState = { version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
+export function demoOwnedStock(s: DemoProgramState, productId: string) {
+  const product=s.products.find(p=>p.id===productId);
+  const trips=s.trips.filter(t=>['active','submitted'].includes(t.stage));
+  const depot=product?.depot||0, empty=s.depotEmpties[productId]||0, truck=trips.reduce((n,t)=>n+(t.stock[productId]||0),0), truckEmpty=trips.reduce((n,t)=>n+(t.empties[productId]||0),0), held=s.clients.reduce((n,c)=>n+(c.held[productId]||0),0);
+  return {depot,empty,truck,truckEmpty,held,total:depot+empty+truck+truckEmpty+held};
+}
+export function demoRefill(s: DemoProgramState, productId: string, quantity: number, actor: string) {
+  if(!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active)) throw new Error('Solo el jefe puede registrar recargas.');
+  integer(quantity);
+  const next=structuredClone(s),product=next.products.find(p=>p.id===productId&&p.active&&p.returnable);
+  if(!product||!quantity||(next.depotEmpties[productId]||0)<quantity) throw new Error('No hay suficientes vacíos de ese artículo para rellenar.');
+  next.depotEmpties[productId]-=quantity; product.depot+=quantity; return next;
+}
 export const DEMO_ORIGIN = { lat: -34.60905, lng: -58.3832 };
 export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng: number }> = {
   c1: { address: 'Av. de Mayo 1200', lat: -34.60935, lng: -58.38365 },
@@ -49,7 +62,7 @@ export function seedProgram(): DemoProgramState {
       { id: 'c3', name: 'Martín Acosta', address: 'Lacroze 840', locality: 'Villa Ballester', block: 'lacroze-800', x: 60, y: 46, active: true, debt: 0, held: { b12: 2 }, rentals: [], usual: '2 bidones de 12 L', note: 'Si no está, consultar si puede recibir después.' },
       { id: 'c4', name: 'Almacén Los Tilos', address: 'Independencia 215', locality: 'San Andrés', block: 'independencia-200', x: 76, y: 68, active: true, debt: 220000, held: { cajon: 2 }, rentals: [], usual: '1 cajón de soda', note: 'Abierto hasta las 18 h.' },
       { id: 'c5', name: 'Paula Ferrer', address: 'Alvear 1216', locality: 'Villa Ballester', block: 'alvear-1200', x: 23, y: 35, active: true, debt: 0, held: { b20: 1 }, rentals: [], usual: '1 bidón de 20 L', note: 'Puede recibir por la tarde.' },
-      { id: 'c6', name: 'Estudio Robles', address: 'San Martín 530', locality: 'San Andrés', block: 'sanmartin-500', x: 47, y: 76, active: true, debt: 0, held: { b20: 2 }, rentals: [], usual: '2 bidones de 20 L', note: 'Atención en recepción.' },
+      { id: 'c6', name: 'Estudio Robles', address: 'San Martín 530', locality: 'San Andrés', block: 'sanmartin-500', x: 47, y: 76, active: true, debt: 0, held: { b20: 2 }, rentals: [{ id: 'customer-owned-demo', productId: 'bomba', serial: 'EQUIPO-DEL-CLIENTE', monthly: 0, mode: 'customer_owned' }], usual: '2 bidones de 20 L', note: 'Atención en recepción.' },
       { id: 'c7', name: 'Cliente de ejemplo · baja', address: 'Mitre 420', locality: 'San Andrés', block: 'mitre-400', x: 80, y: 34, active: false, debt: 0, held: {}, rentals: [], usual: 'Sin visitas', note: 'Baja histórica de ejemplo; solo visible para el jefe.' },
     ],
     presence: { luz: { clientId: 'c1', time: '09:15', attending: false } },
@@ -146,8 +159,8 @@ export function decideRequest(state: DemoProgramState, requestId: string, approv
       c.active = false; c.deactivatedOn = demoDay; c.deactivationReason = r.reason;
       c.deactivatedTripIds = s.trips.filter(t => ['planned','active'].includes(t.stage) && t.stops.some(p => p.clientId === c.id)).map(t => t.id);
       c.note = `Baja aprobada: ${r.reason}. ${c.note}`;
-      for (const rental of c.rentals) { const p = s.products.find(x => x.id === rental.productId); if (p) p.depot++; }
-      c.rentals = [];
+      for (const rental of c.rentals) { const p = s.products.find(x => x.id === rental.productId); if (p && rental.mode !== 'customer_owned') p.depot++; }
+      c.rentals = c.rentals.filter(r => r.mode === 'customer_owned');
       s.trips.forEach(t => { if (['planned', 'active'].includes(t.stage)) t.stops = t.stops.filter(stop => stop.clientId !== c.id || !['pending', 'later', 'tomorrow', 'next-week'].includes(stop.status)); });
     }
   }
