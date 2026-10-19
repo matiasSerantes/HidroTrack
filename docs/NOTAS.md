@@ -195,3 +195,9 @@ Pedido: separar los modelos dispenser del catálogo común, permitir editar/agre
 Pedido: los botones secundarios se confunden con el fondo (ejemplo Archivar). Deben tener fondo celeste y borde visible en reposo, buen contraste, foco de teclado y estados distinguibles en celular y PC. Mantener turquesa en acciones principales y rojo suave en eliminar. Aplicar base común a las acciones reales y reforzar botones secundarios de la demo. Estado: en implementación.
 
 - Implementado en CSS compartido y acceso real: fondo celeste, borde azul y texto definidos desde reposo; foco visible, controles deshabilitados distinguibles, turquesa principal y rojo suave al eliminar. Incluye botones antes sin clase (actualizar, cancelar, preparar reparto y otros). Build y diff correctos; cambio solo visual, sin pruebas nuevas de lógica. Revisión visual en dispositivos pendiente.
+
+## 2026-10-19 · Planilla como acceso principal del cliente
+
+Pedido: reemplazar el acceso de archivar en la lista por Planilla. Mover Archivar cliente al interior de la planilla, exclusivo del jefe. También conservar Editar datos dentro para simplificar la lista. Mantener confirmación, historial y bloqueo ante escrituras pendientes. Estado: en implementación.
+
+- Implementado: lista con Planilla como acción principal; Editar datos y Archivar cliente dentro de la planilla real. Archivo con confirmación, historial conservado y bloqueo mientras hay una escritura incierta. El acceso real sigue restringido al jefe por rol y RLS existentes. Demo muestra Planilla y reserva Archivar cliente al jefe; asistentes conservan Solicitar baja. Pruebas de edición/archivo actualizadas al flujo y comprobación del bloqueo. Build y 95 pruebas aprobados; revisión visual en dispositivos pendiente.

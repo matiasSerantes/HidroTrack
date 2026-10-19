@@ -140,3 +140,5 @@ Clientes reales: Abrir ficha (o tocar el nombre), Editar y Eliminar. Eliminar co
 Como jefe, Carga y rendición → Retirar stock o registrar rotura. Elegir artículo, cantidad, ubicación, fecha, persona involucrada y motivo. Descuenta del lugar elegido y conserva un historial ficticio, sin modificar deuda. El registro real equivalente y las fechas editables requieren aplicar la migración de incidentes; la web avisa y no simula guardados si todavía no existe. Los modelos dispenser aparecen en su sección conservando sus registros; la unidad de venta nunca se convierte en existencias.
 
 Botones secundarios reforzados en demo y cuenta real: fondo celeste y borde visibles sin pasar el puntero, foco de teclado y tamaño táctil. Acciones principales turquesa y eliminación en rojo suave.
+
+Acceso actualizado: Clientes → Planilla. En la cuenta real, Editar datos y Archivar cliente se encuentran dentro de la planilla del jefe; el archivo requiere confirmación y conserva historial. La demo muestra Planilla y el jefe inicia la baja desde Archivar cliente; el asistente conserva Solicitar baja y la aprobación del jefe.
