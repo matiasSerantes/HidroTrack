@@ -27,7 +27,7 @@ describe('inventario conectado del jefe',()=>{
     rendered.rerender(<OwnerStock section="dispensers" client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
     await screen.findByRole('heading',{name:'Dispenser frío calor'});
     expect(records.products).toHaveLength(2);expect(client.rpc).not.toHaveBeenCalled();
-    expect(screen.getByText(/0 unidades registradas/)).toBeTruthy();
+    expect(screen.getByText('0',{selector:'.stock-catalog-units'})).toBeTruthy();
   });
   it('edita nombre, unidad y precio conservando el identificador y las existencias',async()=>{
     const {records,filters}=fixture('catalog');await screen.findByRole('button',{name:'Editar Bidón 20'});
@@ -107,7 +107,7 @@ describe('inventario conectado del jefe',()=>{
   it('presenta artículos y precios en catálogo sin mezclar formularios de stock o reparto',async()=>{
     fixture('catalog'); await screen.findByText('Lo que vende tu reparto');
     expect(screen.getByRole('heading',{name:'Bidón 20'})).toBeTruthy();
-    expect(screen.getByText(/20 unidades registradas/)).toBeTruthy();
+    expect(screen.getByText(/20/,{selector:'.stock-catalog-units'})).toBeTruthy();
     expect((await screen.findByLabelText('Unidad de venta (no cantidad)')).value).toBe('unidad');
     expect(screen.queryByLabelText('Movimiento')).toBeNull();
     expect(screen.queryByRole('heading',{name:'Camión y repartos'})).toBeNull();

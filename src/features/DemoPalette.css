@@ -170,3 +170,5 @@
   .hd .hd-touch-nav button:hover { background: #1a5768; }
   .hd .hd-touch-nav button.active:hover { background: #128b92; }
 }
+
+.hd .hd-catalog-units{display:block;font-size:38px;line-height:1.15;color:#087e91;margin:20px 0 16px}.hd .hd-catalog-units>span{display:block;font-size:14px;color:#315e76;margin-top:6px;font-weight:600}.hd .hd-catalog-distribution{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.hd .hd-catalog-distribution>span{padding:10px 6px;border:1px solid #bfdeee;border-radius:10px;background:#f6fcff;text-align:center;font-size:12px;color:#416b82}.hd .hd-catalog-distribution b{display:block;font-size:20px;color:#23566e;margin-top:5px}.hd .hd-catalog-secondary-price{margin-top:18px;padding-top:14px;border-top:1px solid #beddec}.hd .hd-catalog-secondary-price small{display:block;font-size:12px}.hd .hd-catalog-secondary-price>span{display:block;font-size:18px;font-weight:650;color:#365f76;margin-top:4px}

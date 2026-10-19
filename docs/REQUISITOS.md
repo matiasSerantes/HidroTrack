@@ -184,3 +184,5 @@ Artículos: editar nombre, unidad y precio sin recrear registros. Modelos dispen
 Los botones deben reconocerse sin pasar el puntero: fondo y borde celestes visibles en reposo, contraste legible, foco de teclado y área táctil de al menos 44 px. Turquesa para acciones principales; rojo suave para eliminar. Aplicar a cuenta real y demo.
 
 Actualización de navegación de clientes: en la lista mostrar Planilla. Dentro colocar Editar datos y, solo para el jefe, Archivar cliente. No ofrecer el archivo desde la lista. Archivar conserva historial y asignaciones y retira al cliente de activos previa confirmación.
+
+Tarjetas de catálogo/modelos: priorizar unidades activas registradas sobre el precio. Mostrar distribución en depósito, camión y clientes; precio secundario debajo. Incluir vacíos en el total de envases propios. El campo Unidad es descripción de venta, nunca una cantidad de existencias.

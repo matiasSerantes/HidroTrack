@@ -142,3 +142,5 @@ Como jefe, Carga y rendición → Retirar stock o registrar rotura. Elegir artí
 Botones secundarios reforzados en demo y cuenta real: fondo celeste y borde visibles sin pasar el puntero, foco de teclado y tamaño táctil. Acciones principales turquesa y eliminación en rojo suave.
 
 Acceso actualizado: Clientes → Planilla. En la cuenta real, Editar datos y Archivar cliente se encuentran dentro de la planilla del jefe; el archivo requiere confirmación y conserva historial. La demo muestra Planilla y el jefe inicia la baja desde Archivar cliente; el asistente conserva Solicitar baja y la aprobación del jefe.
+
+Catálogo: unidades activas destacadas, depósito/camión/clientes debajo y precio al pie. Demo usa sus cantidades ficticias y excluye equipos que pertenecen al cliente. Las tarjetas reales usan existencias registradas en el libro; no convierten el campo Unidad en stock.

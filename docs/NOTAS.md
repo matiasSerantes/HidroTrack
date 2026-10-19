@@ -201,3 +201,9 @@ Pedido: los botones secundarios se confunden con el fondo (ejemplo Archivar). De
 Pedido: reemplazar el acceso de archivar en la lista por Planilla. Mover Archivar cliente al interior de la planilla, exclusivo del jefe. También conservar Editar datos dentro para simplificar la lista. Mantener confirmación, historial y bloqueo ante escrituras pendientes. Estado: en implementación.
 
 - Implementado: lista con Planilla como acción principal; Editar datos y Archivar cliente dentro de la planilla real. Archivo con confirmación, historial conservado y bloqueo mientras hay una escritura incierta. El acceso real sigue restringido al jefe por rol y RLS existentes. Demo muestra Planilla y reserva Archivar cliente al jefe; asistentes conservan Solicitar baja. Pruebas de edición/archivo actualizadas al flujo y comprobación del bloqueo. Build y 95 pruebas aprobados; revisión visual en dispositivos pendiente.
+
+## 2026-10-19 · Unidades antes que precio en catálogo
+
+Pedido: destacar unidades activas de cada artículo/modelo y dejar precio debajo. Mostrar existencias reales registradas y distribución depósito/camión/clientes, sin interpretar el campo Unidad como cantidad. Aplicar a tarjetas reales y demo. Estado: en implementación.
+
+- Implementado: unidades activas en grande; distribución en depósito (llenos y vacíos), camión (llenos y vacíos) y clientes; precio secundario al pie. En cuenta real se usa total propio del libro y no el campo Unidad. Demo presenta su inventario ficticio y equipos propios colocados, excluyendo propiedad del cliente. Compilación y 95 pruebas correctas; no se modificaron cantidades ni base remota. Revisión visual en dispositivos pendiente.
