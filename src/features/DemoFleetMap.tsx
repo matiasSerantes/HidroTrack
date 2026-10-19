@@ -9,7 +9,7 @@ import './DemoStreetMap.css';
 import './DemoFleetMap.css';
 
 const colors = ['#078e97', '#9260ca', '#d58c20', '#467ccd'];
-export default function DemoFleetMap({ state: s, onOpenTrip }: { state: DemoProgramState; onOpenTrip: (id: string) => void }) {
+export default function DemoFleetMap({ state: s, onOpenTrip, onOpenStop }: { state: DemoProgramState; onOpenTrip: (id: string) => void; onOpenStop: (tripId: string, clientId: string) => void }) {
   const container = useRef<HTMLDivElement>(null), map = useRef<L.Map | null>(null), group = useRef<L.LayerGroup | null>(null), fitted = useRef(false);
   const [revision, setRevision] = useState(0), [ready, setReady] = useState(false), [failed, setFailed] = useState(false), [filter, setFilter] = useState('all');
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function DemoFleetMap({ state: s, onOpenTrip }: { state: DemoProg
       if (points.length > 1 && L.Browser.svg) L.polyline(points.map(({ c }) => [c.geo!.lat, c.geo!.lng] as L.LatLngTuple), { color, weight: 4, dashArray: '6 9', opacity: .6 }).addTo(layer);
       points.forEach(({ c, p }, i) => {
         const label = document.createElement('span'); label.textContent = `${trip.name}: ${c.name} · ${isDone(p) ? 'resuelta' : 'pendiente'}`;
-        L.marker([c.geo!.lat, c.geo!.lng], { icon: L.divIcon({ className: 'hd-fleet-stop', html: `<span style="border-color:${color}">${i + 1}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }), title: `${member.name} · parada ${i + 1}` }).bindTooltip(label).addTo(layer);
+        L.marker([c.geo!.lat, c.geo!.lng], { icon: L.divIcon({ className: 'hd-fleet-stop', html: `<span style="border-color:${color}">${i + 1}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }), title: `${member.name} · parada ${i + 1}` }).bindTooltip(label).on('click', () => onOpenStop(trip.id, c.id)).addTo(layer);
       });
       if (position) {
         const tag = document.createElement('div'); tag.className = 'hd-fleet-person'; tag.style.backgroundColor = color;

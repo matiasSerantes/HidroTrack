@@ -30,6 +30,10 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Tocar parada: clientes de la cuadra y gestión del jefe — pedido del 2026-10-19
+
+Implementado en demo: al tocar una parada en el mapa se muestra el panel «Clientes de esta cuadra», por cuadra/localidad y con visibilidad según rol. El jefe puede subir/bajar el orden y agregar/quitar clientes pendientes desde ese panel. Las visitas resueltas se conservan. Paula Ferrer tiene una dirección cercana de ejemplo y comienza fuera del reparto para probar su incorporación. También se abre este panel al tocar una parada en el mapa general del jefe. Se interpreta «subir o bajar reparto de esa parada» como orden de visita y alta/baja en el reparto; ambos controles quedaron visibles.
+
 ### Mapa del jefe con ubicación de asistentes — pedido del 2026-10-19
 
 Implementado en demo: botón «Ver asistentes en el mapa» en la jornada y repartos del jefe, y apartado «Mapa del equipo». Muestra todos sus asistentes activos, repartos abiertos, clientes, avances y última posición simulada emitida desde el mapa del asistente. Actualiza por evento entre vistas/pestañas del mismo navegador y mantiene señal periódica mientras la página está visible. Indica hora, pausa, falta de actualización o ausencia de ubicación. La réplica entre teléfonos/PC reales mediante GPS y servidor queda pendiente; esta entrega no modifica Supabase ni solicita ubicación real.
@@ -79,6 +83,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: agregado panel de cuadra en los mapas y controles del jefe para orden/agregar/quitar, preservando visitas y clientes. Validación: 42 pruebas, con toque de marcador, cambios desde el mapa, permisos del asistente e historial protegido; compilación correcta. Ordenar o quitar paradas no debe mover artificialmente la posición demo del asistente.
 
 - 2026-10-19: agregado mapa general del jefe y publicación local de posiciones demo con hora/estado; distingue asistentes sin señal y posiciones pausadas/antiguas. Validación: 39 pruebas y compilación correctas, incluida réplica al jefe tras avanzar a Lucía y actualización mediante evento de otra pestaña. La cartografía y apariencia en navegador/dispositivos reales siguen pendientes de revisión visual.
 

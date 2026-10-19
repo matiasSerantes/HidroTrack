@@ -19,8 +19,9 @@ export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng:
   c1: { address: 'Av. de Mayo 1200', lat: -34.60935, lng: -58.38365 },
   c2: { address: 'Av. de Mayo 1250', lat: -34.60950, lng: -58.38420 },
   c3: { address: 'Av. de Mayo 1280', lat: -34.60957, lng: -58.38465 },
+  c5: { address: 'Av. de Mayo 1220', lat: -34.60942, lng: -58.38385 },
 };
-/** Actualiza solo los tres ejemplos originales; conserva operaciones y altas locales. */
+/** Actualiza las direcciones de ejemplo; conserva operaciones y altas locales. */
 export function withDemoAddresses(state: DemoProgramState): DemoProgramState {
   return { ...state, loanExampleAdded: true, trips: state.trips.map(t => t.id === 't1' && t.name === 'Ballester · mañana' ? { ...t, name: 'Monserrat · tres paradas' } : t), clients: state.clients.map(c => {
     if (!state.loanExampleAdded && c.id === 'c3' && c.active && !c.rentals.some(r => r.id === 'loan-demo-3')) c = { ...c, rentals: [...c.rentals, { id: 'loan-demo-3', productId: 'frio', serial: 'PRESTAMO-DEMO-03', monthly: 0, mode: 'loan' }] };
@@ -164,3 +165,21 @@ export function scheduleStop(state: DemoProgramState, tripId: string, clientId: 
   return s;
 }
 export const moneyInput = (cents: number) => String(cents / 100);
+export function editDemoStop(state: DemoProgramState, actor: string, tripId: string, clientId: string, action: 'add' | 'remove' | 'up' | 'down') {
+  const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId), client = s.clients.find(c => c.id === clientId && c.active);
+  if (actor !== 'owner' || !s.members.some(m => m.id === actor && m.active)) throw new Error('Solo el jefe puede editar las paradas del reparto.');
+  if (!trip || !['planned', 'active'].includes(trip.stage) || !client) throw new Error('Necesitás un reparto abierto y un cliente activo.');
+  const index = trip.stops.findIndex(p => p.clientId === clientId);
+  if (action === 'add') {
+    if (index >= 0) throw new Error('El cliente ya está en el reparto.');
+    trip.stops.push({ clientId, status: 'pending' }); return s;
+  }
+  if (index < 0 || !['pending', 'later'].includes(trip.stops[index].status)) throw new Error('La parada ya está resuelta o no pertenece a este reparto.');
+  if (action === 'remove') trip.stops.splice(index, 1);
+  else {
+    const target = index + (action === 'up' ? -1 : 1);
+    if (target < 0 || target >= trip.stops.length || !['pending', 'later'].includes(trip.stops[target].status)) throw new Error('No se puede mover la parada en esa dirección.');
+    [trip.stops[index], trip.stops[target]] = [trip.stops[target], trip.stops[index]];
+  }
+  return s;
+}

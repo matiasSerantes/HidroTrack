@@ -31,6 +31,8 @@ Aceptación a completar tras confirmar el método: el requisito de segundo facto
 
 ## REQ-03 — Clientes, localidades y cuadra
 
+- Al tocar una parada en el mapa, mostrar directamente los clientes de esa cuadra y permitir seleccionarlos. El asistente ve clientes activos de sus asignaciones; el jefe ve la cartera activa de su empresa. Para el jefe, el panel ofrece subir/bajar el orden de las paradas pendientes y agregar/quitar clientes de ese reparto, conservando las visitas ya resueltas.
+
 - Al llegar al domicilio, identificar el cliente y pedir confirmación **«Está presente / No está»**. La ubicación no debe bastar para registrar una venta ni elegir automáticamente entre vecinos; confirmar el cliente correcto. En producción se solicita detección por proximidad GPS; en la demo se activa con llegada/avance simulados.
 - Si está presente, mostrar envases pendientes por tipo y equipos en préstamo o alquiler antes de atender. Al entregar un bidón retornable, sumar un envase en poder del cliente; al retirar, descontarlo. El saldo permanece para la próxima visita, aunque cambie el reparto o el día.
 - Si no está, permitir volver más tarde hoy, elegir otra fecha o pasar a la semana siguiente, conservando el pendiente y su fecha sin tocar ventas, envases o pagos.

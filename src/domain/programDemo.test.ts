@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { approveClose, closeTrip, decideRequest, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
+import { approveClose, closeTrip, decideRequest, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
 
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('solo el jefe edita paradas pendientes y conserva clientes y movimientos', () => {
+    const s = seedProgram();
+    expect(() => editDemoStop(s, 'luz', 't1', 'c1', 'down')).toThrow(/Solo el jefe/);
+    const moved = editDemoStop(s, 'owner', 't1', 'c1', 'down');
+    expect(moved.trips[0].stops.map(p => p.clientId)).toEqual(['c2', 'c1', 'c3']);
+    const added = editDemoStop(moved, 'owner', 't1', 'c5', 'add');
+    expect(() => editDemoStop(added, 'owner', 't1', 'c5', 'add')).toThrow(/ya está/);
+    const removed = editDemoStop(added, 'owner', 't1', 'c5', 'remove');
+    expect(removed.clients).toEqual(s.clients); expect(removed.sales).toEqual(s.sales);
+    const visited = recordVisit(s, input);
+    expect(() => editDemoStop(visited, 'owner', 't1', 'c1', 'remove')).toThrow(/ya está resuelta/);
+    expect(visited.sales).toHaveLength(1);
+  });
   it('un bidón entregado queda pendiente y en la siguiente visita descuenta lo devuelto', () => {
     let s = seedProgram(); s.clients[0].held.b20 = 0;
     s = recordVisit(s, { ...input, items: [{ productId: 'b20', quantity: 1, returned: 0 }], paid: '0' });

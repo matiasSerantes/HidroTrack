@@ -26,7 +26,13 @@ Se guardan el perfil ficticio, pantalla, reparto, cliente seleccionado, posició
 
 No hace falta volver a ingresar el código ficticio al recuperar una demo; no es una sesión autenticada real. «Salir de la demostración» quita el regreso automático pero conserva datos ficticios; «Reiniciar» limpia también borradores y posiciones. El navegador debe permitir y conservar almacenamiento local; si se elimina o se usa otro navegador/dispositivo, no habrá recuperación. No se guardan automáticamente borradores de formularios de alta o baja, solo de la atención al cliente.
 
-### El jefe ve a sus asistentes en el mapa
+### Tocar una parada y ver la cuadra
+
+Tocar un marcador de cliente o una parada de la lista en el mapa abre directamente el panel **Clientes de esta cuadra**. Agrupa por cuadra/localidad; tocar un cliente del panel lo selecciona y centra. En el mapa general del jefe, tocar una parada abre el mapa de ese reparto con su cuadra.
+
+El jefe tiene **Subir**, **Bajar**, **Agregar al reparto** y **Quitar del reparto** para paradas pendientes de repartos abiertos. Una visita resuelta queda protegida y conserva su historial. El asistente ve sus clientes asignados y no esos controles. Para probar un alta desde la cuadra, Paula Ferrer está en **Av. de Mayo 1220**, cerca de las tres paradas originales, y comienza fuera del reparto. Las demos guardadas reciben su dirección de ejemplo sin reiniciar ventas.
+
+### Ubicaciones del equipo
 
 Como jefe, pulsar **Ver asistentes en el mapa**, desde Mi jornada o Repartos y mapa. También está el apartado **Mapa del equipo**. Se muestran asistentes activos, sus repartos abiertos y las posiciones ficticias que hayan compartido al abrir su mapa. Los marcadores con iniciales representan asistentes y los números, clientes. Se puede filtrar, centrar a una persona o abrir su reparto.
 
@@ -91,6 +97,6 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 39 pruebas aprobadas, incluidas operaciones, mapas, recuperación, llegada/presencia, envases, préstamos, reprogramación y réplica de posiciones al jefe mediante eventos entre pestañas. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 42 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.

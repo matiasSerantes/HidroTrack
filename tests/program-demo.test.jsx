@@ -154,4 +154,31 @@ describe('recorridos navegables de la demo', () => {
     expect(screen.getByText('En mapa · demo')).toBeTruthy();
     expect(screen.getByText('Sin ubicación')).toBeTruthy();
   });
+  it('al tocar una parada el jefe gestiona clientes de la cuadra desde el mapa', async () => {
+    enter();
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir mapa y ubicación demo' }));
+    const dialog = screen.getByRole('dialog');
+    await within(dialog).findByText('Tu ubicación actual · DEMO');
+    fireEvent.click(within(dialog).getByTitle('2. Café La Esquina · Av. de Mayo 1250'));
+    const block = within(dialog).getByRole('region', { name: 'Clientes de esta cuadra' });
+    expect(within(block).getByRole('button', { name: 'Seleccionar a Paula Ferrer en esta cuadra' })).toBeTruthy();
+    fireEvent.click(within(block).getByRole('button', { name: 'Bajar parada de Elena Duarte' }));
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).trips[0].stops[0].clientId).toBe('c2');
+    fireEvent.click(within(block).getByRole('button', { name: 'Agregar a Paula Ferrer al reparto' }));
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).trips[0].stops.at(-1).clientId).toBe('c5');
+    fireEvent.click(within(block).getByRole('button', { name: 'Quitar a Paula Ferrer del reparto' }));
+    const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.trips[0].stops.some(p => p.clientId === 'c5')).toBe(false);
+    expect(saved.clients.some(c => c.id === 'c5' && c.active)).toBe(true);
+  });
+  it('el asistente ve su cuadra sin controles del jefe ni clientes ajenos a su asignación', async () => {
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
+    await screen.findByText('Tu ubicación actual · DEMO');
+    const block = screen.getByRole('region', { name: 'Clientes de esta cuadra' });
+    expect(within(block).getByRole('button', { name: 'Seleccionar a Elena Duarte en esta cuadra' })).toBeTruthy();
+    expect(within(block).queryByRole('button', { name: /Agregar|Subir parada|Bajar parada|Quitar/ })).toBeNull();
+    expect(within(block).queryByText('Paula Ferrer')).toBeNull();
+  });
 });
