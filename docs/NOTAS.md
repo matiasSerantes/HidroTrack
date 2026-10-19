@@ -155,3 +155,11 @@ Pedido autorizado: preparar base de perfiles y provisionar el primer jefe con lo
 ## 2026-10-19 · Igualar acceso real a la estética de la demo
 
 Corrección pedida: conservar diseño aprobado al trabajar con cuenta real. Integrar clientes e inventario conectados en la estructura visual de la demo: barra lateral en PC, encabezado de empresa y navegación inferior/móvil. Usar las mismas hojas de diseño/paleta, sin copiar datos ficticios ni presentar módulos pendientes como reales. Navegación a artículos, camión/repartos y surtidores sobre las secciones ya conectadas. Mantener bloqueo de navegación durante escrituras inciertas. Estado: en implementación.
+
+- Resultado: estructura compartida implementada, 72 pruebas y build aprobados; push 8930b89. Revisión visual en dispositivos pendiente.
+
+## 2026-10-19 · Catálogo visible y stock inicial vacío
+
+Pedido: destacar catálogo de artículos, separar camión/repartos del inventario y facilitar el conteo inicial de bidones vacíos. El precio y la unidad del catálogo no representan existencias. Stock mostrará depósito llenos/vacíos, en clientes y total en camiones sin desglosarlo; el detalle de carga irá en Repartos. Catálogo tendrá listado propio y acción destacada para agregar artículos. No interpretar números ingresados como unidad/precio como cantidades ni alterar datos reales automáticamente. Estado: en implementación.
+
+- Implementado en la cuenta real: Catálogo visible en menú con tarjetas, precio y existencias diferenciadas; Stock, Repartos y Surtidores muestran sus propias secciones. Apertura de vacíos predeterminada y guía de carga inicial. Sin modificaciones remotas ni cambios de cantidades existentes. 74 pruebas aprobadas, incluida carga inicial de 600 vacíos y separación de secciones; build correcto. Navegador de automatización sin superficies disponibles, revisión visual pendiente. La demo conserva su catálogo separado y las operaciones ficticias.

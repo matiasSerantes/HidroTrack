@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OwnerStock } from '../src/features/OwnerStock';
 afterEach(()=>cleanup());
-function fixture() {
+function fixture(section) {
   const filters=[];
   const records={
     products:[{id:'b20',name:'Bidón 20',unit:'unidad',price:3500,returnable:true,active:true}],
@@ -15,13 +15,33 @@ function fixture() {
   const client={rpc:vi.fn(async()=>({data:'ok',error:null})),from:vi.fn(table=>{
     const chain={select:()=>chain,eq:(key,value)=>{filters.push([table,key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table]||[],error:null}).then(resolve,reject)};return chain;
   })};
-  render(<OwnerStock client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
+  render(<OwnerStock section={section} client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
   return {client,filters};
 }
 describe('inventario conectado del jefe',()=>{
-  it('prepara clientes del reparto y confirma su carga única usando las RPC',async()=>{
+  it('registra 600 bidones iniciales como vacíos y separa el detalle del camión',async()=>{
     const {client}=fixture(); await screen.findByText('Dónde están los artículos');
-    fireEvent.click(screen.getByText('Preparar reparto y cargar camión'));
+    expect(screen.getByLabelText('Movimiento').value).toBe('receive_empty');
+    expect(screen.queryByRole('columnheader',{name:'Camión llenos'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'Preparar reparto y cargar camión'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'Agregar artículo al catálogo'})).toBeNull();
+    fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'b20'}});
+    fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'600'}});
+    fireEvent.click(screen.getByText('Registrar movimiento'));
+    await screen.findByText(/Inventario registrado/);
+    expect(client.rpc).toHaveBeenCalledWith('inventory_owner_stock',expect.objectContaining({p_kind:'receive_empty',p_items:[{product_id:'b20',quantity:600}]}));
+  });
+  it('presenta artículos y precios en catálogo sin mezclar formularios de stock o reparto',async()=>{
+    fixture('catalog'); await screen.findByText('Lo que vende tu reparto');
+    expect(screen.getByRole('heading',{name:'Bidón 20'})).toBeTruthy();
+    expect(screen.getByText(/20 unidades registradas/)).toBeTruthy();
+    expect(screen.getByLabelText('Unidad de venta (no cantidad)').value).toBe('unidad');
+    expect(screen.queryByLabelText('Movimiento')).toBeNull();
+    expect(screen.queryByRole('heading',{name:'Camión y repartos'})).toBeNull();
+    expect(screen.getByRole('button',{name:'Agregar artículo al catálogo'}).className).toBe('primary');
+  });
+  it('prepara clientes del reparto y confirma su carga única usando las RPC',async()=>{
+    const {client}=fixture('trips'); await screen.findByText('1. Preparar reparto');
     fireEvent.change(screen.getByLabelText('Nombre del reparto'),{target:{value:'Ruta propia'}});
     fireEvent.change(screen.getByLabelText('Repartidor asignado'),{target:{value:'owner'}});
     fireEvent.click(screen.getByLabelText('María'));
@@ -37,7 +57,7 @@ describe('inventario conectado del jefe',()=>{
   it('consulta saldos por empresa y registra recarga con la función real, sin comprar envases',async()=>{
     const {client,filters}=fixture(); await screen.findByText('Dónde están los artículos');
     expect(filters.every(([,key,value])=>key!=='tenant_id'||value==='tenant-a')).toBe(true);
-    expect(screen.getByText('Propiedad del cliente')).toBeTruthy();
+    expect(screen.queryByText('Registrar o ubicar surtidor')).toBeNull();
     fireEvent.change(screen.getByLabelText('Movimiento'),{target:{value:'refill'}});
     fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'b20'}});
     fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'2'}});
@@ -59,7 +79,7 @@ describe('inventario conectado del jefe',()=>{
     expect(client.rpc.mock.calls[1]).toEqual(client.rpc.mock.calls[0]);
   });
   it('registra un surtidor del cliente sin alquiler ni ingreso al patrimonio propio',async()=>{
-    const {client}=fixture(); await screen.findByText('Dónde están los artículos');
+    const {client}=fixture('dispensers'); await screen.findByText('Propiedad del cliente');
     fireEvent.click(screen.getByText('Registrar o ubicar surtidor'));
     fireEvent.change(screen.getByLabelText('Nombre o modelo'),{target:{value:'Surtidor particular'}});
     fireEvent.change(screen.getByLabelText('Propiedad'),{target:{value:'customer'}});

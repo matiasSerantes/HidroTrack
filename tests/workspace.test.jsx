@@ -40,9 +40,9 @@ describe('panel conectado del titular', () => {
     const menu=screen.getByRole('navigation',{name:'Secciones del jefe'});
     fireEvent.click(screen.getByRole('button',{name:'Abrir navegación'}));
     expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('true');
-    fireEvent.click(within(menu).getByRole('button',{name:'Artículos',exact:true}));
+    fireEvent.click(within(menu).getByRole('button',{name:'Catálogo',exact:true}));
     await screen.findByRole('button',{name:'Guardar artículo'});
-    expect(screen.getByRole('heading',{name:'Artículos'})).toBeTruthy();
+    expect(screen.getByRole('heading',{name:'Catálogo'})).toBeTruthy();
     expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(within(menu).getByRole('button',{name:'Repartos y camión'}));
     await screen.findByRole('heading',{name:'1. Preparar reparto'});
@@ -55,7 +55,7 @@ describe('panel conectado del titular', () => {
     const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');
     const menu=screen.getByRole('navigation',{name:'Secciones del jefe'});
-    fireEvent.click(within(menu).getByRole('button',{name:'Stock y surtidores'}));
+    fireEvent.click(within(menu).getByRole('button',{name:'Stock'}));
     await screen.findByText('Dónde están los artículos');
     fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'product-a'}});
     fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'2'}});
@@ -75,7 +75,7 @@ describe('panel conectado del titular', () => {
     await screen.findByText('María');
     expect(screen.getByText('Jefe de prueba · Jefe de reparto')).toBeTruthy();
     expect(calls.some(c=>c.table==='inventory_owned_stock')).toBe(false);
-    fireEvent.click(screen.getByRole('button',{name:'Stock y surtidores'}));
+    fireEvent.click(screen.getByRole('button',{name:'Stock'}));
     await screen.findByText('Dónde están los artículos');
     expect(calls.find(c=>c.table==='inventory_owned_stock').filters).toContainEqual(['tenant_id','tenant-a']);
   });

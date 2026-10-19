@@ -171,4 +171,6 @@ Reutilizar Supabase Auth para credenciales y perfiles públicos protegidos para 
 
 - Actualización: primer jefe creado tras autorizar el alta administrativa temporal; perfil, empresa y licencia activos. Inicio de sesión y lectura de inventario verificados con sesión real. Alta temporal deshabilitada tras completar la operación. No se cargó stock ficticio.
 
-La cuenta real debe conservar la estructura visual aprobada de la demo: misma paleta, navegaci?n lateral en PC e inferior en celular. Mostrar ?nicamente datos reales y m?dulos conectados.
+La cuenta real debe conservar la estructura visual aprobada de la demo: misma paleta, navegación lateral en PC e inferior en celular. Mostrar únicamente datos reales y módulos conectados.
+
+Catálogo visible con artículos y precios; cantidades separadas en inventario. La apertura inicial permite registrar los bidones vacíos antes de rellenarlos. Carga y detalle de llenos/vacíos del camión pertenecen a Repartos; Stock solo resume el total en camiones para conservar la distribución del patrimonio.
