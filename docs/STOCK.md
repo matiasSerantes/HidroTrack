@@ -92,3 +92,11 @@ La pantalla conserva las RPC anteriores para entradas mientras no exista la nuev
 Validación actual: 95 pruebas, incluidas 17 de PostgreSQL; compilación aprobada. Nuevas RPC aún sin comprobación remota; revisión visual y concurrencia multiconexión pendientes.
 
 Verificación posterior preparada en `supabase/tests/inventory_incidents_verify.sql`: ejecutar por MCP después de aplicar la migración. Es de solo lectura, no devuelve datos de clientes y comprueba funciones/permisos/RLS, protección del libro y saldos negativos por ubicación. Pasa localmente; 96 pruebas totales, 18 de PostgreSQL. OAuth del MCP completado y confirmado por CLI; el cliente de esta conversación sigue respondiendo Auth required. Reconectar/reiniciar el cliente MCP antes de aplicar y verificar la migración remota, que aún está pendiente.
+
+## Disponibilidad de dispenser por modelo — pendiente remoto
+
+Aplicar `20261019190000_dispenser_model_assignments.sql` después de la migración de incidentes. Agrega asignaciones por unidad con RLS y RPC `inventory_assign_dispenser_model` / `inventory_return_dispenser_model`. Consumir stock desde depósito o camión del reparto del cliente cambia la ubicación, no el patrimonio. Devolver suma al depósito. Una rotura/baja del libro en el cliente cierra las asignaciones correspondientes, conserva su operación y no permite devolver unidades ya retiradas. Las fechas de baja/devolución no pueden ser anteriores a la entrega.
+
+La planilla combina modelos disponibles del libro y equipos individualizados previos. No materializa de nuevo todas las existencias ni exige serie para modelos contados por cantidad. Sin tabla nueva, avisa que requiere actualización; los equipos anteriores conservan su flujo. El verificador SQL ahora requiere ambas migraciones y también controla las asignaciones activas contra las unidades en clientes.
+
+102 pruebas locales, incluidas 21 PostgreSQL; 17 tablas locales con RLS. Ninguna de estas dos migraciones fue aplicada al remoto desde esta sesión.

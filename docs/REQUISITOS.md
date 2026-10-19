@@ -186,3 +186,5 @@ Los botones deben reconocerse sin pasar el puntero: fondo y borde celestes visib
 Actualización de navegación de clientes: en la lista mostrar Planilla. Dentro colocar Editar datos y, solo para el jefe, Archivar cliente. No ofrecer el archivo desde la lista. Archivar conserva historial y asignaciones y retira al cliente de activos previa confirmación.
 
 Tarjetas de catálogo/modelos: priorizar unidades activas registradas sobre el precio. Mostrar distribución en depósito, camión y clientes; precio secundario debajo. Incluir vacíos en el total de envases propios. El campo Unidad es descripción de venta, nunca una cantidad de existencias.
+
+Dispenser: el ingreso de unidades por modelo debe alimentar directamente el selector de la planilla del cliente. Disponibles son unidades en depósito o camión activo; no las asignadas a clientes ni dadas de baja. Asignar consume una unidad disponible sin aumentar patrimonio; devolver la libera; rotura la retira y cierra su asignación. Conservar préstamo/alquiler y fecha por unidad, además de equipos previamente individualizados. No exigir doble registro.

@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261019180000_inventory_incidents']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261019180000_inventory_incidents','20261019190000_dispenser_model_assignments']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -28,7 +28,7 @@ describe('migración y seguridad PostgreSQL', () => {
   });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
-    expect(rows).toHaveLength(16);
+    expect(rows).toHaveLength(17);
     expect(rows.every(row => row.relrowsecurity)).toBe(true);
   });
   it('ejecuta escenarios de aislamiento, roles, licencias y auditoría con rollback', async () => {
@@ -279,5 +279,44 @@ describe('stock transaccional PostgreSQL', () => {
     expect((await db.query('select retired from public.dispensers where id=$1',[asset])).rows[0].retired).toBe(true);
     expect((await db.query('select incident from public.dispenser_events where id=$1',[id])).rows[0].incident).toMatchObject({kind:'damage',involved_kind:'owner',involved_id:owner});
     await rejected(()=>save(),/dado de baja/);
+  });
+  it('el stock de modelos queda disponible, asignar lo ocupa y devolver lo libera sin duplicar unidades',async()=>{
+    const model='30000000-0000-0000-0000-000000000005',assignment=op();
+    await db.query("select public.inventory_create_product($1,$2,'Dispenser básico',0,'unidad',false)",[tenant,model]);
+    await post('receive',[{product_id:model,quantity:2}]);
+    const assign=(id=assignment)=>db.query('select public.inventory_assign_dispenser_model($1,$2,$3,$4,$5,0,$6::date,null)',[tenant,id,model,customer,'loan','2026-10-18']);
+    await assign();await assign();
+    let b=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[model])).rows[0];
+    expect([Number(b.total_owned),Number(b.depot_ready),Number(b.in_customers)]).toEqual([2,1,1]);
+    const second=op();await assign(second);await rejected(()=>assign(op()),/No quedan dispenser/);
+    const returned=op(),back=()=>db.query('select public.inventory_return_dispenser_model($1,$2,$3,$4::date)',[tenant,returned,assignment,'2026-10-19']);
+    await back();await back();
+    b=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[model])).rows[0];
+    expect([Number(b.total_owned),Number(b.depot_ready),Number(b.in_customers)]).toEqual([2,1,1]);
+    expect((await db.query('select status from public.dispenser_assignments where id=$1',[assignment])).rows[0].status).toBe('returned');
+    await assign(op());
+    expect((await db.query("select count(*)::int as n from public.dispenser_assignments where status='active'")).rows[0].n).toBe(2);
+  });
+  it('una rotura en el cliente cierra la asignación y no vuelve a hacer disponible esa unidad',async()=>{
+    const model='30000000-0000-0000-0000-000000000005',assignment=op();
+    await db.query("select public.inventory_create_product($1,$2,'Dispenser frío calor',0,'unidad',false)",[tenant,model]);await post('receive',[{product_id:model,quantity:1}]);
+    await db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'rental',5000,'2026-10-18',null)",[tenant,assignment,model,customer]);
+    const damage=op(),breakIt=(date='2026-10-19')=>db.query('select public.inventory_remove($1,$2,$3,$4,1,$5,null,$6,$7::date,$8,$9,$10)',[tenant,damage,'damage',model,'customer_held',customer,date,'customer',customer,'Rotura']);
+    await rejected(()=>breakIt('2026-10-17'),/anterior a la entrega/);
+    await breakIt();await breakIt();
+    expect((await db.query('select status from public.dispenser_assignments where id=$1',[assignment])).rows[0].status).toBe('damaged');
+    const b=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[model])).rows[0];
+    expect([Number(b.total_owned),Number(b.depot_ready),Number(b.in_customers)]).toEqual([0,0,0]);
+    await rejected(()=>db.query('select public.inventory_return_dispenser_model($1,$2,$3,$4::date)',[tenant,op(),assignment,'2026-10-19']),/no está activo/);
+  });
+  it('asigna desde el camión solo a un cliente del reparto y protege asignaciones de otras cuentas',async()=>{
+    const model='30000000-0000-0000-0000-000000000005';
+    await db.query("select public.inventory_create_product($1,$2,'Dispenser básico',0,'unidad',false)",[tenant,model]);await post('receive',[{product_id:model,quantity:3}]);await createTrip();await post('load',[{product_id:model,quantity:2}]);
+    const assign=()=>db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'loan',0,'2026-10-19',$5)",[tenant,op(),model,customer,trip]);await assign();
+    const b=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[model])).rows[0];
+    expect([Number(b.total_owned),Number(b.depot_ready),Number(b.truck_ready),Number(b.in_customers)]).toEqual([3,1,1,1]);
+    await as(driver);await rejected(()=>assign(),/Solo el jefe/);expect((await db.query('select * from public.dispenser_assignments')).rows).toHaveLength(0);
+    await as(stranger);await rejected(()=>assign(),/Solo el jefe/);expect((await db.query('select * from public.dispenser_assignments')).rows).toHaveLength(0);
+    expect((await db.query("select has_function_privilege('anon','public.inventory_assign_dispenser_model(uuid,uuid,uuid,uuid,text,numeric,date,uuid)','execute') as allowed")).rows[0].allowed).toBe(false);
   });
 });
