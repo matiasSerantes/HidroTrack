@@ -3,6 +3,7 @@ import { ArrowDown, ArrowDownLeft, ArrowRight, ArrowUp, ArrowUpRight, Bell, Buil
 import { currency, parseMoney } from '../domain/demo';
 import { DEMO_KEY, approveClose, closeTrip, decideRequest, demoDay, isDone, loadTrip, moneyInput, readProgram, recordVisit, seedProgram, uid, type Client, type DemoProgramState, type Page, type Product, type Request, type Stop, type Trip } from '../domain/programDemo';
 import './DemoProgram.css';
+import './DemoPalette.css';
 
 type Dialog = { type: 'customer' | 'product' | 'member' | 'trip' | 'load' | 'close' | 'visit' | 'detail' | 'deactivation' | 'notices' | 'message' | 'reset' | 'new-trip'; id?: string; tripId?: string } | null;
 type Context = { state: DemoProgramState; actor: string; owner: boolean; page: Page; go: (p: Page) => void; open: (d: Dialog) => void; act: (fn: (s: DemoProgramState) => DemoProgramState, text?: string) => boolean; tripId: string; setTripId: (s: string) => void };

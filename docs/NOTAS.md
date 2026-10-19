@@ -30,6 +30,10 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Ajuste de color solicitado el 2026-10-19
+
+El usuario considera la demo demasiado clara y con poco color. Pedido confirmado: reforzar la paleta y el contraste, conservando la prioridad móvil y la buena presentación en PC. Aplicado en la demo: navegación y bienvenida en petróleo, acciones turquesa y colores diferenciados para estados, métricas y alquileres; textos secundarios más oscuros. Es un ajuste visual; no cambia operaciones ni permisos.
+
 ### Demo completa solicitada el 2026-10-19
 
 El usuario pidió una demostración integral con datos ficticios para revisar el programa por partes y después implementar cada módulo. Se construyó una nueva demo con jefe/asistente, autenticador simulado, recorridos y plano, clientes/cuadra, atención multiartículo, ventas y alquileres, stock/vacíos, equipo, aprobaciones/bajas, rendiciones, reportes y marca de empresa. Guía y límites en [DEMO.md](DEMO.md).
@@ -59,6 +63,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: reforzada la paleta de la demo en `DemoPalette.css`, conservando distribución y controles de PC/celular. Cambio visual verificado mediante compilación de producción y revisión de diferencias; no se agregaron pruebas que repliquen estilos. Revisión visual en navegador pendiente.
 
 - 2026-10-19: aclarada y reflejada en instrucciones, requisitos, guía y plan la compatibilidad visual/funcional de PC y celular, con prioridad móvil. Cambio documental; verificado con `git diff --check`.
 

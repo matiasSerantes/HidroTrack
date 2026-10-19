@@ -1,0 +1,162 @@
+/* Paleta de HidroTrack: identidad más marcada y estados fáciles de distinguir. */
+.hd {
+  --ink: #173b49;
+  --muted: #607585;
+  --teal: #087f87;
+  --line: #d7e2e9;
+  --paper: #edf2f7;
+}
+.hd p, .hd small { color: #607585; }
+.hd .hd-kicker { color: #487282; }
+.hd .hd-card, .hd .hd-product, .hd .hd-metric {
+  border-color: #d7e2e9;
+  box-shadow: 0 4px 15px #183b4d05;
+}
+.hd .hd-sidebar {
+  background: linear-gradient(175deg, #103c4c, #102c3d);
+  border-right-color: #174957;
+}
+.hd .hd-brand { color: #f4ffff !important; }
+.hd .hd-brand > span:first-child { background: #159a9d; color: #fff; }
+.hd .hd-brand-dot { color: #56e0cf; }
+.hd .hd-workspace { background: #ffffff0c; border-color: #ffffff1a; }
+.hd .hd-workspace strong { color: #f2fffd; }
+.hd .hd-workspace small { color: #a2c5ce; }
+.hd .hd-nav-label { color: #89aebd; }
+.hd .hd-sidebar nav button { color: #bad1db; }
+.hd .hd-sidebar nav button:hover { background: #ffffff0d; color: #fff; }
+.hd .hd-sidebar nav button.active {
+  color: #fff; background: #0e8e91;
+  box-shadow: 0 4px 12px #062d4030;
+}
+.hd .hd-sidebar nav button b { background: #f5c96a; color: #614408; }
+.hd .hd-preview-note { background: #ffffff08; border-color: #ffffff1c; color: #65ddcb; }
+.hd .hd-preview-note strong { color: #ddf6ef; }
+.hd .hd-preview-note small { color: #99bbc7; }
+.hd .hd-preview-note button { color: #63ddd2; }
+.hd .hd-exit { color: #b5cdd7 !important; }
+.hd .hd-topbar { border-bottom-color: #cddfe7; }
+.hd .hd-breadcrumb { color: #6c8595; }
+.hd .hd-breadcrumb strong { color: #254b5f; }
+.hd .hd-icon { color: #517487 !important; }
+.hd .hd-company-logo small { color: #607989; }
+.hd .hd-demo-strip { background: #e0f3f3; border-color: #8dc9cc; color: #356976; }
+.hd .hd-demo-strip button { color: #087c82; font-weight: 700; }
+.hd .hd-btn { color: #355e72 !important; border-color: #b9d0db !important; }
+.hd .hd-btn.primary { background: #087f87 !important; border-color: #087f87 !important; color: #fff !important; }
+.hd .hd-btn.primary:hover { background: #05646e !important; }
+.hd .hd-btn.selected { background: #d9eeef !important; }
+.hd .hd-link { color: #087f87 !important; }
+.hd .hd-link.danger { color: #b54f47 !important; }
+.hd .hd-btn.white { color: #126376 !important; }
+.hd .hd-tag { background: #e6edf4; color: #436378; }
+.hd .hd-tag.mint { background: #cff1e2; color: #156445; }
+.hd .hd-tag.amber { background: #ffe8b4; color: #855408; }
+.hd .hd-tag.lavender { background: #e7dffc; color: #6942a3; }
+.hd .hd-tag.glass { background: #ffffff19; color: #e3fffa; border-color: #ffffff35; }
+.hd .hd-dot { background: #1eaa8d; }
+.hd .hd-day-banner .hd-dot { background: #79f0cf; }
+.hd .hd-avatar.teal { background: #ccefe9; color: #136f66; }
+.hd .hd-avatar.lavender { background: #e7e0fa; color: #6e46a3; }
+.hd .hd-avatar.amber { background: #ffe6b2; color: #80530d; }
+.hd .hd-metric > div span, .hd .hd-metric small { color: #506b7d; }
+.hd .hd-metric > div svg { color: #168c9c; }
+.hd .hd-metric.emphasis { background: #117c83; border-color: #117c83; }
+.hd .hd-metric.emphasis > strong { color: #fff; }
+.hd .hd-metric.emphasis > div span, .hd .hd-metric.emphasis small, .hd .hd-metric.emphasis > div svg { color: #e0f6f6; }
+.hd .hd-metrics > .hd-metric:nth-child(2) { background: #e0edf9; border-top: 3px solid #4b92cc; }
+.hd .hd-metrics > .hd-metric:nth-child(3) { background: #eee6fa; border-top: 3px solid #a27ac8; }
+.hd .hd-metrics > .hd-metric:nth-child(4) { background: #fff0d3; border-top: 3px solid #e6b246; }
+.hd .hd-metrics > .hd-metric:nth-child(3) svg { color: #8454b3; }
+.hd .hd-metrics > .hd-metric:nth-child(4) svg { color: #ac7417; }
+.hd .hd-metric-denom { color: #71889a; }
+.hd .hd-day-banner { background: linear-gradient(115deg, #113f55, #0d8d94); }
+.hd .hd-day-banner h2 { color: #fff; }
+.hd .hd-day-banner p { color: #d0eef0; }
+.hd .hd-banner-art { color: #b9f3ec; }
+.hd .hd-art-ring { border-color: #a4efdf30; }
+.hd .hd-art-pin { background: #f6c85e; color: #73520d; }
+.hd .hd-art-check { color: #088d83; }
+.hd .hd-progress { background: #e1eaf1; }
+.hd .hd-progress > span { background: #1ca496; }
+.hd .hd-caption { color: #607e8e; }
+.hd .hd-presence { color: #167d72; }
+.hd .hd-presence > span:last-child { color: #718793; }
+.hd .hd-quick-grid button { background: #f0f8f8; border-color: #cfe5e5; }
+.hd .hd-quick-grid button strong { color: #315b6b; }
+.hd .hd-quick-grid button > span { background: #ceeeea; color: #168b81; }
+.hd .hd-quick-grid button:nth-child(2) > span { background: #dceafd; color: #3c78b6; }
+.hd .hd-quick-grid button:nth-child(3) > span { background: #e9defb; color: #8755b7; }
+.hd .hd-quick-grid button:nth-child(4) > span { background: #ffebc7; color: #ac7c21; }
+.hd .hd-quick-grid button > svg { color: #698b9d; }
+.hd .hd-stop-number { background: #d3eeec; color: #187d78; }
+.hd .hd-next-client em, .hd .hd-debt { color: #a35f1e !important; }
+.hd .hd-tip-card { background: #dceff0; border-color: #badce1; }
+.hd .hd-tip-card > span { color: #4c7a89; }
+.hd .hd-tip-card h3 { color: #216574; }
+.hd .hd-tip-card p { color: #4d7886; }
+.hd .hd-tip-card > svg { color: #54a6aa; }
+.hd .hd-stop-card { border-color: #d4e2eb; border-left: 4px solid #e9b64f; }
+.hd .hd-stop-card.visited { background: #e6f6ee; border-color: #a9d8c4; border-left-color: #27a379; }
+.hd .hd-stop-card.later { background: #fff5de; border-left-color: #d99a28; }
+.hd .hd-stop-card.tomorrow, .hd .hd-stop-card.no-sale { background: #eee9f8; border-left-color: #9971bf; }
+.hd .hd-stop-top p span, .hd .hd-stop-info { color: #607e8b; }
+.hd .hd-tabs { background: #dce7ee; border-color: #c8dae5; }
+.hd .hd-tabs button { color: #526e80; }
+.hd .hd-tabs button.active { background: #fff; color: #087f87; }
+.hd .hd-callout, .hd .hd-client-address { background: #e3f1f5; border-color: #bcd8e3; color: #467488; }
+.hd .hd-client-address strong { color: #315e70; }
+.hd .hd-detail-box { background: #dcefee; border-color: #badfdc; }
+.hd .hd-detail-box h3 { color: #126d6b; }
+.hd .hd-product-icon { background: #d9efef; color: #1c9094; }
+.hd .hd-product-icon.lavender { background: #e9dffa; color: #8354b5; }
+.hd .hd-product-footer, .hd .hd-field, .hd .hd-role-switch > span { color: #5c7687 !important; }
+.hd .hd-help { background: #edf3f7; color: #547082 !important; }
+.hd .hd-check { color: #426779 !important; }
+.hd .hd-list-row, .hd .hd-list-row strong { color: #45697b; }
+.hd .hd-member { background: #f0f5f8; border-color: #d6e2eb; }
+.hd .hd-request-icon { background: #d9eeef; color: #187e83; }
+.hd .hd-return-line { color: #557286; }
+.hd .hd-payment { background: #e9f3f5; border-color: #bfdce2; }
+.hd .hd-total-row { color: #547589; border-bottom-color: #cddfe5; }
+.hd .hd-total-row strong { color: #235f70; }
+.hd .hd-total-row.grand { color: #186d77; }
+.hd .hd-total-row.grand strong { color: #086f7b; }
+.hd .hd-rental-charge { background: #ede5f9; }
+.hd .hd-rental-charge h3 { color: #7c4faa; }
+.hd .hd-visit-table-head, .hd th { background: #e8f0f6; color: #496b80; }
+.hd td, .hd td strong { color: #3d5e72; }
+.hd .hd-map { background-color: #eaf0f3; border-color: #cadce5; }
+.hd .hd-map-park { background: #c5e0d1; color: #4e8265; }
+.hd .hd-map-label { color: #64818e; }
+.hd .hd-street { color: #7a8e99; }
+.hd .hd-map-pin { background: #128995 !important; }
+.hd .hd-map-pin.done { background: #25a47b !important; }
+.hd .hd-map-depot { border-color: #9ecbd0; color: #356879; }
+.hd .hd-map-disclaimer { color: #566e7a; background: #edf3f5ed; }
+.hd .hd-map-legend { color: #5b7c8b; }
+.hd .hd-person-pin { background: #f5c660; color: #755016; }
+.hd .hd-footer { color: #6c8494; border-color: #cedee7; }
+.hd .hd-touch-nav { background: #103d4ff5; border-color: #1c5360; }
+.hd .hd-touch-nav button { color: #bbd4df; }
+.hd .hd-touch-nav button.active { background: #128b92; color: #fff; }
+.hd .hd-toast { background: #10495c; border-color: #2c7a86; color: #fff; }
+.hd .hd-toast > svg, .hd .hd-toast button { color: #83e5d3; }
+.hd .hd-gate { background: radial-gradient(ellipse at 8% 55%, #126878, #11384c 75%); max-width: none; }
+.hd .hd-gate-brand { color: #e7fffc; }
+.hd .hd-gate h1 { color: #fff; }
+.hd .hd-gate h1 em { color: #6de4d2; }
+.hd .hd-gate-grid > section:first-child > .hd-kicker { color: #8fd1d6; }
+.hd .hd-gate-grid > section:first-child > p { color: #c2dce6; }
+.hd .hd-gate-path { color: #85c0cd; }
+.hd .hd-gate-path > span { color: #d7f4f4; }
+.hd .hd-gate-path > span > svg { background: #ffffff0f; border-color: #67b5bc70; color: #76e2d5; }
+.hd .hd-gate-note { color: #b7d8df; }
+.hd .hd-gate footer { color: #a6cad4; }
+.hd .hd-step { color: #53758c; }
+.hd .hd-persona.selected { background: #e0f3f2 !important; border-color: #46a8aa !important; }
+.hd .hd-persona.selected > svg { color: #108991; }
+@media(max-width:740px) {
+  .hd .hd-touch-nav button:hover { background: #1a5768; }
+  .hd .hd-touch-nav button.active:hover { background: #128b92; }
+}

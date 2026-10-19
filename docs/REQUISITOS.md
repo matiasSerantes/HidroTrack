@@ -104,6 +104,8 @@ Aceptación: el jefe recibe eventos de su empresa y puede distinguir visita actu
 
 ## REQ-10 — Experiencia visual
 
+Preferencia confirmada el 19/10/2026: evitar una estética excesivamente pálida. Usar colores más presentes y buen contraste en navegación, acciones, métricas y estados, manteniendo texto legible y un uso consistente de la paleta en celular y PC.
+
 La web debe verse y funcionar bien tanto en **PC como en celular**, con diseño adaptado al espacio y a la forma de interacción de cada dispositivo. El celular mantiene la prioridad; en PC se aprovechan la barra lateral, las tablas y las vistas amplias para la gestión del jefe. Validar ambos formatos antes de dar por terminada una pantalla.
 
 Buena estética, usable desde el teléfono durante el reparto. Priorizar selección de cliente, cantidades, qué deja/retira, importe, cobro y siguiente parada. Respetar el nombre/logo de empresa en la esquina superior derecha y mantener estados claros de pendiente, aprobado, ausente y baja.

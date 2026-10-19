@@ -13,6 +13,8 @@ Acuerdo del usuario del 19/10/2026. Estas instrucciones viven en el repositorio 
 
 ## Criterios generales
 
+- Preferencia visual confirmada: evitar una interfaz demasiado pálida. Mantener colores presentes, contraste legible y estados distinguibles, con verde petróleo/turquesa como identidad y acentos coherentes en móvil y PC.
+
 - **Celular y PC deben verse y funcionar bien.** Priorizar el celular no elimina el escritorio: adaptar navegación, formularios, tablas, mapas y uso del espacio a ambos. Conservar en PC la barra lateral y las vistas amplias; en móvil priorizar el flujo táctil del chofer. Comprobar ambos tamaños al modificar la interfaz.
 
 - **Prioridad principal: celular y chofer.** La aplicación se usará mayormente desde teléfonos durante los recorridos. Diseñar primero el flujo móvil: acceso rápido al cliente, cantidades, cobro y siguiente parada; pocos pasos, controles táctiles cómodos, texto legible, buena estética y uso eficiente de red/recursos. El escritorio acompaña esta prioridad.
