@@ -102,6 +102,10 @@ Aceptación: carga inicial, entregas, retiros, alquileres y regreso permiten con
 
 ## REQ-09 — Seguimiento y notificaciones
 
+- **Pedido confirmado el 19/10/2026:** el jefe tendrá un botón para abrir un mapa general con los repartos de sus asistentes y la ubicación de cada uno. Mientras un asistente tenga abierta su página de mapa, publicar su posición para replicarla en la vista del jefe.
+- Mostrar nombre, reparto, avance y hora de última actualización; diferenciar posición reciente, emisión pausada, señal antigua y ausencia de datos. Al dejar de recibir posiciones, no mostrar el último punto como si fuera actual.
+- La demo replica coordenadas ficticias entre roles/pestañas del mismo navegador. El GPS y la transmisión entre teléfonos y PC requieren implementación real posterior; mantener la separación entre empresas y los permisos del jefe al conectarla.
+
 - Evaluar que el jefe pueda ver en qué cliente está cada asistente.
 - Enviar a la cuenta del jefe una notificación por venta de sus asistentes.
 - Notificar solicitudes de aprobación y bajas de clientes.

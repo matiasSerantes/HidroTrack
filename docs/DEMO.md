@@ -26,6 +26,14 @@ Se guardan el perfil ficticio, pantalla, reparto, cliente seleccionado, posició
 
 No hace falta volver a ingresar el código ficticio al recuperar una demo; no es una sesión autenticada real. «Salir de la demostración» quita el regreso automático pero conserva datos ficticios; «Reiniciar» limpia también borradores y posiciones. El navegador debe permitir y conservar almacenamiento local; si se elimina o se usa otro navegador/dispositivo, no habrá recuperación. No se guardan automáticamente borradores de formularios de alta o baja, solo de la atención al cliente.
 
+### El jefe ve a sus asistentes en el mapa
+
+Como jefe, pulsar **Ver asistentes en el mapa**, desde Mi jornada o Repartos y mapa. También está el apartado **Mapa del equipo**. Se muestran asistentes activos, sus repartos abiertos y las posiciones ficticias que hayan compartido al abrir su mapa. Los marcadores con iniciales representan asistentes y los números, clientes. Se puede filtrar, centrar a una persona o abrir su reparto.
+
+Para probar: cambiar a Lucía → Abrir reparto → Simular avance. Cambiar al jefe y abrir el mapa del equipo: aparece el último punto de Lucía. Como se cerró la vista del asistente al cambiar de rol, figura pausado. También se puede abrir la misma URL en otra pestaña del **mismo navegador y origen** y mantener una vista por rol; los cambios de posición se replican por almacenamiento local. Las posiciones se actualizan al avanzar y se emite una señal cada 15 segundos mientras el mapa está abierto y la página visible; al ocultar/cerrar, se marca pausa, y si no llega actualización durante más de 45 segundos se indica señal antigua.
+
+Si todavía no hay una posición emitida, aparece «Sin ubicación»; no se inventa una. El mapa del equipo necesita internet para las calles. Esta réplica local no comunica un teléfono con otra PC ni funciona entre navegadores distintos: el GPS y el servidor para ese caso quedan pendientes. No se solicita ubicación real y no se modificó Supabase.
+
 **Prioridad principal: celular.** La vista móvil ofrece navegación inferior para Hoy, Mi ruta/Repartos, Clientes y Mi carga; el resto queda en el menú. Los controles de acción tienen un tamaño táctil mínimo de 44 px y los campos principales usan texto de 16 px. Se usan fuentes del sistema sin solicitar tipografías a un proveedor externo. Esta orientación sigue pendiente de una revisión visual y de rendimiento en teléfonos reales.
 
 ## Qué se puede probar
@@ -83,6 +91,6 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 36 pruebas aprobadas, incluidas operaciones, navegación, mapa, recuperación de borradores, llegada/presencia, saldo de envases entre visitas, préstamos sin cargo y reprogramación sin alterar ventas/stock. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; la carga real de la cartografía y esa comprobación visual quedan pendientes.
+`npm test`: 39 pruebas aprobadas, incluidas operaciones, mapas, recuperación, llegada/presencia, envases, préstamos, reprogramación y réplica de posiciones al jefe mediante eventos entre pestañas. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.

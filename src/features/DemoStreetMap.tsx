@@ -4,6 +4,7 @@ import { ArrowRight, LocateFixed, MapPin, Navigation, RotateCcw } from 'lucide-r
 import { DEMO_ORIGIN, type Client, type Stop } from '../domain/programDemo';
 import 'leaflet/dist/leaflet.css';
 import './DemoStreetMap.css';
+import { writeDemoPosition } from '../domain/demoTracking';
 
 type Props = { clients: Client[]; stops: Stop[]; initialClientId?: string; onClient: (id: string) => void; storageKey?: string; renderActions?: (client: Client, nextPending: () => void, arrival: { isHere: boolean; simulate: () => void }) => ReactNode };
 export default function DemoStreetMap({ clients, stops, initialClientId, onClient, storageKey, renderActions }: Props) {
@@ -14,7 +15,14 @@ export default function DemoStreetMap({ clients, stops, initialClientId, onClien
   const current = step > 0 && points.length ? points[(step - 1) % points.length] : undefined;
   const position = current?.geo || DEMO_ORIGIN;
   const selectedClient = clients.find(c => c.id === selected) || points[0];
-  useEffect(() => { if (!storageKey) return; try { localStorage.setItem(storageKey, JSON.stringify({ step, selected, currentClientId: current?.id || null })); } catch { setSaveFailed(true); } }, [storageKey, step, selected, current?.id]);
+  useEffect(() => {
+    if (!storageKey) return;
+    const publish = (sharing = !document.hidden) => { try { writeDemoPosition(storageKey, { step, selected, currentClientId: current?.id || null, lat: position.lat, lng: position.lng, updatedAt: Date.now(), sharing }); } catch { setSaveFailed(true); } };
+    const visibility = () => publish(), pause = () => publish(false);
+    publish(); const timer = setInterval(() => publish(), 15000);
+    document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', pause);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', pause); pause(); };
+  }, [storageKey, step, selected, current?.id, position.lat, position.lng]);
   function nextPending() {
     const pending = clients.filter(c => stops.some(p => p.clientId === c.id && ['pending', 'later'].includes(p.status)));
     const next = pending[(pending.findIndex(c => c.id === selectedClient?.id) + 1) % pending.length];

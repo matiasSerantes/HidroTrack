@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { DemoProgram } from '../src/features/DemoProgram';
 import { DEMO_KEY } from '../src/domain/programDemo';
+import { mapPositionKey } from '../src/domain/demoJourney';
 
 afterEach(() => { cleanup(); localStorage.clear(); });
 function enter(assistant = false) {
@@ -132,5 +133,25 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Está presente' }));
     const loan = screen.getByRole('region', { name: 'Envases y equipos de Martín Acosta' });
     expect(within(loan).getByText('PRESTAMO-DEMO-03 · En préstamo · sin cargo')).toBeTruthy();
+  });
+  it('el jefe recibe en su mapa el punto del asistente y los cambios de otra pestaña', async () => {
+    enter(true);
+    expect(screen.queryByRole('button', { name: 'Ver asistentes en el mapa' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
+    await screen.findByText('Tu ubicación actual · DEMO');
+    fireEvent.click(screen.getByRole('button', { name: 'Simular avance' }));
+    const key = mapPositionKey('luz', 't1');
+    expect(JSON.parse(localStorage.getItem(key)).currentClientId).toBe('c1');
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'), { target: { value: 'owner' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver asistentes en el mapa' }));
+    await screen.findByRole('region', { name: 'Mapa del jefe con repartos y ubicación de asistentes' });
+    expect(screen.getByRole('button', { name: 'Centrar a Lucía' })).toBeTruthy();
+    expect(screen.getByText(/Elena Duarte · actualizado/)).toBeTruthy();
+    const next = { ...JSON.parse(localStorage.getItem(key)), currentClientId: 'c2', lat: -34.6095, lng: -58.3842, updatedAt: Date.now(), sharing: true };
+    localStorage.setItem(key, JSON.stringify(next));
+    fireEvent(window, new StorageEvent('storage', { key, newValue: JSON.stringify(next) }));
+    expect(screen.getByText(/Café La Esquina · actualizado/)).toBeTruthy();
+    expect(screen.getByText('En mapa · demo')).toBeTruthy();
+    expect(screen.getByText('Sin ubicación')).toBeTruthy();
   });
 });

@@ -30,6 +30,10 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Mapa del jefe con ubicación de asistentes — pedido del 2026-10-19
+
+Implementado en demo: botón «Ver asistentes en el mapa» en la jornada y repartos del jefe, y apartado «Mapa del equipo». Muestra todos sus asistentes activos, repartos abiertos, clientes, avances y última posición simulada emitida desde el mapa del asistente. Actualiza por evento entre vistas/pestañas del mismo navegador y mantiene señal periódica mientras la página está visible. Indica hora, pausa, falta de actualización o ausencia de ubicación. La réplica entre teléfonos/PC reales mediante GPS y servidor queda pendiente; esta entrega no modifica Supabase ni solicita ubicación real.
+
 ### Llegada, presencia y envases para devolver — pedido del 2026-10-19
 
 Implementado en demo: cada bidón entregado suma un envase en poder del cliente y los devueltos se descuentan; el saldo se muestra en la próxima visita y durante la carga de cantidades. Al simular llegada se identifica el domicilio y se pregunta presencia. Presente: mostrar envases y equipos prestados/alquilados antes de atender; ausente: volver más tarde, elegir fecha o próxima semana, sin crear venta ni modificar stock. Incluido equipo en préstamo sin cargo como ejemplo para Martín Acosta. La fecha queda en pendientes, pero no crea automáticamente un nuevo reparto. Para producción queda solicitada detección por proximidad GPS con confirmación del cliente, todavía sin implementar.
@@ -75,6 +79,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: agregado mapa general del jefe y publicación local de posiciones demo con hora/estado; distingue asistentes sin señal y posiciones pausadas/antiguas. Validación: 39 pruebas y compilación correctas, incluida réplica al jefe tras avanzar a Lucía y actualización mediante evento de otra pestaña. La cartografía y apariencia en navegador/dispositivos reales siguen pendientes de revisión visual.
 
 - 2026-10-19: agregado flujo de llegada/presencia, reprogramación fechada y vista de envases/equipos con saldo para la próxima visita. Verificación: 36 pruebas y build correctos, incluidos entrega de un bidón sin devolución y posterior recuperación, préstamo sin cargo, llegada y ausencia con próxima semana. La ubicación continúa simulada y la revisión visual en dispositivos reales sigue pendiente.
 
