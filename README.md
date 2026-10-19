@@ -49,3 +49,7 @@ Validar el panel conectado contra el proyecto Supabase, completar administració
 `npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. La migración inicial pasó esta validación local; falta ejecutarla e inspeccionarla en el proyecto remoto. No hay cuentas de producción configuradas desde este repositorio.
 
 La prueba `supabase/tests/isolation.sql` prepara fixtures y los revierte. Para ejecutarla manualmente usar únicamente Supabase local descartable: `psql "$DATABASE_URL" -f supabase/tests/isolation.sql`. Verifica lectura/escritura entre titulares, autoasignación de membresías, chofer sin asignaciones, privacidad comercial frente al superadmin, suspensión, expiración, relaciones compuestas, acceso anónimo y auditoría de licencias. Los flujos administrativos futuros necesitarán sus propias pruebas.
+
+## Notas y estado verificado
+
+Consultar [notas de trabajo](docs/NOTAS.md) y [revisión remota de Supabase del 19/10/2026](docs/REVISION_SUPABASE_2026-10-19.md). La inspección remota ya se realizó; las referencias anteriores a validación pendiente siguen aplicando a las pruebas completas de Auth/PostgREST y de la aplicación. Los acuerdos de continuidad están en AGENTS.md.
