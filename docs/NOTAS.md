@@ -2,6 +2,9 @@
 
 ## Acuerdos vigentes
 
+- **Prioridad principal confirmada el 2026-10-19:** el uso habitual será desde celulares durante los repartos. Diseñar primero para móvil, con respuesta ágil, pasos cortos para los choferes y estética cuidada. Evaluar cada pantalla por su utilidad en la calle; no limitarse a achicar una vista de escritorio.
+- **Orden de trabajo de seguridad:** avanzar primero hasta una beta funcional y realizar allí la revisión completa y el endurecimiento de seguridad, antes de habilitarla con datos reales. Mantener mientras tanto las protecciones básicas existentes y la separación demo/producción. Este acuerdo no habilita desactivar RLS, exponer secretos ni usar la demo como autenticación real.
+
 - 2026-10-19: procedimiento ampliado y guardado en `AGENTS.md`: primero registrar cada idea en Git; después representarla en la demo visual HTML o mejorar la función existente y su demo; actualizar estado/plan; verificar, hacer commit y push al finalizar cada edición. Estas instrucciones y el contexto deben viajar en el repositorio para trabajar desde otra PC o sesión con acceso al mismo proyecto.
 - Al cierre del proyecto indicado por el usuario, retirar las notas temporales de desarrollo y referencias del árbol versionado/entrega, corregir sus enlaces y mantener documentación final de uso/mantenimiento. Hasta ese cierre, conservarlas en Git. No se pidió borrar ni reescribir el historial de commits; los commits antiguos seguirán conteniendo las versiones anteriores.
 
@@ -54,6 +57,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: priorizado el uso móvil como criterio principal en instrucciones, requisitos y plan. Incorporada a la demo una barra inferior con Hoy, Mi ruta/Repartos, Clientes y Mi carga; ampliados controles táctiles y campos en celular y retirado el pedido externo de fuentes. La revisión completa de seguridad se agenda para la beta. Rendimiento, teclado y estética en dispositivos reales siguen pendientes de validar.
 
 - 2026-10-19: persistido el procedimiento de ideas → demo/función existente → actualización de estado → validación/commit/push, con continuidad entre equipos y limpieza de notas al cierre del proyecto. Cambio documental verificado con `git diff --check`.
 

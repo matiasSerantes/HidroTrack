@@ -13,6 +13,9 @@ Acuerdo del usuario del 19/10/2026. Estas instrucciones viven en el repositorio 
 
 ## Criterios generales
 
+- **Prioridad principal: celular y chofer.** La aplicación se usará mayormente desde teléfonos durante los recorridos. Diseñar primero el flujo móvil: acceso rápido al cliente, cantidades, cobro y siguiente parada; pocos pasos, controles táctiles cómodos, texto legible, buena estética y uso eficiente de red/recursos. El escritorio acompaña esta prioridad.
+- Llegar primero a una beta funcional; programar la revisión completa y el endurecimiento de seguridad para esa etapa, antes del uso con datos reales. Mantener las protecciones básicas existentes durante el desarrollo y no confundir la autenticación/permisos simulados de la demo con seguridad de producción.
+
 - Mantener `docs/NOTAS.md` actualizado con ideas, decisiones, trabajo terminado, validaciones y pendientes. Separar propuestas de decisiones confirmadas y registrar fechas.
 - Antes de comenzar, leer estas notas y el estado de Git. Al cerrar una tarea, dejar anotado el resultado y el siguiente paso útil.
 - Crear commits de cambios coherentes y verificados, y hacer push al remoto de la rama de trabajo al terminar cada avance. El usuario autorizó este flujo de forma permanente el 19 de octubre de 2026; no pedir confirmación rutinaria para commit o push.

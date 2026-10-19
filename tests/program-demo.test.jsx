@@ -34,7 +34,7 @@ describe('recorridos navegables de la demo', () => {
   });
   it('el asistente solicita un cliente y el jefe puede aprobarlo', () => {
     enter(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Clientes', exact: true }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
     fireEvent.click(screen.getByText('Solicitar alta'));
     const dialog = screen.getByRole('dialog');
     for (const [label, value] of [['Nombre del cliente', 'Nuevo Demo'], ['Dirección', 'Calle 100'], ['Cuadra (calle-altura, para agrupar)', 'calle-100'], ['Pedido habitual', '1 bidón']]) fireEvent.change(within(dialog).getByLabelText(label), { target: { value } });
@@ -44,13 +44,13 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(screen.getByRole('button', { name: /Aprobaciones/ }));
     const request = screen.getByText('Alta de cliente · Nuevo Demo').closest('article');
     fireEvent.click(within(request).getByText('Aprobar'));
-    fireEvent.click(screen.getByRole('button', { name: 'Clientes', exact: true }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
     expect(screen.getByText('Nuevo Demo')).toBeTruthy();
   });
   it('todos los apartados del jefe son accesibles sin tocar la base real', () => {
     enter();
     for (const name of ['Repartos y mapa', 'Clientes', 'Artículos y alquileres', 'Carga y rendición', 'Mi equipo', 'Aprobaciones', 'Ventas y cobros', 'Mi empresa']) {
-      fireEvent.click(screen.getByRole('button', { name: name === 'Aprobaciones' ? /Aprobaciones/ : name, exact: name !== 'Aprobaciones' }));
+      fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: name === 'Aprobaciones' ? /Aprobaciones/ : name, exact: name !== 'Aprobaciones' }));
       expect(screen.getByRole('heading', { level: 1, name })).toBeTruthy();
     }
   });

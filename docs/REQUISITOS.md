@@ -106,6 +106,14 @@ Aceptación: el jefe recibe eventos de su empresa y puede distinguir visita actu
 
 Buena estética, usable desde el teléfono durante el reparto. Priorizar selección de cliente, cantidades, qué deja/retira, importe, cobro y siguiente parada. Respetar el nombre/logo de empresa en la esquina superior derecha y mantener estados claros de pendiente, aprobado, ausente y baja.
 
+**Prioridad principal confirmada el 19/10/2026:** el celular es el dispositivo principal. El chofer necesita una interfaz simple, rápida y cuidada durante su jornada. Diseñar primero las pantallas móviles, con navegación corta, acciones principales al alcance del pulgar, controles táctiles amplios, entradas legibles y mínima carga innecesaria de red. El trabajo sin señal sigue siendo un requisito pendiente; el guardado local de la demo no representa sincronización real.
+
+Aceptación: recorrer cliente → entrega/retiro → cobro → siguiente parada desde un teléfono sin depender de la vista de escritorio; validar legibilidad, interacción táctil, teclado, rendimiento en dispositivos reales y estados de red. La demo debe mostrar esta orientación sin afirmar que ya fue validada en celulares reales.
+
+## Etapa de seguridad acordada
+
+Priorizar una beta funcional antes de la revisión completa y el endurecimiento de seguridad. Planificar esa revisión como condición previa al uso con datos reales. Las protecciones básicas existentes (roles/RLS, secretos fuera del frontend y separación de la demo) se mantienen durante todo el desarrollo. La beta demo puede seguir usando simulaciones expresamente identificadas.
+
 ## Orden propuesto dentro del plan existente
 
 | Etapa | Incorporaciones solicitadas |
