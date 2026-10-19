@@ -96,7 +96,14 @@
 .hd .hd-tip-card h3 { color: #216574; }
 .hd .hd-tip-card p { color: #4d7886; }
 .hd .hd-tip-card > svg { color: #54a6aa; }
-.hd .hd-stop-card { border-color: #d4e2eb; border-left: 4px solid #e9b64f; }
+.hd .hd-stop-card { background: #f0f8ff; border-color: #c5dfef; border-left: 4px solid #70b9df; }
+.hd .hd-stop-card.pending { background: #f0f8ff; color: #244d64; }
+.hd .hd-stop-card.has-debt { background: #fff3e7; border-color: #efd0ad; border-left-color: #e7a05c; }
+.hd .hd-stop-card.has-debt h3 { color: #244d64; }
+.hd .hd-deactivation-notice { background: #fff0f0; border: 1px solid #edb3b3; border-left: 4px solid #d66565; color: #893d43; border-radius: 12px; padding: 16px; margin: 12px 0; }
+.hd .hd-deactivation-notice p { color: #8a4d53; margin: 5px 0; }
+.hd .hd-inactive-client td { background: #fff0f0; border-top: 1px solid #edb3b3; border-bottom: 1px solid #edb3b3; }
+.hd .hd-inactive-client td:first-child { border-left: 4px solid #d66565; }
 .hd .hd-stop-card.visited { background: #e6f6ee; border-color: #a9d8c4; border-left-color: #27a379; }
 .hd .hd-stop-card.later { background: #fff5de; border-left-color: #d99a28; }
 .hd .hd-stop-card.tomorrow, .hd .hd-stop-card.no-sale { background: #eee9f8; border-left-color: #9971bf; }
@@ -106,7 +113,7 @@
 .hd .hd-tabs button.active { background: #fff; color: #087f87; }
 .hd .hd-callout, .hd .hd-client-address { background: #e3f1f5; border-color: #bcd8e3; color: #467488; }
 .hd .hd-client-address strong { color: #315e70; }
-.hd .hd-detail-box { background: #dcefee; border-color: #badfdc; }
+.hd .hd-detail-box { background: #e5f4fc; border-color: #bcdceb; }
 .hd .hd-detail-box h3 { color: #126d6b; }
 .hd .hd-product-icon { background: #d9efef; color: #1c9094; }
 .hd .hd-product-icon.lavender { background: #e9dffa; color: #8354b5; }

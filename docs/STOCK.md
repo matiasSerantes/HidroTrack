@@ -48,7 +48,7 @@ Se niega escritura directa del libro a `anon` y `authenticated`. Las funciones v
 
 Las escrituras se serializan mediante bloqueo de la empresa durante la transacción para evitar saldos negativos por operaciones simultáneas. Es una primera implementación para volúmenes pequeños; no se midió rendimiento ni concurrencia con varias conexiones reales. No hay edición/borrado de movimientos desde la API de usuario.
 
-Verificación local: 9 pruebas de PostgreSQL (58 en toda la aplicación), incluyendo aislamiento, ingreso/carga/entrega/regreso, repetición, rollback, cantidades, permisos, precio histórico y siguiente reparto. MCP confirmó migración, tablas con RLS, vistas, funciones sin ejecución anónima y cero operaciones demo. Falta integración con JWT reales de Auth/PostgREST y prueba de concurrencia sobre el servidor.
+Verificación local: 9 pruebas de PostgreSQL (59 en toda la aplicación), incluyendo aislamiento, ingreso/carga/entrega/regreso, repetición, rollback, cantidades, permisos, precio histórico y siguiente reparto. MCP confirmó migración, tablas con RLS, vistas, funciones sin ejecución anónima y cero operaciones demo. Falta integración con JWT reales de Auth/PostgREST y prueba de concurrencia sobre el servidor.
 
 El asesor remoto señala las tres funciones de stock por ser `SECURITY DEFINER` ejecutables por usuarios autenticados. Es deliberado: son la entrada transaccional y contienen sus propios controles de autorización; no otorgan escritura libre. Se mantiene el pendiente anterior de protección de contraseñas filtradas, además de los hallazgos previos descritos en el informe.
 

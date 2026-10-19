@@ -166,6 +166,7 @@ describe('demo completa: operaciones conectadas', () => {
     s.requests[1].returns = [{ rentalId: 'rent1', returned: true, good: true }];
     const approved = decideRequest(s, 'deact', true);
     expect(approved.clients.find(c => c.id === 'c2')?.active).toBe(false);
+    expect(approved.clients.find(c => c.id === 'c2')).toMatchObject({ deactivatedOn: '2026-10-19', deactivationReason: 'Mudanza', deactivatedTripIds: ['t1'] });
     expect(approved.trips[0].stops.some(p => p.clientId === 'c2')).toBe(false);
     expect(approved.products.find(p => p.id === 'frio')?.depot).toBe(9);
     expect(approved.clients.find(c => c.id === 'c2')?.note).toContain('Mudanza');

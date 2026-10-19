@@ -15,6 +15,24 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('una baja aprobada muestra el día en el reparto y deja de ser una parada para atender', () => {
+    const initial = seedProgram();
+    initial.requests.push({ id: 'leave', kind: 'deactivation', clientId: 'c1', authorId: 'luz', status: 'pending', title: 'Baja · Elena', reason: 'Se mudó', returns: [] });
+    localStorage.setItem(DEMO_KEY, JSON.stringify(initial));
+    enter();
+    fireEvent.click(screen.getByRole('button', { name: /Aprobaciones/ }));
+    fireEvent.click(within(screen.getByText('Baja · Elena').closest('article')).getByText('Aprobar'));
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    const notice = within(screen.getByRole('region', { name: 'Bajas de este reparto hoy' })).getByRole('note');
+    expect(within(notice).getByText('Elena Duarte · Baja del servicio')).toBeTruthy();
+    expect(within(notice).getByText('Baja aprobada el 19/10/2026')).toBeTruthy();
+    expect(within(notice).queryByText('Atender cliente')).toBeNull();
+    const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.trips[0].stops.some(p => p.clientId === 'c1')).toBe(false);
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'), { target: { value: 'luz' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    expect(screen.getByRole('region', { name: 'Bajas de este reparto hoy' })).toBeTruthy();
+  });
   it('la ficha identifica cuenta al día y no repite clientes de la cuadra', () => {
     enter(true);
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));

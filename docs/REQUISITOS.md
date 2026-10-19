@@ -156,3 +156,7 @@ Comenzar por la base real de stock. Primera migración aplicada: catálogo ampli
 ### Cuenta del cliente y autorización de deuda — 19/10/2026
 
 La ficha no repite clientes de la misma cuadra: esa selección queda en el mapa. Mostrar deuda aprobada o Al día, y aparte créditos solicitados/rechazados sin presentarlos como saldo cero resuelto. Un asistente que entrega con pago insuficiente de lo vendido hoy genera solicitud y aviso al jefe; solo la aprobación suma ese faltante a la deuda. La entrega física y el cobro se registran al atender. Deuda anterior ya aprobada no requiere nueva solicitud. Regla provisional explicitada en pantalla: aplicar pago primero a hoy y excedente a deuda anterior. Como jefe, confirmar una entrega a crédito autoriza y registra directamente. Rechazar no borra venta ni faltante; el circuito posterior de cobro del rechazo sigue pendiente. Implementado en demo, sin ampliar la base real de stock a cuentas corrientes.
+
+### Ajuste visual confirmado — 19/10/2026
+
+Mantener paleta celeste clara en tarjetas, cuenta y stock; deuda en naranja suave. Baja aprobada en recuadro rojo suave con su fecha, incluido aviso del día en el reparto del asistente sin ofrecer atención. No confundir ausencia o deuda con baja. La fecha se registra al aprobar; bajas históricas sin fecha no deben inventarla. Preferencia vigente sobre los fondos oscuros introducidos anteriormente.

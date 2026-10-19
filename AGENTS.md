@@ -13,7 +13,7 @@ Acuerdo del usuario del 19/10/2026. Estas instrucciones viven en el repositorio 
 
 ## Criterios generales
 
-- Preferencia visual confirmada: evitar una interfaz demasiado pálida. Mantener colores presentes, contraste legible y estados distinguibles, con verde petróleo/turquesa como identidad y acentos coherentes en móvil y PC.
+- Preferencia visual actualizada el 19/10/2026: mantener celestes como base en tarjetas y fichas, con turquesa para acciones. No introducir fondos oscuros en esas tarjetas. Deuda: naranja suave, legible y cuidado; baja aprobada: recuadro rojo suave con fecha. Conservar contraste y coherencia en móvil y PC.
 
 - **Celular y PC deben verse y funcionar bien.** Priorizar el celular no elimina el escritorio: adaptar navegación, formularios, tablas, mapas y uso del espacio a ambos. Conservar en PC la barra lateral y las vistas amplias; en móvil priorizar el flujo táctil del chofer. Comprobar ambos tamaños al modificar la interfaz.
 

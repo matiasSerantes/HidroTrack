@@ -5,7 +5,7 @@ export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' };
-export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string };
+export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean };
 export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
 export type Trip = { id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
@@ -143,7 +143,9 @@ export function decideRequest(state: DemoProgramState, requestId: string, approv
       const c = s.clients.find(x => x.id === r.clientId);
       if (!c) throw new Error('No encontramos al cliente.');
       if (r.returns?.some(x => !x.returned || !x.good)) throw new Error('Esta demo exige devolver los equipos en buen estado antes de aprobar. Podés rechazar y revisar el caso.');
-      c.active = false; c.note = `Baja aprobada: ${r.reason}. ${c.note}`;
+      c.active = false; c.deactivatedOn = demoDay; c.deactivationReason = r.reason;
+      c.deactivatedTripIds = s.trips.filter(t => ['planned','active'].includes(t.stage) && t.stops.some(p => p.clientId === c.id)).map(t => t.id);
+      c.note = `Baja aprobada: ${r.reason}. ${c.note}`;
       for (const rental of c.rentals) { const p = s.products.find(x => x.id === rental.productId); if (p) p.depot++; }
       c.rentals = [];
       s.trips.forEach(t => { if (['planned', 'active'].includes(t.stage)) t.stops = t.stops.filter(stop => stop.clientId !== c.id || !['pending', 'later', 'tomorrow', 'next-week'].includes(stop.status)); });
