@@ -305,6 +305,31 @@ describe('stock transaccional PostgreSQL', () => {
     expect((await db.query('select active from public.products where id=$1',[product])).rows[0].active).toBe(false);
     expect((await db.query('select count(*)::int as n from public.inventory_movements where product_id=$1',[product])).rows[0].n).toBe(2);
   });
+  it('reinicia solo el inventario de la empresa verificada conservando clientes, cuentas y otra empresa',async()=>{
+    await post('receive',items(2));
+    const otherProduct='30000000-0000-0000-0000-000000000099';
+    await db.exec('reset role');
+    await db.query("insert into public.products(id,tenant_id,name,price) values($1,$2,'Otro artículo',0)",[otherProduct,other]);
+    await as(stranger);await db.query("select public.inventory_post($1,$2,'receive',null,null,$3::jsonb,'Compra ajena')",[other,op(),JSON.stringify([{product_id:otherProduct,quantity:3}])]);
+    await db.exec('reset role');
+    const before=(await db.query('select (select count(*)::int from auth.users) as users,(select count(*)::int from public.customers) as customers,(select count(*)::int from public.licenses) as licenses')).rows[0];
+    await db.query("select set_config('hidrotrack.reset_tenant',$1,true)",[tenant]);
+    await db.exec(await readFile(new URL('../supabase/maintenance/reset_inventory.sql',import.meta.url),'utf8'));
+    expect((await db.query('select count(*)::int as n from public.products where tenant_id=$1',[tenant])).rows[0].n).toBe(0);
+    expect((await db.query('select count(*)::int as n from public.inventory_movements where tenant_id=$1',[tenant])).rows[0].n).toBe(0);
+    expect((await db.query('select count(*)::int as n from public.inventory_movements where tenant_id=$1',[other])).rows[0].n).toBe(1);
+    const after=(await db.query('select (select count(*)::int from auth.users) as users,(select count(*)::int from public.customers) as customers,(select count(*)::int from public.licenses) as licenses')).rows[0];
+    expect(after).toEqual(before);
+  });
+  it('rechaza reiniciar inventario sin empresa verificada o con reparto activo, sin borrar datos',async()=>{
+    const reset=await readFile(new URL('../supabase/maintenance/reset_inventory.sql',import.meta.url),'utf8');
+    await db.exec('reset role');await db.query("select set_config('hidrotrack.reset_tenant','',true)");
+    await rejected(()=>db.exec(reset),/Falta empresa/);
+    await as(owner);await post('receive',items(2));await createTrip();await post('load',items(1));
+    await db.exec('reset role');await db.query("select set_config('hidrotrack.reset_tenant',$1,true)",[tenant]);
+    await rejected(()=>db.exec(reset),/repartos activos/);
+    expect((await db.query('select count(*)::int as n from public.inventory_movements where tenant_id=$1',[tenant])).rows[0].n).toBe(2);
+  });
   it('una rotura en el cliente cierra la asignación y no vuelve a hacer disponible esa unidad',async()=>{
     const model='30000000-0000-0000-0000-000000000005',assignment=op();
     await db.query("select public.inventory_create_product($1,$2,'Dispenser frío calor',0,'unidad',false)",[tenant,model]);await post('receive',[{product_id:model,quantity:1}]);

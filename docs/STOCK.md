@@ -101,6 +101,10 @@ La planilla combina modelos disponibles del libro y equipos individualizados pre
 
 102 pruebas locales, incluidas 21 PostgreSQL; 17 tablas locales con RLS. Ninguna de estas dos migraciones fue aplicada al remoto desde esta sesión.
 
+## Reinicio administrativo solicitado
+
+`supabase/maintenance/reset_inventory.sql` vacía catálogo e inventario de una sola empresa verificada por MCP; conserva cuenta, usuarios, licencia y clientes. Ejecutar en una transacción con empresa explícita, verificar antes de confirmar y rechazar si hay repartos activos/en rendición. No es una migración ni una función pública. Limpieza autorizada pero todavía no ejecutada remotamente: MCP requiere reconexión. Validación local actual: 109 pruebas, incluidas 24 de PostgreSQL, y build correctos.
+
 ## Eliminar modelos/artículos de activos
 
 Botón Eliminar en stock de bidones y tarjetas de catálogo/dispenser: vuelve a consultar saldos, rechaza existencias positivas y confirma active=false conservando filas e historial. Opera con los permisos de actualización ya existentes. `20261019200000_product_archive_guard.sql` agrega la protección atómica del servidor usando el mismo bloqueo de empresa que las RPC de inventario. Pendiente de aplicar remotamente después de las migraciones 180000 y 190000. Hasta entonces la comprobación de interfaz no cubre una modificación concurrente desde otro dispositivo.

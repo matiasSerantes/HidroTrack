@@ -97,7 +97,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 107 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 109 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
 
@@ -148,3 +148,5 @@ Catálogo: unidades activas destacadas, depósito/camión/clientes debajo y prec
 En la planilla demo se informa qué dispenser quedan disponibles en el reparto del cliente; Atender cliente permite asignarlos usando ese stock. La planilla real prepara además asignación directa por modelo desde depósito/camión y devolución desde la ficha, sin volver a cargar equipos; requiere aplicar ambas migraciones pendientes de incidentes y asignaciones. No confundir la preparación local con activación remota.
 
 Eliminar artículo/modelo: disponible para el jefe en tarjetas demo y reales y en Stock de bidones. Retira de activos con confirmación conservando historial; con unidades pendientes muestra que deben resolverse primero. En la demo se conserva el registro ficticio; en cuenta real se actualiza active=false. La protección atómica de servidor requiere además la tercera migración pendiente, product_archive_guard.
+
+Cuenta real: el bloqueo de Eliminar con unidades muestra un aviso inmediato. El reinicio administrativo autorizado está preparado y probado localmente; no se ejecutó en Supabase por falta de conexión MCP autenticada.

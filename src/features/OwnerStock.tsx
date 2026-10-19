@@ -64,7 +64,7 @@ export function OwnerStock({ client, tenantId, customers, onLock, section='inven
       if(result.error)throw new Error('No pudimos comprobar las existencias. El artículo no se eliminó.');
       const balance=(result.data as Balance[]|null)?.find(b=>b.product_id===product.id);
       const units=Math.max(Number(balance?.total_owned||0),Number(balance?.depot_ready||0)+Number(balance?.depot_empty||0)+Number(balance?.truck_ready||0)+Number(balance?.truck_empty||0)+Number(balance?.in_customers||0));
-      if(units>0){setNotice(`${product.name} tiene ${units} unidades registradas. Primero registrá las devoluciones, bajas o roturas correspondientes. El artículo conserva su stock.`);return;}
+      if(units>0){const message=`No se eliminó ${product.name}: tiene ${units} unidades registradas. Primero registrá las devoluciones, bajas o roturas correspondientes. El artículo conserva su stock.`;setNotice(message);alert(message);return;}
       if(!confirm(`¿Eliminar ${product.name} de los artículos activos? Sus registros e historial se conservarán.`))return;
       await execute({name:'product_update',args:{id:product.id,patch:{active:false}},message:'Artículo eliminado de activos. Sus registros e historial se conservan.'});
     }catch(e){setError((e as Error).message||'No pudimos eliminar el artículo.');}

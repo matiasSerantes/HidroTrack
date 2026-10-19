@@ -40,8 +40,10 @@ describe('inventario conectado del jefe',()=>{
   it('no permite ocultar un artículo que todavía tiene unidades en stock o clientes',async()=>{
     const {records}=fixture();await screen.findByRole('button',{name:'Eliminar Bidón 20'});
     vi.spyOn(window,'confirm').mockReturnValue(true);
+    vi.spyOn(window,'alert').mockImplementation(()=>{});
     fireEvent.click(screen.getByRole('button',{name:'Eliminar Bidón 20'}));
     await screen.findByText(/tiene 20 unidades registradas/);
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('No se eliminó Bidón 20'));
     expect(window.confirm).not.toHaveBeenCalled();expect(records.products[0].active).toBe(true);
   });
   it('muestra modelos dispenser en su sección sin duplicar ni convertir cantidades',async()=>{
