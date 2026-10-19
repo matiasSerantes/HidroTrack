@@ -22,6 +22,10 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => { await db.close(); });
 describe('migración y seguridad PostgreSQL', () => {
+  it('ejecuta la verificación posterior de incidentes sin modificar datos',async()=>{
+    await db.exec(await readFile(new URL('../supabase/tests/inventory_incidents_verify.sql',import.meta.url),'utf8'));
+    expect((await db.query('select count(*)::int as count from public.inventory_operations')).rows[0].count).toBe(0);
+  });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
     expect(rows).toHaveLength(16);

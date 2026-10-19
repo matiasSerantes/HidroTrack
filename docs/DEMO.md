@@ -97,7 +97,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 95 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 96 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
 

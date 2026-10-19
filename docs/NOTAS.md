@@ -207,3 +207,10 @@ Pedido: reemplazar el acceso de archivar en la lista por Planilla. Mover Archiva
 Pedido: destacar unidades activas de cada artículo/modelo y dejar precio debajo. Mostrar existencias reales registradas y distribución depósito/camión/clientes, sin interpretar el campo Unidad como cantidad. Aplicar a tarjetas reales y demo. Estado: en implementación.
 
 - Implementado: unidades activas en grande; distribución en depósito (llenos y vacíos), camión (llenos y vacíos) y clientes; precio secundario al pie. En cuenta real se usa total propio del libro y no el campo Unidad. Demo presenta su inventario ficticio y equipos propios colocados, excluyendo propiedad del cliente. Compilación y 95 pruebas correctas; no se modificaron cantidades ni base remota. Revisión visual en dispositivos pendiente.
+
+## 2026-10-19 · Retomar cierre de base de inventario
+
+Usuario pide continuar con base de datos. Prioridad: completar/verificar migración pendiente de fechas, roturas y bajas antes de avanzar a ventas/cuentas corrientes. Comprobado servidor Supabase configurado y enabled en CLI local, pero sin herramientas MCP disponibles en esta sesión; integración de esta aplicación figura no instalada. No volver a pedir autorización del trabajo ya dado. Preparar verificación posterior de esquema, permisos y saldos; no marcar aplicada remotamente hasta ejecutarla por MCP y verificar.
+
+- Agregada verificación de solo lectura `supabase/tests/inventory_incidents_verify.sql`: funciones, permisos anónimos/autenticados, RLS, protección de escrituras directas y saldos por depósito/camión/cliente. Pasa en PostgreSQL local; 96 pruebas totales. No se aplicó la migración remota.
+- El primer intento de login MCP desde el entorno restringido no detectó autorización. Al reintentar con red habilitada se inició correctamente el flujo OAuth de Supabase, pendiente de completarse en navegador. No guardar enlaces de autorización ni tokens en Git. Tras completar, comprobar herramientas disponibles y aplicar/verificar la migración pendiente antes de dar el inventario real por cerrado.

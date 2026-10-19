@@ -90,3 +90,5 @@ Agrega familia de producto (artículo/dispenser), fecha de hecho y persona invol
 La pantalla conserva las RPC anteriores para entradas mientras no exista la nueva columna y muestra que bajas/fechas editables requieren actualizar la base. Los modelos reconocidos como dispenser se muestran en esa sección con el mismo ID y libro; no se convierten en equipos individuales ni duplican stock. Tras aplicar, familia conserva la clasificación aun si se renombra el modelo. Equipos retirados no aparecen como disponibles en la ficha del cliente.
 
 Validación actual: 95 pruebas, incluidas 17 de PostgreSQL; compilación aprobada. Nuevas RPC aún sin comprobación remota; revisión visual y concurrencia multiconexión pendientes.
+
+Verificación posterior preparada en `supabase/tests/inventory_incidents_verify.sql`: ejecutar por MCP después de aplicar la migración. Es de solo lectura, no devuelve datos de clientes y comprueba funciones/permisos/RLS, protección del libro y saldos negativos por ubicación. Pasa localmente; 96 pruebas totales, 18 de PostgreSQL. OAuth del MCP iniciado con acceso de red, pendiente de completar; migración remota aún pendiente.
