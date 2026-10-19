@@ -115,3 +115,9 @@ Estas propuestas no fueron implementadas durante la revisión.
 Pedido: al iniciar, el asistente declara y confirma la carga una sola vez. No puede editarla ni volver a cargar hasta cerrar y solicitar el siguiente reparto. Stock del camión muestra existencias y vacíos actualizados con cada entrega, más importe acumulado de artículos entregados (precio histórico, separado del cobrado y cuotas de alquiler anteriores). Estado: implementado en demo; se conserva la aprobación de rendición existente antes de iniciar otro. Las demos ya activas conservan su carga confirmada.
 
 - Validación de carga/camión: 44 pruebas y compilación; prueba de inicio, entrega, importe y recuperación; dominio verifica bloqueo de carga repetida, siguiente reparto y conservación de carga original. Revisión visual en dispositivos pendiente.
+
+## 2026-10-19 · Inicio de base real de stock
+
+Prioridad pedida: comenzar por la base de datos de stock. Alcance: reutilizar productos existentes, existencias separadas por empresa/depósito/reparto y condición lleno/vacío, movimientos auditables y carga única. Preparar migración y pruebas antes de aplicar por MCP. Reconciliar primero migraciones administrativas existentes; no cargar datos demo en Supabase. Estado: aplicado por MCP como `20261019160747_inventory`; frontend pendiente de conexión.
+
+- Resultado stock: cuatro tablas, tres vistas y tres RPC; carga única, entrega/devolución, precio histórico, cierre exacto por jefe e idempotencia. Recuperadas foundation y admin_portal desde el historial remoto, con sus identificadores correctos. 51 pruebas (9 PostgreSQL), build y comprobación remota correctos; 13 tablas con RLS, cero operaciones demo. Contratos y límites en `docs/STOCK.md`. Siguiente: catálogo/ingreso de depósito reales y cuentas de prueba; no confundir la pantalla demo con stock conectado.

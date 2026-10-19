@@ -35,3 +35,7 @@ Se inspeccionaron definiciones y configuración; no se hicieron pruebas de escri
 ## Conexión MCP
 
 La credencial OAuth existe y un cliente nuevo logró listar e invocar las herramientas de Supabase. Esta conversación no recibió el catálogo nativo del servidor. La vía de diagnóstico usada no extrajo ni mostró tokens. La CLI instalada informó versión 0.130.0 y errores al interpretar el nivel `max` del catálogo de modelos; no impidieron las consultas MCP. También apareció una integración Unity local inalcanzable. No se atribuye a esos errores una causa definitiva del fallo de esta conversación.
+
+## Actualización posterior: base de stock
+
+Después de la revisión de solo lectura anterior, el usuario priorizó implementar stock. Se aplicó por MCP `20261019160747_inventory`: cuatro tablas, tres vistas y tres RPC; total 13 tablas públicas con RLS. Sin operaciones demo ni datos comerciales insertados. Se recuperaron y versionaron foundation y admin_portal con las versiones reales, resolviendo el historial local incompleto sin modificar el historial remoto. Ver [contrato, pruebas y límites](STOCK.md). Las RPC nuevas son SECURITY DEFINER de forma deliberada y verifican autorización; el asesor las señala como ejecutables por authenticated. Las pruebas completas con Auth/PostgREST y los otros pendientes de la revisión siguen abiertos.

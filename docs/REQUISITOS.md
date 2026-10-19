@@ -148,3 +148,7 @@ El orden es una propuesta de implementación; el usuario no priorizó todavía e
 ### Carga única y stock del camión (demo)
 
 Al iniciar un reparto planificado, el asistente confirma cantidades una sola vez. No se editan ni recargan durante ese reparto, incluso al reabrir. Stock del camión permite consultar carga original, disponibilidad y vacíos actualizados con cada operación confirmada. Mostrar el importe acumulado de artículos entregados a precios históricos, separado del dinero cobrado. Otro reparto tiene carga propia; requiere cierre y aprobación del anterior según el flujo existente.
+
+### Prioridad de implementación confirmada — 19/10/2026
+
+Comenzar por la base real de stock. Primera migración aplicada: catálogo ampliado, libro de movimientos por empresa, asignaciones básicas, carga única, entregas/envases y regreso aprobado. Ver `STOCK.md`. La integración visual, ventas/cobros, alquileres serializados, ajustes y rendiciones con diferencias siguen pendientes; las pantallas actuales conservan los datos demo.

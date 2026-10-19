@@ -97,7 +97,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 44 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 51 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
 
@@ -106,3 +106,7 @@ Esta entrega permite evaluar el programa completo por partes. Cada parte que pas
 Un reparto planificado muestra **Iniciar reparto**: ingresá la carga y pulsá **Confirmar carga e iniciar**. Se abre Mi reparto y la carga queda bloqueada sin recargas ni edición; cerrar y reabrir conserva ese estado. **Stock del camión**, desde Mi reparto, muestra carga inicial, unidades disponibles y vacíos recuperados. Cada entrega confirmada actualiza el stock y el **Total del camión · entregas realizadas** a su precio registrado. El cobrado se informa por separado; el total de entregas excluye cuotas de alquiler de equipos instalados anteriormente.
 
 La Lucía inicial ya tiene un reparto activo con carga confirmada. Para probar el inicio desde cero, el jefe puede crear un reparto para un asistente sin reparto activo, cambiar al asistente y pulsar Iniciar reparto. Para Lucía, finalizar/rendir, obtener aprobación y solicitar el siguiente; cada nuevo reparto permite una única carga independiente. La confirmación de cierre no habilita modificar la carga anterior. Todo se guarda en la demo local; no modifica Supabase. Validación visual en teléfonos y PC reales pendiente.
+
+### Base real de stock
+
+Desde el 19/10/2026 hay una base de stock aplicada en Supabase. Sus funciones y saldos están documentados en [STOCK.md](STOCK.md). Esta demostración sigue usando datos locales: no carga ni consulta inventario real. La próxima parte es conectar catálogo/ingreso del depósito.
