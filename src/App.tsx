@@ -3,6 +3,8 @@ import type { Session } from '@supabase/supabase-js';
 import { OwnerWorkspace } from './features/OwnerWorkspace';
 import { Droplets, Truck, ArrowUpRight } from 'lucide-react';
 import { DemoProgram } from './features/DemoProgram';
+import { readJourney } from './domain/demoJourney';
+import { readProgram } from './domain/programDemo';
 import { supabase } from './lib/supabase';
 
 export function App() {
@@ -21,7 +23,7 @@ export function App() {
     }).catch(() => { if (active) setCheckingSession(false); });
     return () => { active = false; subscription.data.subscription.unsubscribe(); };
   }, []);
-  const [demo, setDemo] = useState(() => new URLSearchParams(window.location.search).get('demo') === '1');
+  const [demo, setDemo] = useState(() => new URLSearchParams(window.location.search).get('demo') === '1' || Boolean(readJourney(readProgram())));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');

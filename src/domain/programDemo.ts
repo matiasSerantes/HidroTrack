@@ -2,7 +2,7 @@ import { parseMoney } from './demo';
 
 export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
-export type Page = 'overview' | 'routes' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
+export type Page = 'overview' | 'routes' | 'delivery' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number };
 export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string };

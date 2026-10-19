@@ -51,6 +51,9 @@ Aceptación: un asistente no puede aprobar su propia solicitud ni enviarla a un 
 
 ## REQ-05 — Repartos del día y mapa
 
+- **Centro de trabajo del asistente:** botón «Abrir reparto» que abre el recorrido completo con su ubicación actual, clientes y acciones principales en el mismo lugar. Desde allí debe poder hacer la mayor parte de la jornada: atención, entrega/retiro, alquiler, cobro, ficha/cuadra, ausencias/pendientes, carga, solicitudes y rendición. En la demo la ubicación es simulada.
+- **Continuidad al reabrir:** si se cierra la web, recuperar el reparto y el punto de trabajo guardado, incluido el borrador de atención sin confirmar. Las operaciones confirmadas no deben duplicarse. La demo lo guarda en el navegador; para producción hay que definir recuperación de sesión, sincronización y conflictos reales.
+
 - El jefe crea repartos diarios con la cantidad y selección de clientes que necesite.
 - Asigna los repartos a sus asistentes para que vean el camino y realicen el recorrido. El jefe también puede atender clientes.
 - El mapa muestra el recorrido armado.

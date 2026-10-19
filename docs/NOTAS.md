@@ -30,6 +30,10 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Abrir reparto y retomar la jornada — pedido del 2026-10-19
+
+Implementado en demo: botón principal «Abrir reparto» y pantalla «Mi reparto» con mapa completo y ubicación simulada. Permite atender, registrar venta/alquiler/cobro, ver ficha y cuadra, marcar pendientes, revisar carga, solicitar altas/bajas y rendir. Al cerrar y volver recupera perfil demo, reparto, pantalla, selección/posición del mapa y borrador de atención. No representa autenticación ni sincronización de producción; la recuperación funciona en el mismo navegador si conserva su almacenamiento. Salir explícitamente quita el regreso automático, y reiniciar limpia borradores y posiciones demo.
+
 ### Mapa visible y ubicación simulada — pedido del 2026-10-19
 
 El usuario no encuentra cómo abrir el mapa desde la web. Implementado: botón «Abrir mapa y ubicación demo», mapa de calles dentro de la web (Leaflet/OpenStreetMap), tres direcciones cercanas sobre Av. de Mayo en Monserrat, CABA, marcadores numerados y punto azul de ubicación actual ficticia. Incluye centrar, ver todo el recorrido, simular avance y abrir ficha. No solicita GPS real ni modifica Supabase. Los puntos son aproximados, no direcciones geocodificadas; la línea une el orden de paradas, sin calcular navegación vial. La migración de los ejemplos guardados conserva las operaciones.
@@ -67,6 +71,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: integrado «Abrir reparto» como centro de trabajo del asistente y recuperación local al reabrir. Verificado mediante 33 pruebas y build; las pruebas cierran/reabren con un borrador de pago parcial, recuperan el mapa y comprueban que confirmar no duplica ventas. Se validan usuario activo, asignación y parada pendiente al recuperar. Revisión visual real sigue pendiente.
 
 - 2026-10-19: agregado mapa de calles bajo carga diferida, ubicación demo y tres clientes cercanos; actualización de copias locales sin reset. Validación: 29 pruebas aprobadas, incluida apertura del mapa/avance/ficha y conservación de ventas en la migración; build de producción correcto. No se verificó la descarga de cartografía ni la apariencia en un navegador real conectado.
 

@@ -68,4 +68,41 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Abrir ficha' }));
     expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Elena Duarte' })).toBeTruthy();
   });
+  it('retoma el reparto, la posición y un borrador después de cerrar y volver', async () => {
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
+    await screen.findByText('Tu ubicación actual · DEMO');
+    fireEvent.click(screen.getByRole('button', { name: 'Simular avance' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Atender: entrega y cobro' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Dejás Bidón 20 litros'), { target: { value: '3' } });
+    fireEvent.change(within(dialog).getByLabelText('Retirás Bidón 20 litros'), { target: { value: '2' } });
+    fireEvent.change(within(dialog).getByLabelText('Paga ahora ($)'), { target: { value: '10000' } });
+    cleanup(); // Cierra la aplicación; conserva el almacenamiento del navegador.
+    render(<DemoProgram onExit={() => {}}/>);
+    expect(screen.getByRole('heading', { level: 1, name: 'Mi reparto' })).toBeTruthy();
+    const restored = screen.getByRole('dialog');
+    expect(within(restored).getByLabelText('Dejás Bidón 20 litros').value).toBe('3');
+    expect(within(restored).getByLabelText('Retirás Bidón 20 litros').value).toBe('2');
+    expect(within(restored).getByLabelText('Paga ahora ($)').value).toBe('10000');
+    fireEvent.click(within(restored).getByText('Confirmar visita'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await screen.findByText('Llegaste a Av. de Mayo 1200', { exact: false });
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).sales).toHaveLength(1);
+    cleanup();
+    render(<DemoProgram onExit={() => {}}/>);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).sales).toHaveLength(1);
+  });
+  it('el asistente marca ausencias y continúa en el mapa sin crear ventas', async () => {
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
+    await screen.findByText('Tu ubicación actual · DEMO');
+    fireEvent.change(screen.getByLabelText('Resultado de visita de Elena Duarte'), { target: { value: 'later' } });
+    expect(screen.getByText('Volver después')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente pendiente' }));
+    expect(screen.getByLabelText('Resultado de visita de Café La Esquina')).toBeTruthy();
+    const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.trips[0].stops[0].status).toBe('later'); expect(saved.sales).toHaveLength(0);
+  });
 });

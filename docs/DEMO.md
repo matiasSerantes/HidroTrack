@@ -8,6 +8,16 @@ Elegir **Santiago · repartidor jefe** o **Lucía · asistente**. El código del
 
 La empresa de ejemplo es **Agua Clara**. El día operativo es el **19/10/2026**; las horas de las acciones corresponden a la hora actual de Buenos Aires. No son datos de un reparto real.
 
+### El espacio principal del asistente
+
+Entrar como Lucía y pulsar **Abrir reparto**. La pantalla **Mi reparto** muestra el mapa completo y permite seleccionar clientes, atender con entrega/retiro/alquiler/cobro, consultar ficha y cuadra, marcar ausencia, pasar al siguiente pendiente, revisar carga, solicitar altas/bajas y rendir. La atención se abre encima del reparto; al confirmar vuelve al mapa actualizado. En celular se accede también desde la barra inferior «Mi reparto».
+
+### Cerrar y seguir donde quedaste
+
+Se guardan el perfil ficticio, pantalla, reparto, cliente seleccionado, posición simulada y cantidades/devoluciones/alquileres/cobro/medio de pago de la atención todavía sin confirmar. Al reabrir la misma web en este navegador, la demo continúa directamente donde quedó. Para probarlo, cargar una cantidad y un pago parcial y recargar sin confirmar: debe recuperar el borrador. Confirmar la visita borra su borrador y evita repetirla al volver.
+
+No hace falta volver a ingresar el código ficticio al recuperar una demo; no es una sesión autenticada real. «Salir de la demostración» quita el regreso automático pero conserva datos ficticios; «Reiniciar» limpia también borradores y posiciones. El navegador debe permitir y conservar almacenamiento local; si se elimina o se usa otro navegador/dispositivo, no habrá recuperación. No se guardan automáticamente borradores de formularios de alta o baja, solo de la atención al cliente.
+
 **Prioridad principal: celular.** La vista móvil ofrece navegación inferior para Hoy, Mi ruta/Repartos, Clientes y Mi carga; el resto queda en el menú. Los controles de acción tienen un tamaño táctil mínimo de 44 px y los campos principales usan texto de 16 px. Se usan fuentes del sistema sin solicitar tipografías a un proveedor externo. Esta orientación sigue pendiente de una revisión visual y de rendimiento en teléfonos reales.
 
 ## Qué se puede probar
@@ -65,6 +75,6 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 29 pruebas aprobadas, incluidas las existentes, operaciones de la demo, navegación de ambos roles y apertura/avance del mapa en jsdom. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; la carga real de la cartografía y esa comprobación visual quedan pendientes.
+`npm test`: 33 pruebas aprobadas, incluidas operaciones de la demo, navegación, apertura/avance del mapa, recuperación tras cerrar con atención pendiente y controles de usuario/asignación al restaurar en jsdom. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; la carga real de la cartografía y esa comprobación visual quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
