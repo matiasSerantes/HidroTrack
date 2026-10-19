@@ -109,3 +109,9 @@ Estas propuestas no fueron implementadas durante la revisión.
 - 2026-10-19: incorporados los nuevos pedidos con identificadores y criterios de aceptación; actualizado el plan visible con el alcance recibido y el estado remoto ya verificado. Validación documental, correspondencia de requisitos y `git diff --check`. No se implementaron funciones nuevas ni se modificó Supabase en esta actualización.
 
 - 2026-10-19: incorporados los acuerdos persistentes en `AGENTS.md`, esta bitácora y el informe de Supabase. Validación: revisión documental y `git diff --check`; no se cambió código de ejecución ni se corrieron pruebas de aplicación para esta actualización documental.
+
+## 2026-10-19 · Carga única por reparto y stock del camión
+
+Pedido: al iniciar, el asistente declara y confirma la carga una sola vez. No puede editarla ni volver a cargar hasta cerrar y solicitar el siguiente reparto. Stock del camión muestra existencias y vacíos actualizados con cada entrega, más importe acumulado de artículos entregados (precio histórico, separado del cobrado y cuotas de alquiler anteriores). Estado: implementado en demo; se conserva la aprobación de rendición existente antes de iniciar otro. Las demos ya activas conservan su carga confirmada.
+
+- Validación de carga/camión: 44 pruebas y compilación; prueba de inicio, entrega, importe y recuperación; dominio verifica bloqueo de carga repetida, siguiente reparto y conservación de carga original. Revisión visual en dispositivos pendiente.

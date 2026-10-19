@@ -144,3 +144,7 @@ Priorizar una beta funcional antes de la revisión completa y el endurecimiento 
 | 6. Piloto | Validar el circuito completo del jefe y asistentes y la experiencia móvil; evaluar seguimiento en vivo. |
 
 El orden es una propuesta de implementación; el usuario no priorizó todavía entre estos nuevos pedidos. Las decisiones pendientes de cada sección deben resolverse al abordar esa función, sin perder el alcance registrado.
+
+### Carga única y stock del camión (demo)
+
+Al iniciar un reparto planificado, el asistente confirma cantidades una sola vez. No se editan ni recargan durante ese reparto, incluso al reabrir. Stock del camión permite consultar carga original, disponibilidad y vacíos actualizados con cada operación confirmada. Mostrar el importe acumulado de artículos entregados a precios históricos, separado del dinero cobrado. Otro reparto tiene carga propia; requiere cierre y aprobación del anterior según el flujo existente.

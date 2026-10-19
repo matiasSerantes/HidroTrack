@@ -3,7 +3,7 @@ import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { DemoProgram } from '../src/features/DemoProgram';
-import { DEMO_KEY } from '../src/domain/programDemo';
+import { DEMO_KEY, seedProgram } from '../src/domain/programDemo';
 import { mapPositionKey } from '../src/domain/demoJourney';
 
 afterEach(() => { cleanup(); localStorage.clear(); });
@@ -15,6 +15,35 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('confirma una carga al iniciar y muestra stock e importe de entregas sin permitir recargar', async () => {
+    const initial = seedProgram();
+    initial.trips[0].stage = 'planned'; initial.trips[0].load = {}; initial.trips[0].stock = {};
+    localStorage.setItem(DEMO_KEY, JSON.stringify(initial));
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar reparto' }));
+    const load = screen.getByRole('dialog');
+    fireEvent.change(within(load).getByLabelText(/Bidón 20 litros/), { target: { value: '10' } });
+    fireEvent.click(within(load).getByText('Confirmar carga e iniciar'));
+    await screen.findByText('Tu ubicación actual · DEMO');
+    fireEvent.click(screen.getByRole('button', { name: 'Stock del camión' }));
+    expect(screen.getByText('Confirmada · bloqueada')).toBeTruthy();
+    expect(screen.queryByText('Cargar transporte')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    fireEvent.click(screen.getAllByText('Atender cliente')[0]);
+    const visit = screen.getByRole('dialog');
+    fireEvent.change(within(visit).getByLabelText('Dejás Bidón 20 litros'), { target: { value: '3' } });
+    fireEvent.click(within(visit).getByText('Confirmar visita'));
+    fireEvent.click(screen.getByRole('button', { name: 'Carga y rendición' }));
+    const stock = screen.getByRole('heading', { name: 'Stock del camión' }).closest('section');
+    expect(within(stock).getByText('7')).toBeTruthy();
+    const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.trips[0].load.b20).toBe(10);
+    expect(saved.trips[0].stock.b20).toBe(7);
+    expect(within(stock).getByText('Total del camión · entregas realizadas').closest('article').textContent).toContain('10.500');
+    cleanup(); render(<DemoProgram onExit={() => {}}/>);
+    expect(screen.getByText('Confirmada · bloqueada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Iniciar reparto' })).toBeNull();
+  });
   it('exige el código ficticio y permite atender con efectos visibles para el jefe', () => {
     enter(true);
     fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));

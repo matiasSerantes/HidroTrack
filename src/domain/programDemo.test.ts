@@ -83,6 +83,19 @@ describe('demo completa: operaciones conectadas', () => {
     expect(s.products[0].depot).toBe(225); expect(s.trips[1].stock.b20).toBe(15);
     expect(() => loadTrip(s, 't2', { b20: 15 })).toThrow(/todavía no comenzó/);
   });
+  it('bloquea otra carga hasta cerrar el anterior y nunca modifica su carga original', () => {
+    const original = seedProgram();
+    original.trips.push({ ...structuredClone(original.trips[1]), id: 'next', driverId: 'luz' });
+    expect(() => loadTrip(original, 'next', { b20: 5 })).toThrow(/anterior/);
+    const visited = resolved(recordVisit(original, input));
+    const submitted = closeTrip(visited, 't1', visited.trips[0].stock, '');
+    expect(() => loadTrip(submitted, 'next', { b20: 5 })).toThrow(/anterior/);
+    const approved = approveClose(submitted, 't1');
+    expect(() => loadTrip(approved, 't1', { b20: 5 })).toThrow(/todavía no comenzó/);
+    const next = loadTrip(approved, 'next', { b20: 5 });
+    expect(next.trips[0].load).toEqual(original.trips[0].load);
+    expect(next.trips.find(t => t.id === 'next')?.stock.b20).toBe(5);
+  });
   it('la rendición respeta pendientes, diferencias y aprobación única', () => {
     expect(() => closeTrip(seedProgram(), 't1', {}, '')).toThrow(/pendientes/);
     const ready = resolved(recordVisit(seedProgram(), input));
