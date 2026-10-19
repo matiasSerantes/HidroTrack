@@ -112,3 +112,5 @@ Botón Eliminar en stock de bidones y tarjetas de catálogo/dispenser: vuelve a 
 El verificador de solo lectura requiere las tres migraciones y comprueba también este trigger. 107 pruebas locales aprobadas, 22 PostgreSQL. Nuevo OAuth exitoso; cliente MCP de esta conversación aún responde Auth required, sin cambios remotos.
 
 Actualización 19/10: MCP conectado y proyecto verificado. Limpieza remota sin ejecutar porque existe un reparto pendiente de rendición; resolverlo antes del reinicio. Migraciones adicionales pendientes.
+
+Resultado remoto 19/10: reinicio ejecutado por MCP en una sola empresa y transacción. Eliminado el reparto de prueba autorizado. Verificados cero artículos, equipos, movimientos y repartos; conservados cliente, cuenta Auth, miembros y licencia mediante comparación dentro de la transacción. Las tres migraciones adicionales siguen pendientes; esta limpieza no las aplica.
