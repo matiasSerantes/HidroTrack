@@ -1,4 +1,4 @@
-import { parseMoney } from './demo';
+import { currency, parseMoney } from './demo';
 
 export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
@@ -10,8 +10,8 @@ export type Member = { id: string; name: string; role: 'owner' | 'driver'; activ
 export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
 export type Trip = { id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
-export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string };
-export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
+export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
+export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
 export type DemoProgramState = { version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export const DEMO_ORIGIN = { lat: -34.60905, lng: -58.3832 };
@@ -102,11 +102,15 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   if (!Number.isSafeInteger(total) || !Number.isSafeInteger(before + total)) throw new Error('El importe excede el rango permitido para la demo.');
   if (paid > total + before) throw new Error('El cobro supera la venta más la deuda anterior.');
   if (!items.length && !paid && !rentalFee) throw new Error('Cargá una entrega, devolución o cobro; para una visita sin operación usá «No compró».');
-  client.debt = before + total - paid; visit.status = 'visited'; delete visit.rescheduleDate;
+  const unpaid = Math.max(total - paid, 0), approved = input.actorId === 'owner', saleId = uid();
+  client.debt = before - Math.max(paid - total, 0) + (approved ? unpaid : 0); visit.status = 'visited'; delete visit.rescheduleDate;
   const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' });
-  s.sales.unshift({ id: uid(), clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time });
+  s.sales.unshift({ id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
+  if (unpaid && !approved) {
+    s.requests.unshift({ id: uid(), kind: 'credit', saleId, amount: unpaid, clientId: client.id, authorId: input.actorId, status: 'pending', title: `Deuda solicitada · ${client.name}` });
+  }
   s.presence = { ...s.presence, [input.actorId]: { clientId: client.id, time, attending: false } };
-  notify(s, `${member.name}: visita registrada en ${client.name}. Venta y cobro actualizados.`);
+  notify(s, `${member.name}: visita registrada en ${client.name}. ${unpaid && !approved ? `Solicita dejar ${currency(unpaid)} de deuda; pendiente de autorización del jefe.` : 'Venta y cobro actualizados.'}`);
   return s;
 }
 export function loadTrip(state: DemoProgramState, tripId: string, quantities: Record<string, number>) {
@@ -118,9 +122,19 @@ export function loadTrip(state: DemoProgramState, tripId: string, quantities: Re
   trip.load = { ...quantities }; trip.stock = { ...quantities }; trip.stage = 'active';
   notify(s, `Comenzó ${trip.name}. Carga del transporte registrada.`); return s;
 }
-export function decideRequest(state: DemoProgramState, requestId: string, approve: boolean) {
+export function decideRequest(state: DemoProgramState, requestId: string, approve: boolean, actorId = 'owner') {
   const s = structuredClone(state), r = s.requests.find(x => x.id === requestId);
+  if (!s.members.some(m => m.id === actorId && m.role === 'owner' && m.active)) throw new Error('Solo el jefe puede aprobar o rechazar solicitudes.');
   if (!r || r.status !== 'pending') throw new Error('Esta solicitud ya fue resuelta.');
+  if (r.kind === 'credit') {
+    const sale = s.sales.find(v => v.id === r.saleId), client = s.clients.find(c => c.id === r.clientId);
+    if (!sale || !client || sale.clientId !== client.id || sale.actorId !== r.authorId || sale.credit?.status !== 'pending' || sale.credit.amount !== r.amount) throw new Error('La solicitud no coincide con la entrega pendiente.');
+    if (approve) {
+      if (!Number.isSafeInteger(client.debt + sale.credit.amount)) throw new Error('El saldo excede el rango permitido.');
+      client.debt += sale.credit.amount;
+    }
+    sale.credit.status = approve ? 'approved' : 'rejected';
+  }
   if (approve) {
     if (r.kind === 'customer' && r.client) s.clients.push(r.client);
     if (r.kind === 'product' && r.product) s.products.push(r.product);

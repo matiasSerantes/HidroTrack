@@ -46,16 +46,59 @@ describe('demo completa: operaciones conectadas', () => {
     expect(migrated.clients[3]).toEqual(s.clients[3]);
     expect(withDemoAddresses(migrated)).toEqual(migrated);
   });
-  it('una visita parcial actualiza stock, envases, deuda y notificaciones sin mutar el original', () => {
+  it('una visita parcial registra la entrega pero solicita aprobación antes de sumar deuda nueva', () => {
     const before = seedProgram(), after = recordVisit(before, input);
     expect(before.sales).toHaveLength(0);
     expect(after.trips[0].stock.b20).toBe(37);
     expect(after.trips[0].empties.b20).toBe(2);
     expect(after.clients[0].held.b20).toBe(3);
-    expect(after.sales[0]).toMatchObject({ total: 1050000, paid: 1000000, before: 480000, after: 530000 });
-    expect(after.clients[0].debt).toBe(530000);
+    expect(after.sales[0]).toMatchObject({ total: 1050000, paid: 1000000, before: 480000, after: 480000, credit: { amount: 50000, status: 'pending' } });
+    expect(after.clients[0].debt).toBe(480000);
+    expect(after.requests[0]).toMatchObject({ kind: 'credit', saleId: after.sales[0].id, amount: 50000, status: 'pending' });
     expect(after.trips[0].stops[0].status).toBe('visited');
     expect(after.notices[0].text).toContain('Elena');
+  });
+  it('solo el jefe aprueba deuda una vez, sin duplicar venta, cobro ni envases', () => {
+    const pending = recordVisit(seedProgram(), input), request = pending.requests[0];
+    expect(() => decideRequest(pending, request.id, true, 'luz')).toThrow(/Solo el jefe/);
+    const approved = decideRequest(pending, request.id, true, 'owner');
+    expect(approved.clients[0].debt).toBe(530000);
+    expect(approved.sales[0].credit?.status).toBe('approved');
+    expect(approved.sales[0].paid).toBe(1000000);
+    expect(approved.sales).toHaveLength(1);
+    expect(approved.trips).toEqual(pending.trips);
+    expect(approved.clients[0].held).toEqual(pending.clients[0].held);
+    expect(pending.clients[0].debt).toBe(480000);
+    expect(() => decideRequest(approved, request.id, true)).toThrow(/ya fue resuelta/);
+  });
+  it('rechazar conserva el importe por cobrar sin convertirlo en deuda aprobada', () => {
+    const pending = recordVisit(seedProgram(), input), rejected = decideRequest(pending, pending.requests[0].id, false);
+    expect(rejected.clients[0].debt).toBe(480000);
+    expect(rejected.sales[0].credit).toEqual({ amount: 50000, status: 'rejected' });
+    expect(rejected.sales[0].total).toBe(1050000);
+    expect(rejected.trips).toEqual(pending.trips);
+    expect(() => decideRequest(rejected, pending.requests[0].id, true)).toThrow(/ya fue resuelta/);
+  });
+  it('aprobar después de otro cobro suma solo el nuevo crédito al saldo vigente', () => {
+    let s = recordVisit(seedProgram(), input); const requestId = s.requests[0].id;
+    s.trips[0].stops[0].status = 'pending';
+    s = recordVisit(s, { ...input, items: [], paid: '4800' });
+    expect(s.clients[0].debt).toBe(0);
+    s = decideRequest(s, requestId, true);
+    expect(s.clients[0].debt).toBe(50000);
+    expect(s.sales).toHaveLength(2);
+  });
+  it('pago completo no pide crédito y mantener deuda anterior no la vuelve a solicitar', () => {
+    const currentPaid = recordVisit(seedProgram(), { ...input, paid: '10500' });
+    expect(currentPaid.clients[0].debt).toBe(480000);
+    expect(currentPaid.sales[0].credit).toBeUndefined();
+    expect(currentPaid.requests.filter(r => r.kind === 'credit')).toHaveLength(0);
+    const fullPaid = recordVisit(seedProgram(), { ...input, paid: '15300' });
+    expect(fullPaid.clients[0].debt).toBe(0);
+    expect(fullPaid.requests.filter(r => r.kind === 'credit')).toHaveLength(0);
+    const ownerCredit = recordVisit(seedProgram(), { ...input, actorId: 'owner' });
+    expect(ownerCredit.clients[0].debt).toBe(530000);
+    expect(ownerCredit.sales[0].credit?.status).toBe('approved');
   });
   it('rechaza duplicados, exceso de stock, pagos inválidos y devoluciones imposibles', () => {
     const s = seedProgram();

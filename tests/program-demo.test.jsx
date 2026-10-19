@@ -15,6 +15,62 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('la ficha identifica cuenta al día y no repite clientes de la cuadra', () => {
+    enter(true);
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ficha de Café La Esquina' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Al día · no debe nada')).toBeTruthy();
+    expect(within(dialog).queryByText('Clientes de esta cuadra')).toBeNull();
+    expect(within(dialog).getByText('Historial de atención')).toBeTruthy();
+  });
+  it('notifica deuda parcial al jefe y solo al aprobar actualiza el saldo de la ficha', () => {
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    fireEvent.click(screen.getAllByText('Atender cliente')[0]);
+    const visit = screen.getByRole('dialog');
+    fireEvent.change(within(visit).getByLabelText('Dejás Bidón 20 litros'), { target: { value: '1' } });
+    fireEvent.change(within(visit).getByLabelText('Paga ahora ($)'), { target: { value: '1000' } });
+    expect(within(visit).getByText(/Se solicitará al jefe dejar debiendo:/)).toBeTruthy();
+    fireEvent.click(within(visit).getByText('Confirmar visita'));
+    let saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.clients[0].debt).toBe(480000);
+    expect(saved.requests[0]).toMatchObject({ kind: 'credit', amount: 250000, status: 'pending' });
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ficha de Elena Duarte' }));
+    expect(within(screen.getByRole('dialog')).getByText(/Deuda solicitada:/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar ventana' }));
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'), { target: { value: 'owner' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir notificaciones' }));
+    expect(within(screen.getByRole('dialog')).getByText(/pendiente de autorización del jefe/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar solicitudes de deuda' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, aprobar deuda' }));
+    saved = JSON.parse(localStorage.getItem(DEMO_KEY));
+    expect(saved.clients[0].debt).toBe(730000);
+    expect(saved.sales).toHaveLength(1); expect(saved.sales[0].paid).toBe(100000);
+    expect(saved.trips[0].stock.b20).toBe(39);
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ficha de Elena Duarte' }));
+    expect(within(screen.getByRole('dialog')).getByText(/Debe.*7\.300/)).toBeTruthy();
+    expect(within(screen.getByRole('dialog')).queryByText(/Deuda solicitada:/)).toBeNull();
+    cleanup(); render(<DemoProgram onExit={() => {}}/>);
+    expect(within(screen.getByRole('dialog')).getByText(/Debe.*7\.300/)).toBeTruthy();
+  });
+  it('rechazar crédito conserva el faltante visible sin sumarlo a la deuda', () => {
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    fireEvent.click(screen.getAllByText('Atender cliente')[0]);
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText('Dejás Bidón 20 litros'), { target: { value: '1' } });
+    fireEvent.click(within(screen.getByRole('dialog')).getByText('Confirmar visita'));
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'), { target: { value: 'owner' } });
+    fireEvent.click(screen.getByRole('button', { name: /Aprobaciones/ }));
+    const request = screen.getByText('Deuda solicitada · Elena Duarte').closest('article');
+    fireEvent.click(within(request).getByText('Rechazar'));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ficha de Elena Duarte' }));
+    expect(within(screen.getByRole('dialog')).getByText(/Pendiente de cobro:/)).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).clients[0].debt).toBe(480000);
+  });
   it('confirma una carga al iniciar y muestra stock e importe de entregas sin permitir recargar', async () => {
     const initial = seedProgram();
     initial.trips[0].stage = 'planned'; initial.trips[0].load = {}; initial.trips[0].stock = {};

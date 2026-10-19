@@ -152,3 +152,7 @@ Al iniciar un reparto planificado, el asistente confirma cantidades una sola vez
 ### Prioridad de implementación confirmada — 19/10/2026
 
 Comenzar por la base real de stock. Primera migración aplicada: catálogo ampliado, libro de movimientos por empresa, asignaciones básicas, carga única, entregas/envases y regreso aprobado. Ver `STOCK.md`. La integración visual, ventas/cobros, alquileres serializados, ajustes y rendiciones con diferencias siguen pendientes; las pantallas actuales conservan los datos demo.
+
+### Cuenta del cliente y autorización de deuda — 19/10/2026
+
+La ficha no repite clientes de la misma cuadra: esa selección queda en el mapa. Mostrar deuda aprobada o Al día, y aparte créditos solicitados/rechazados sin presentarlos como saldo cero resuelto. Un asistente que entrega con pago insuficiente de lo vendido hoy genera solicitud y aviso al jefe; solo la aprobación suma ese faltante a la deuda. La entrega física y el cobro se registran al atender. Deuda anterior ya aprobada no requiere nueva solicitud. Regla provisional explicitada en pantalla: aplicar pago primero a hoy y excedente a deuda anterior. Como jefe, confirmar una entrega a crédito autoriza y registra directamente. Rechazar no borra venta ni faltante; el circuito posterior de cobro del rechazo sigue pendiente. Implementado en demo, sin ampliar la base real de stock a cuentas corrientes.

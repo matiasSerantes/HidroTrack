@@ -97,7 +97,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 51 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 58 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
 
@@ -110,3 +110,11 @@ La Lucía inicial ya tiene un reparto activo con carga confirmada. Para probar e
 ### Base real de stock
 
 Desde el 19/10/2026 hay una base de stock aplicada en Supabase. Sus funciones y saldos están documentados en [STOCK.md](STOCK.md). Esta demostración sigue usando datos locales: no carga ni consulta inventario real. La próxima parte es conectar catálogo/ingreso del depósito.
+
+### Deuda autorizada por el jefe
+
+La ficha muestra **Estado de cuenta**: deuda aprobada o **Al día · no debe nada**, más solicitudes pendientes o créditos rechazados por separado. La lista de la cuadra se mantiene en el mapa y fue retirada de la ficha.
+
+Para probar: como Lucía, atender Elena, entregar 1 bidón de 20 L y poner que paga $1.000. La entrega cuesta $3.500: se solicita autorización por $2.500 y se conservan $4.800 de deuda anterior aprobada. Confirmar visita descuenta stock y registra el cobro sin sumar aún esos $2.500 al saldo. Cambiar al jefe, abrir notificaciones → **Revisar solicitudes de deuda** → **Sí, aprobar deuda**. Elena pasa a deber $7.300, sin duplicar entregas ni cobros. La aprobación y el saldo persisten al reabrir.
+
+El pago se aplica primero a lo vendido hoy y el excedente a deuda anterior; esta elección provisional se explica en pantalla. Pagar lo de hoy dejando deuda anterior no vuelve a solicitar autorización. El jefe autoriza directamente si él mismo confirma una visita a crédito. Rechazar conserva el faltante visible como **Pendiente de cobro**, sin incorporarlo a la deuda aprobada ni borrar movimientos. Registrar su cobro posterior queda pendiente de una siguiente parte. Las operaciones antiguas de la demo conservan su saldo previo; no se reabren ni solicitan retroactivamente. Todo este flujo es local de demo: todavía no hay cuentas corrientes, aprobación de deuda ni notificaciones push conectadas a Supabase.
