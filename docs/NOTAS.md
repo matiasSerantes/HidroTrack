@@ -30,6 +30,10 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Mapa visible y ubicación simulada — pedido del 2026-10-19
+
+El usuario no encuentra cómo abrir el mapa desde la web. Implementado: botón «Abrir mapa y ubicación demo», mapa de calles dentro de la web (Leaflet/OpenStreetMap), tres direcciones cercanas sobre Av. de Mayo en Monserrat, CABA, marcadores numerados y punto azul de ubicación actual ficticia. Incluye centrar, ver todo el recorrido, simular avance y abrir ficha. No solicita GPS real ni modifica Supabase. Los puntos son aproximados, no direcciones geocodificadas; la línea une el orden de paradas, sin calcular navegación vial. La migración de los ejemplos guardados conserva las operaciones.
+
 ### Ajuste de color solicitado el 2026-10-19
 
 El usuario considera la demo demasiado clara y con poco color. Pedido confirmado: reforzar la paleta y el contraste, conservando la prioridad móvil y la buena presentación en PC. Aplicado en la demo: navegación y bienvenida en petróleo, acciones turquesa y colores diferenciados para estados, métricas y alquileres; textos secundarios más oscuros. Es un ajuste visual; no cambia operaciones ni permisos.
@@ -63,6 +67,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: agregado mapa de calles bajo carga diferida, ubicación demo y tres clientes cercanos; actualización de copias locales sin reset. Validación: 29 pruebas aprobadas, incluida apertura del mapa/avance/ficha y conservación de ventas en la migración; build de producción correcto. No se verificó la descarga de cartografía ni la apariencia en un navegador real conectado.
 
 - 2026-10-19: reforzada la paleta de la demo en `DemoPalette.css`, conservando distribución y controles de PC/celular. Cambio visual verificado mediante compilación de producción y revisión de diferencias; no se agregaron pruebas que repliquen estilos. Revisión visual en navegador pendiente.
 

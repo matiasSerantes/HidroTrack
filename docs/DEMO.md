@@ -12,6 +12,14 @@ La empresa de ejemplo es **Agua Clara**. El día operativo es el **19/10/2026**;
 
 ## Qué se puede probar
 
+### Abrir el mapa desde la web
+
+Entrar a la demo como Lucía o Santiago → **Repartos y mapa** → **Abrir mapa y ubicación demo**. También hay un botón sobre cada vista ilustrativa del recorrido y «Ver en el mapa» en las fichas con coordenadas.
+
+El reparto de Lucía muestra a Elena Duarte en **Av. de Mayo 1200**, Café La Esquina en **Av. de Mayo 1250** y Martín Acosta en **Av. de Mayo 1280**, Monserrat, CABA. Son clientes ficticios con puntos aproximados cercanos. El botón **Mi ubicación (demo)** centra el punto azul y **Simular avance** lo mueve entre las paradas sin marcar visitas ni registrar ventas. Seleccionar una parada permite abrir su ficha.
+
+El mapa de calles necesita internet. La biblioteca y la cartografía se cargan al abrir el mapa, no al iniciar toda la demo. Si falla el fondo se muestra un aviso y siguen disponibles los marcadores y la lista. La atribución de OpenStreetMap permanece visible. La ubicación es siempre simulada: no se solicita GPS. Las demos anteriores reciben estas tres direcciones sin borrar sus ventas.
+
 Paleta actualizada: petróleo para navegación/bienvenida, turquesa para acciones principales, azul para cobros, violeta para alquileres y ámbar para pendientes. Los estados conservan sus textos y los textos secundarios tienen más presencia.
 
 La demo mantiene barra lateral y disposición amplia para PC, y navegación inferior y controles táctiles para celular. Ambos formatos forman parte del producto; el celular tiene prioridad. La revisión visual en ambos dispositivos sigue pendiente.
@@ -46,7 +54,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 - Datos guardados bajo `hidrotrack.complete-demo.v1` en este navegador. «Reiniciar» pide confirmación y recupera los ejemplos. Si no hay espacio para guardar, se avisa que los cambios quedan en memoria.
 - No se importó Supabase en los módulos de la demo, no se crean cuentas reales y ninguna operación modifica la base. El acceso conectado anterior se conserva fuera de la demo.
-- Autenticador visual, perfiles intercambiables, avisos internos y seguimiento local **simulados**. El plano es ilustrativo: sin mapas de calles reales, cálculo de ruta, GPS, push, WhatsApp ni envío de mensajes. No se solicita ubicación.
+- Autenticador visual, perfiles intercambiables, avisos internos y seguimiento local **simulados**. El plano de resumen es ilustrativo y su botón abre un mapa de calles reales con posiciones ficticias. No hay cálculo de ruta vial, GPS, push, WhatsApp ni envío de mensajes. No se solicita ubicación.
 - «Atendiendo» se actualiza al abrir la atención y «Último punto» al confirmar. Ambos muestran hora y etiqueta de simulación; no equivalen a un GPS real.
 - El jefe ve la cartera completa; el asistente ve clientes activos de sus repartos y sus operaciones. Es una demostración de interfaz, no una frontera de seguridad: todos los datos ficticios están en el navegador.
 - El alquiler del ejemplo es mensual: entregar un equipo registra su unidad y primera cuota. Un equipo existente permite registrar su cuota una sola vez en el período demo. No hay calendario de contratos ni facturación recurrente real.
@@ -57,6 +65,6 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 27 pruebas aprobadas, incluidas las existentes, operaciones de la demo y navegación de ambos roles en jsdom. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; el diseño incluye reglas adaptativas, pero esa comprobación visual queda pendiente.
+`npm test`: 29 pruebas aprobadas, incluidas las existentes, operaciones de la demo, navegación de ambos roles y apertura/avance del mapa en jsdom. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; la carga real de la cartografía y esa comprobación visual quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.

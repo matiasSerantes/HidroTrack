@@ -54,6 +54,7 @@ Aceptación: un asistente no puede aprobar su propia solicitud ni enviarla a un 
 - El jefe crea repartos diarios con la cantidad y selección de clientes que necesite.
 - Asigna los repartos a sus asistentes para que vean el camino y realicen el recorrido. El jefe también puede atender clientes.
 - El mapa muestra el recorrido armado.
+- Demo del 19/10/2026: acceso explícito al mapa de calles desde la web, tres direcciones cercanas y ubicación actual simulada para revisar la experiencia. Permitir centrar, seleccionar clientes y simular avance; no confundir la línea entre paradas con navegación vial ni pedir GPS real para esta prueba.
 - El jefe puede agregar o sacar clientes de un reparto activo. Conservar las operaciones ya registradas aunque se quite una parada futura.
 - Cada visita realizada por el jefe o sus asistentes actualiza el avance y acumula ventas/alquileres del reparto y del negocio. Definir los totales y filtros precisos en la implementación.
 - Si el cliente no está, ofrecer volver más tarde o dejarlo para otro día. Mantenerlo en pendientes, sin marcar una entrega inexistente.

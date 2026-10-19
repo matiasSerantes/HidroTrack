@@ -5,7 +5,7 @@ export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number };
-export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string };
+export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean };
 export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'no-sale' };
 export type Trip = { id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
@@ -14,9 +14,23 @@ export type Sale = { id: string; clientId: string; tripId: string; actorId: stri
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
 export type DemoProgramState = { version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
+export const DEMO_ORIGIN = { lat: -34.60905, lng: -58.3832 };
+export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng: number }> = {
+  c1: { address: 'Av. de Mayo 1200', lat: -34.60935, lng: -58.38365 },
+  c2: { address: 'Av. de Mayo 1250', lat: -34.60950, lng: -58.38420 },
+  c3: { address: 'Av. de Mayo 1280', lat: -34.60957, lng: -58.38465 },
+};
+/** Actualiza solo los tres ejemplos originales; conserva operaciones y altas locales. */
+export function withDemoAddresses(state: DemoProgramState): DemoProgramState {
+  return { ...state, trips: state.trips.map(t => t.id === 't1' && t.name === 'Ballester · mañana' ? { ...t, name: 'Monserrat · tres paradas' } : t), clients: state.clients.map(c => {
+    const location = DEMO_ADDRESSES[c.id];
+    if (!location || c.geo) return c;
+    return { ...c, address: location.address, locality: 'Monserrat, CABA', block: 'avdemayo-1200', geo: { lat: location.lat, lng: location.lng } };
+  }) };
+}
 const stop = (clientId: string): Stop => ({ clientId, status: 'pending' });
 export function seedProgram(): DemoProgramState {
-  return {
+  return withDemoAddresses({
     version: 1, company: { name: 'Agua Clara', initials: 'AC', locality: 'Villa Ballester' },
     products: [
       { id: 'b20', name: 'Bidón 20 litros', unit: 'unidad', price: 350000, kind: 'sale', returnable: true, depot: 240, active: true },
@@ -43,12 +57,12 @@ export function seedProgram(): DemoProgramState {
     ], sales: [], depotEmpties: { b20: 32, b12: 18, soda: 45, cajon: 6 },
     requests: [{ id: 'req1', kind: 'customer', title: 'Alta de cliente · Florencia Demo', authorId: 'nico', status: 'pending', client: { id: 'c8', name: 'Florencia Demo', address: 'Mitre 280', locality: 'San Andrés', block: 'mitre-200', x: 67, y: 61, active: true, debt: 0, held: {}, rentals: [], usual: '2 bidones de 20 L', note: 'Solicitud de ejemplo creada por un asistente.' } }],
     notices: [{ id: 'n1', text: 'Nicolás solicitó el alta de un cliente. Revisá las aprobaciones.', read: false }],
-  };
+  });
 }
 export function readProgram(): DemoProgramState {
   try {
     const parsed = JSON.parse(localStorage.getItem(DEMO_KEY) || 'null');
-    if (parsed?.version === 1 && ['clients', 'products', 'members', 'trips', 'sales', 'requests', 'notices'].every(k => Array.isArray(parsed[k])) && parsed.company && parsed.depotEmpties) return parsed;
+    if (parsed?.version === 1 && ['clients', 'products', 'members', 'trips', 'sales', 'requests', 'notices'].every(k => Array.isArray(parsed[k])) && parsed.company && parsed.depotEmpties) return withDemoAddresses(parsed);
   } catch { /* Una copia local inválida vuelve a los ejemplos. */ }
   return seedProgram();
 }

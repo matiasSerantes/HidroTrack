@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { approveClose, closeTrip, decideRequest, loadTrip, recordVisit, seedProgram, type DemoProgramState } from './programDemo';
+import { approveClose, closeTrip, decideRequest, loadTrip, recordVisit, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
 
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('actualiza tres direcciones cercanas sin borrar visitas ni clientes nuevos', () => {
+    const s = recordVisit(seedProgram(), input);
+    s.clients.slice(0, 3).forEach(c => { delete c.geo; c.address = 'Dirección anterior'; });
+    const migrated = withDemoAddresses(s);
+    expect(migrated.clients.slice(0, 3).map(c => c.address)).toEqual(['Av. de Mayo 1200', 'Av. de Mayo 1250', 'Av. de Mayo 1280']);
+    expect(migrated.clients.slice(0, 3).every(c => c.geo && c.locality === 'Monserrat, CABA')).toBe(true);
+    expect(migrated.sales).toEqual(s.sales);
+    expect(migrated.clients[0].debt).toBe(s.clients[0].debt);
+    expect(migrated.clients[3]).toEqual(s.clients[3]);
+    expect(withDemoAddresses(migrated)).toEqual(migrated);
+  });
   it('una visita parcial actualiza stock, envases, deuda y notificaciones sin mutar el original', () => {
     const before = seedProgram(), after = recordVisit(before, input);
     expect(before.sales).toHaveLength(0);

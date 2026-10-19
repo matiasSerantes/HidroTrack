@@ -54,4 +54,18 @@ describe('recorridos navegables de la demo', () => {
       expect(screen.getByRole('heading', { level: 1, name })).toBeTruthy();
     }
   });
+  it('abre el mapa dentro de la web y permite mover la ubicación ficticia', async () => {
+    enter(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Repartos y mapa' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir mapa y ubicación demo' }));
+    const dialog = screen.getByRole('dialog');
+    await within(dialog).findByText('Tu ubicación actual · DEMO');
+    expect(within(dialog).getByRole('region', { name: 'Mapa de calles con clientes y ubicación simulada' })).toBeTruthy();
+    expect(within(dialog).getByText('Punto de partida · Monserrat, CABA', { exact: false })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Simular avance' }));
+    expect(within(dialog).getByText('Llegaste a Av. de Mayo 1200', { exact: false })).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY) || '{}').sales || []).toHaveLength(0);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abrir ficha' }));
+    expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Elena Duarte' })).toBeTruthy();
+  });
 });
