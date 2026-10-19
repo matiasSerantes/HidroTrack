@@ -46,7 +46,7 @@ En esta computadora también se puede ejecutar `powershell -ExecutionPolicy Bypa
 
 ## Supabase
 
-Copiar `.env.example` a `.env` y completar la URL y clave pública de un proyecto propio. Nunca usar `service_role` en Vite. Las migraciones de `supabase/migrations` coinciden con el historial remoto: foundation, admin_portal, inventory y owned_inventory. En un proyecto nuevo se aplican en orden; no volver a ejecutar foundation sobre HidroTrack. La base de stock se aplicó mediante MCP el 19/10/2026. Ver [modelo y funciones de stock](docs/STOCK.md). El acceso real del jefe incluye Stock y surtidores; requiere membresía owner y licencia. La demostración mantiene datos locales.
+Copiar `.env.example` a `.env` y completar la URL y clave pública de un proyecto propio. Nunca usar `service_role` en Vite. Las migraciones de `supabase/migrations` coinciden con el historial remoto: foundation, admin_portal, inventory, owned_inventory y user_profiles. En un proyecto nuevo se aplican en orden; no volver a ejecutar foundation sobre HidroTrack. La base de stock se aplicó mediante MCP el 19/10/2026. Ver [modelo y funciones de stock](docs/STOCK.md). El acceso real del jefe incluye Stock y surtidores; requiere membresía owner y licencia. La demostración mantiene datos locales.
 
 Crear usuarios con Supabase Auth. El alta inicial de tenant, membresía owner, licencia y superadministrador se realiza desde un servidor o consola confiable, en una transacción. No hay autoasignación de roles. Elegir explícitamente el límite de choferes; no tiene valor por defecto. Los administradores pueden leer metadatos de titulares y administrar licencias, pero no acceden automáticamente a información comercial. Una licencia suspendida o vencida bloquea acceso comercial sin gracia implícita. La política definitiva de gracia sigue pendiente.
 
@@ -54,7 +54,7 @@ Crear usuarios con Supabase Auth. El alta inicial de tenant, membresía owner, l
 
 Validar el panel conectado contra el proyecto Supabase, completar administración segura de altas y límites de choferes, sumar productos, rutas/asignaciones y MapLibre. La base transaccional de stock ya está aplicada. Catálogo, ingreso, recarga, carga y regreso ya tienen pantalla real del jefe. Provisionar una cuenta y validar el flujo con Auth/PostgREST; después conectar ventas del chofer. Completar ventas/pagos, diferencias de rendición e IndexedDB. Ninguna operación comercial de producción debe basarse en la lógica de la demo.
 
-`npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. Las cuatro migraciones pasan la validación local; la base de stock y sus permisos también se inspeccionaron en el proyecto remoto. No hay cuentas de producción configuradas desde este repositorio.
+`npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. Las cinco migraciones pasan la validación local; la base de stock y sus permisos también se inspeccionaron en el proyecto remoto. No hay cuentas de producción configuradas desde este repositorio.
 
 La prueba `supabase/tests/isolation.sql` prepara fixtures y los revierte. Para ejecutarla manualmente usar únicamente Supabase local descartable: `psql "$DATABASE_URL" -f supabase/tests/isolation.sql`. Verifica lectura/escritura entre titulares, autoasignación de membresías, chofer sin asignaciones, privacidad comercial frente al superadmin, suspensión, expiración, relaciones compuestas, acceso anónimo y auditoría de licencias. Los flujos administrativos futuros necesitarán sus propias pruebas.
 
@@ -65,3 +65,5 @@ Los [requisitos funcionales](docs/REQUISITOS.md) reúnen los pedidos de artícul
 Consultar [notas de trabajo](docs/NOTAS.md) y [revisión remota de Supabase del 19/10/2026](docs/REVISION_SUPABASE_2026-10-19.md). La inspección remota ya se realizó; las referencias anteriores a validación pendiente siguen aplicando a las pruebas completas de Auth/PostgREST y de la aplicación. Los acuerdos de continuidad están en AGENTS.md.
 
 Para preparar la carga de Darío, ver [datos y plantillas de inventario inicial](docs/DATOS_INICIALES.md). No incluir datos reales de clientes, correos ni inventarios privados en commits.
+
+La base de [perfiles de usuarios](docs/USUARIOS.md) está aplicada. El alta del primer jefe sigue pendiente de autorización del mecanismo administrativo; todavía no hay una cuenta de jefe nueva con acceso real.

@@ -20,9 +20,9 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
         insert: value => { call.operation = 'insert'; call.value = value; return chain; },
         update: value => { call.operation = 'update'; call.value = value; return chain; },
         single: () => chain,
-        maybeSingle: () => chain,
+        maybeSingle: () => {call.single=true;return chain;},
         then: (resolve, reject) => {
-          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : table==='customers' ? [...records] : [];
+          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : table==='customers' ? [...records] : [];
           return Promise.resolve({ data, error: null }).then(resolve, reject);
         },
       };
@@ -36,6 +36,7 @@ describe('panel conectado del titular', () => {
     const {client,calls}=clientFixture();
     render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');
+    expect(screen.getByText('Jefe de prueba · Jefe de reparto')).toBeTruthy();
     expect(calls.some(c=>c.table==='inventory_owned_stock')).toBe(false);
     fireEvent.click(screen.getByRole('button',{name:'Stock y surtidores'}));
     await screen.findByText('Dónde están los artículos');

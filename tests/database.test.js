@@ -11,12 +11,12 @@ beforeAll(async () => {
     create role authenticated nologin;
     create role service_role nologin;
     create schema auth;
-    create table auth.users(id uuid primary key, email text);
+    create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}');
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -24,7 +24,7 @@ afterAll(async () => { await db.close(); });
 describe('migración y seguridad PostgreSQL', () => {
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
-    expect(rows).toHaveLength(15);
+    expect(rows).toHaveLength(16);
     expect(rows.every(row => row.relrowsecurity)).toBe(true);
   });
   it('ejecuta escenarios de aislamiento, roles, licencias y auditoría con rollback', async () => {
@@ -71,6 +71,20 @@ describe('stock transaccional PostgreSQL', () => {
     await as(owner);
   });
   afterEach(async () => { await db.exec('rollback; reset role'); });
+
+  it('crea perfiles sin credenciales ni autoasignación de roles y aísla otros repartos', async()=>{
+    expect((await db.query('select * from public.user_profiles')).rows).toHaveLength(2);
+    await db.query('update public.user_profiles set full_name=$1 where user_id=$2',['Jefe de prueba',owner]);
+    await as(driver);
+    expect((await db.query('select user_id from public.user_profiles')).rows.map(p=>p.user_id)).toEqual([driver]);
+    await rejected(()=>db.query('update public.user_profiles set user_id=$1 where user_id=$2',[stranger,driver]),/permission denied/);
+    await rejected(()=>db.exec(`insert into public.user_profiles(user_id,full_name) values('${stranger}','Intruso')`),/permission denied/);
+    await as(stranger); expect((await db.query('select * from public.user_profiles')).rows).toHaveLength(1);
+    await db.exec('reset role');
+    await db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2)",['20000000-0000-0000-0000-000000000004',{full_name:'Nuevo asistente',role:'owner'}]);
+    expect((await db.query("select full_name from public.user_profiles where user_id='20000000-0000-0000-0000-000000000004'")).rows[0].full_name).toBe('Nuevo asistente');
+    expect((await db.query("select * from public.tenant_members where user_id='20000000-0000-0000-0000-000000000004'")).rows).toHaveLength(0);
+  });
 
   it('ingresa, carga una vez y descuenta entregas con envases e importe histórico', async () => {
     await post('receive', items(40)); await createTrip(); await as(driver);

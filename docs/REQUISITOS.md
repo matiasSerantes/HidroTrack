@@ -164,3 +164,7 @@ Mantener paleta celeste clara en tarjetas, cuenta y stock; deuda en naranja suav
 ### Patrimonio físico confirmado — 19/10/2026
 
 El jefe compra un parque propio de envases. Entregar, recuperar vacíos y rellenar solo cambia ubicación/condición; no aumenta el total. Compra y apertura inicial sí agregan unidades conocidas. Mostrar depósito lleno/vacío, camión lleno/vacío, envases en clientes y total por artículo. No afirmar si el cliente ya consumió el agua. Surtidores propios en préstamo gratuito o alquiler, separados de surtidores del cliente (no suman al patrimonio). Primera pantalla conectada del jefe implementada junto con base, carga única y regreso exacto; todavía falta validar con cuenta real e integrar ventas/cobros del chofer. Darío aportará datos luego; no crear su cuenta ni inventario con datos inventados.
+
+### Usuarios reales — 19/10/2026
+
+Reutilizar Supabase Auth para credenciales y perfiles públicos protegidos para nombres. Roles solo desde membresías administrativas, nunca metadatos editables. Primer jefe solicitado: alta aún pendiente por revisión automática del mecanismo, sin guardar datos personales ni contraseña en Git. Perfiles y presentación de nombre implementados. Ver USUARIOS.md.

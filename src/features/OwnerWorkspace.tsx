@@ -7,7 +7,7 @@ import { OwnerStock } from './OwnerStock';
 type Membership = { tenant_id: string; role: string };
 type Customer = { id: string; name: string; address: string; phone: string };
 type License = { kind: string; status: string; expires_at: string | null };
-type Workspace = { tenantName: string; license: License; customers: Customer[] };
+type Workspace = { ownerName: string; tenantName: string; license: License; customers: Customer[] };
 
 export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; userId: string }) {
   const [memberships, setMemberships] = useState<Membership[] | null>(null);
@@ -48,12 +48,13 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
         if (!license) throw new Error('Tu reparto todavía no tiene una licencia configurada. Contactá al administrador.');
         if (license.status !== 'active') throw new Error('La licencia de tu reparto está suspendida. Contactá al administrador.');
         if (license.kind === 'monthly' && (!license.expires_at || Date.parse(license.expires_at) <= Date.now())) throw new Error('La licencia de tu reparto venció. Contactá al administrador.');
-        const [tenantResult, customersResult] = await Promise.all([
+        const [tenantResult, customersResult, profileResult] = await Promise.all([
           client.from('tenants').select('name').eq('id', tenantId).single(),
           client.from('customers').select('id, name, address, phone').eq('tenant_id', tenantId).eq('active', true).order('name'),
+          client.from('user_profiles').select('full_name').eq('user_id',userId).maybeSingle(),
         ]);
-        if (tenantResult.error || customersResult.error) throw new Error('No pudimos consultar los datos del reparto. Revisá la conexión y tu acceso.');
-        if (active) setWorkspace({ tenantName: tenantResult.data.name, license, customers: customersResult.data ?? [] });
+        if (tenantResult.error || customersResult.error || profileResult.error) throw new Error('No pudimos consultar los datos del reparto. Revisá la conexión y tu acceso.');
+        if (active) setWorkspace({ ownerName: profileResult.data?.full_name || 'Repartidor jefe', tenantName: tenantResult.data.name, license, customers: customersResult.data ?? [] });
       } catch (err) { if (active) setError(err instanceof Error ? err.message : 'No pudimos cargar tu reparto. Intentá nuevamente.'); }
     })();
     return () => { active = false; };
@@ -92,7 +93,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     } catch { setNotice('No pudimos cerrar la sesión. Intentá nuevamente.'); setBusy(false); }
   }
   const owners = memberships?.filter(item => item.role === 'owner') ?? [];
-  return <main className="connected-workspace"><header><div><span className="eyebrow">HIDROTRACK · MI REPARTO</span><h1><Droplets size={26}/> {workspace?.tenantName ?? 'Tu cuenta'}</h1></div><button disabled={busy||stockLocked} onClick={signOut}><LogOut size={16}/> Cerrar sesión</button></header>
+  return <main className="connected-workspace"><header><div><span className="eyebrow">HIDROTRACK · MI REPARTO</span><h1><Droplets size={26}/> {workspace?.tenantName ?? 'Tu cuenta'}</h1>{workspace&&<p>{workspace.ownerName} · Jefe de reparto</p>}</div><button disabled={busy||stockLocked} onClick={signOut}><LogOut size={16}/> Cerrar sesión</button></header>
     {owners.length > 1 && <label>Reparto<select disabled={busy||stockLocked} value={tenantId} onChange={e => { setError(''); setTenantId(e.target.value); }}>{owners.map(item => <option key={item.tenant_id} value={item.tenant_id}>{item.tenant_id}</option>)}</select></label>}
     {error ? <section className="notice" role="alert"><p>{error}</p><button onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16}/> Reintentar</button></section> : memberships === null ? <p role="status">Consultando tu acceso…</p> : !owners.length ? <section className="notice">{memberships.some(item => item.role === 'driver') ? 'Tu cuenta es de chofer. El acceso a recorridos asignados se habilitará en la siguiente etapa.' : 'Tu cuenta todavía no está asignada a un reparto como titular. Contactá al administrador para completar el alta.'}</section> : !workspace ? <p role="status">Cargando tu reparto…</p> : <>
     <div className="demo-notice"><span>Cuenta de titular · {workspace.license.kind === 'permanent' ? 'Licencia permanente' : `Licencia vigente hasta ${new Date(workspace.license.expires_at!).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`}</span><button disabled={busy||stockLocked} onClick={() => setRefresh(value => value + 1)}>Actualizar datos</button></div>
