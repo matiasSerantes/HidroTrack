@@ -2,6 +2,14 @@
 
 Repositorio: https://github.com/matiasSerantes/HidroTrack.git
 
+## Demo completa para revisar el programa
+
+Con `npm run dev`, abrir `http://127.0.0.1:5173/?demo=1`, elegir jefe o asistente y usar el código ficticio **123456**. También se puede entrar desde «Explorar demostración». Ver [guía y recorrido de prueba](docs/DEMO.md).
+
+La nueva demo integra artículos/venta/alquiler, clientes y cuadra, recorridos asignables, atención y cobros, envases/stock, solicitudes/bajas, rendiciones, equipo, reportes y nombre/logo de empresa. Todos los datos se guardan en este navegador; el autenticador, mapa y seguimiento son simulaciones. No modifica Supabase. El acceso conectado anterior se conserva fuera de la demo.
+
+Esta sección describe la demo integral agregada el 19/10/2026. Las secciones de alcance e integración siguientes describen la base previa y el trabajo de producción todavía pendiente.
+
 ## Plan de acción
 
 Abrir `public/plan.html` directamente en el navegador o visitar `/plan.html` al ejecutar Vite. Incluye estado verificado, próximas entregas, seis etapas, criterios de aceptación, dependencias y decisiones pendientes. Los estados son un registro manual del desarrollo, no una consulta en vivo a Supabase.

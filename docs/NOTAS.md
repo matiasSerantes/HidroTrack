@@ -22,6 +22,14 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Demo completa solicitada el 2026-10-19
+
+El usuario pidió una demostración integral con datos ficticios para revisar el programa por partes y después implementar cada módulo. Se construyó una nueva demo con jefe/asistente, autenticador simulado, recorridos y plano, clientes/cuadra, atención multiartículo, ventas y alquileres, stock/vacíos, equipo, aprobaciones/bajas, rendiciones, reportes y marca de empresa. Guía y límites en [DEMO.md](DEMO.md).
+
+Las operaciones están conectadas dentro del estado local: visita → stock/envases/cuenta/avance/aviso; solicitud → aprobación/publicación; rendición → revisión/depósito/otro reparto. No se modificó Supabase. Las reglas provisorias de alquiler, bajas y cierres están señaladas en la demo y no se consideran decisiones definitivas.
+
+Próximo paso: el usuario recorre la demo y elegimos la primera parte para ajustar. Falta la revisión visual manual en navegador y la validación de producción de cada flujo.
+
 ### Referencia en video revisada el 2026-10-19
 
 Se analizaron visualmente fotogramas distribuidos por el video de una app similar (2:17 aproximadamente), con revisión adicional de atención, cobro y resumen mensual. Observaciones, tiempos y propuestas en [ideas de la referencia](REFERENCIA_VIDEO_2026-10-19.md). No se analizó el audio ni se incorporaron capturas, video, credenciales o datos personales al repositorio.
@@ -43,6 +51,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: implementada la demo integral y documentada la guía de prueba. Validación: 27 pruebas aprobadas y build de producción correcto; incluye pruebas de coherencia de operaciones, aprobación de solicitudes y navegación de módulos/roles. No se pudo verificar visualmente en navegador: no había ninguno conectado a las herramientas. Se conserva el acceso conectado anterior fuera de la demo.
 
 - 2026-10-19: documentado el análisis visual de la referencia en video con marcas de tiempo, propuestas para jefe/asistente y límites de lo observado. Validación documental y `git diff --check`; no se modificó la aplicación ni Supabase.
 
