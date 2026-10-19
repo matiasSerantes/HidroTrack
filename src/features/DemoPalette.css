@@ -42,7 +42,10 @@
 .hd .hd-company-logo small { color: #607989; }
 .hd .hd-demo-strip { background: #e0f3f3; border-color: #8dc9cc; color: #356976; }
 .hd .hd-demo-strip button { color: #087c82; font-weight: 700; }
-.hd .hd-btn { color: #355e72 !important; border-color: #b9d0db !important; }
+.hd .hd-btn { color: #214f68 !important; border-color: #85bcd9 !important; }
+.hd .hd-btn:not(.primary):not(.white) { background: #dff1fc !important; box-shadow: 0 1px 2px #21526c12; }
+.hd .hd-btn:not(.primary):not(.white):hover:not(:disabled) { background: #c9e7f8 !important; border-color: #529bbf !important; }
+.hd .hd-btn:focus-visible { outline: 3px solid #087f87; outline-offset: 3px; }
 .hd .hd-btn.primary { background: #087f87 !important; border-color: #087f87 !important; color: #fff !important; }
 .hd .hd-btn.primary:hover { background: #05646e !important; }
 .hd .hd-btn.selected { background: #d9eeef !important; }
