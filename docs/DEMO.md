@@ -97,7 +97,7 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 76 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
+`npm test`: 83 pruebas aprobadas, incluidas operaciones, mapas, recuperación, envases, reprogramación, réplica al jefe y panel de cuadra con orden/agregar/quitar y restricciones del asistente. `npm run build`: compilación de producción aprobada. La carga real de la cartografía y la revisión visual en navegador/dispositivos reales quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
 
@@ -134,3 +134,5 @@ La cuenta real comparte ahora la estructura visual y paleta de la demo, con Mi j
 Catálogo real: tarjetas de artículos y precios. Stock: conteo de depósito, clientes y total en camiones; apertura de vacíos seleccionada inicialmente. Repartos: preparación y detalle del camión. El campo unidad del catálogo describe la venta (unidad, cajón), no carga cantidades. Para 600 bidones vacíos, registrar 600 en Cantidad del inventario inicial de vacíos.
 
 En Repartos, Carga de camión lista los artículos del catálogo: completá cantidades y pulsá Registrar carga. Todos se registran en una operación y la carga queda bloqueada por reparto. La demo muestra la misma lista con datos ficticios. En Stock, Cargar stock del depósito permite cargar varias cantidades y Registrar stock; rellenar vacíos sigue siendo un movimiento del depósito. Equipos individualizados permanecen en Dispenser.
+
+Clientes reales: Abrir ficha (o tocar el nombre), Editar y Eliminar. Eliminar confirma la baja de activos conservando el historial. Desde la ficha, Registrar bidones que ya tiene carga el conteo inicial anterior a HidroTrack; no usarlo para envases ya contados en depósito o entregas. Asignar dispenser permite seleccionar un equipo del depósito previamente registrado y elegir préstamo/alquiler. La ficha muestra envases y equipos actuales y movimientos del cliente. La demo también permite editar datos desde su ficha conservando envases, deuda y equipos.

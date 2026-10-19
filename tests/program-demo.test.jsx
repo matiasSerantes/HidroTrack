@@ -15,6 +15,22 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('editar desde la ficha conserva envases, deuda y equipos del cliente demo',()=>{
+    const initial=seedProgram();localStorage.setItem(DEMO_KEY,JSON.stringify(initial));enter();
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'Abrir ficha de Elena Duarte'}));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Editar cliente'}));
+    const dialog=screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Nombre del cliente').value).toBe('Elena Duarte');
+    fireEvent.change(within(dialog).getByLabelText('Nombre del cliente'),{target:{value:'Elena actualizada'}});
+    fireEvent.submit(within(dialog).getByLabelText('Nombre del cliente').closest('form'));
+    const saved=JSON.parse(localStorage.getItem(DEMO_KEY)),edited=saved.clients.find(c=>c.id==='c1');
+    expect(saved.clients.length).toBe(initial.clients.length);
+    expect(edited.name).toBe('Elena actualizada');
+    expect(edited.held).toEqual(initial.clients[0].held);
+    expect(edited.debt).toBe(initial.clients[0].debt);
+    expect(edited.rentals).toEqual(initial.clients[0].rentals);
+  });
   it('una baja aprobada muestra el día en el reparto y deja de ser una parada para atender', () => {
     const initial = seedProgram();
     initial.requests.push({ id: 'leave', kind: 'deactivation', clientId: 'c1', authorId: 'luz', status: 'pending', title: 'Baja · Elena', reason: 'Se mudó', returns: [] });

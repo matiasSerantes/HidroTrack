@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, FileText, Pencil, Trash2 } from 'lucide-react';
 import './OwnerWorkspace.css';
 import { OwnerStock } from './OwnerStock';
+import { OwnerCustomerSheet } from './OwnerCustomerSheet';
 import { OwnerOverview, OwnerShell, ownerViewTitle, type OwnerView } from './OwnerShell';
 
 type Membership = { tenant_id: string; role: string };
@@ -19,6 +20,8 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   const [refresh, setRefresh] = useState(0);
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editing,setEditing]=useState<Customer|null>(null);
+  const [selectedCustomer,setSelectedCustomer]=useState<Customer|null>(null);
   const [search, setSearch] = useState('');
   const [stockLocked,setStockLocked]=useState(false);
   const [view,setView] = useState<OwnerView>('overview');
@@ -39,7 +42,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   }, [client, userId, refresh]);
   useEffect(() => {
     let active = true;
-    setWorkspace(null); setShowForm(false); setNotice(''); setSearch('');
+    setWorkspace(null); setShowForm(false); setEditing(null);setSelectedCustomer(null); setNotice(''); setSearch('');
     if (!tenantId) return;
     void (async () => {
       try {
@@ -61,28 +64,29 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     return () => { active = false; };
   }, [client, tenantId, memberships]);
   async function createCustomer(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!workspace || busy) return;
+    event.preventDefault(); if (!workspace || busy || stockLocked) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     const name = String(data.get('name') ?? '').trim(), address = String(data.get('address') ?? '').trim(), phone = String(data.get('phone') ?? '').trim();
     if (!name || !address) { setNotice('Completá nombre y dirección.'); return; }
     setBusy(true); setNotice('');
     try {
-      const result = await client.from('customers').insert({ tenant_id: tenantId, name, address, phone }).select('id, name, address, phone').single();
+      const request=editing?client.from('customers').update({name,address,phone}).eq('tenant_id',tenantId).eq('id',editing.id):client.from('customers').insert({tenant_id:tenantId,name,address,phone});
+      const result=await request.select('id, name, address, phone').single();
       if (result.error) throw result.error;
-      setWorkspace(current => current ? { ...current, customers: [...current.customers, result.data].sort((a, b) => a.name.localeCompare(b.name, 'es')) } : null);
-      setShowForm(false); setNotice('Cliente guardado en tu reparto.');
+      setWorkspace(current => current ? { ...current, customers: [...current.customers.filter(c=>c.id!==result.data.id), result.data].sort((a, b) => a.name.localeCompare(b.name, 'es')) } : null);
+      setShowForm(false);setEditing(null);setSelectedCustomer(null); setNotice('Cliente guardado en tu reparto.');
     } catch { setNotice('No se pudo guardar el cliente. Revisá la conexión y tu licencia. Si perdiste la conexión, actualizá la lista antes de reintentar.'); }
     finally { setBusy(false); }
   }
   async function archive(customer: Customer) {
-    if (busy || !confirm(`¿Archivar a ${customer.name}? Sus datos se conservarán en el historial.`)) return;
+    if (busy || stockLocked || !confirm(`¿Eliminar a ${customer.name} de los clientes activos? Se conservarán su historial, envases y equipos registrados.`)) return;
     setBusy(true); setNotice('');
     try {
       const result = await client.from('customers').update({ active: false }).eq('tenant_id', tenantId).eq('id', customer.id).select('id').single();
       if (result.error) throw result.error;
       setWorkspace(current => current ? { ...current, customers: current.customers.filter(item => item.id !== customer.id) } : null);
-      setNotice('Cliente archivado.');
+      setSelectedCustomer(null);setEditing(null);setShowForm(false);setNotice('Cliente eliminado de activos. Su historial y asignaciones se conservan.');
     } catch { setNotice('No se pudo archivar el cliente. Revisá la conexión y tus permisos.'); }
     finally { setBusy(false); }
   }
@@ -95,15 +99,15 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   }
   const owners = memberships?.filter(item => item.role === 'owner') ?? [];
   const ready=Boolean(workspace&&!error&&owners.length);
-  function navigate(next:OwnerView) {if(busy||stockLocked||!ready)return;setShowForm(false);setView(next);}
+  function navigate(next:OwnerView) {if(busy||stockLocked||!ready)return;setShowForm(false);setEditing(null);setSelectedCustomer(null);setView(next);}
   return <OwnerShell view={view} go={navigate} company={workspace?.tenantName} owner={workspace?.ownerName} locked={busy||stockLocked} ready={ready} signOut={signOut}>
     <div className="hd-page-heading"><div><span className="hd-kicker">TU ESPACIO DE TRABAJO</span><h1>{ownerViewTitle(view)}</h1>{workspace&&<p>{workspace.ownerName} · Jefe de reparto</p>}</div></div>
     {owners.length > 1 && <label>Reparto<select disabled={busy||stockLocked} value={tenantId} onChange={e => { setError(''); setTenantId(e.target.value); }}>{owners.map(item => <option key={item.tenant_id} value={item.tenant_id}>{item.tenant_id}</option>)}</select></label>}
     {error ? <section className="notice" role="alert"><p>{error}</p><button onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16}/> Reintentar</button></section> : memberships === null ? <p role="status">Consultando tu acceso…</p> : !owners.length ? <section className="notice">{memberships.some(item => item.role === 'driver') ? 'Tu cuenta es de chofer. El acceso a recorridos asignados se habilitará en la siguiente etapa.' : 'Tu cuenta todavía no está asignada a un reparto como titular. Contactá al administrador para completar el alta.'}</section> : !workspace ? <p role="status">Cargando tu reparto…</p> : <>
     <div className="hd-demo-strip owner-license-strip"><span>Cuenta de titular · {workspace.license.kind === 'permanent' ? 'Licencia permanente' : `Licencia vigente hasta ${new Date(workspace.license.expires_at!).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`}</span><button disabled={busy||stockLocked} onClick={() => setRefresh(value => value + 1)}>Actualizar datos</button></div>
-    {view==='overview' ? <OwnerOverview company={workspace.tenantName} customers={workspace.customers} go={navigate} addCustomer={()=>{setView('customers');setShowForm(true);}}/> : view!=='customers' ? <OwnerStock section={view==='stock'?'inventory':view} key={tenantId} client={client} tenantId={tenantId} customers={workspace.customers} onLock={setStockLocked}/> : <section className="panel"><div className="section-heading"><div><h2>Clientes de tu reparto</h2><p className="muted">{workspace.customers.length} clientes activos</p></div><button className="primary" disabled={busy||stockLocked} onClick={() => setShowForm(value => !value)}><Plus size={16}/> Nuevo cliente</button></div>
-    {showForm && <form className="customer-form" onSubmit={createCustomer}><label>Nombre completo<input name="name" required maxLength={100} autoFocus disabled={busy||stockLocked}/></label><label>Dirección<input name="address" required maxLength={200} disabled={busy||stockLocked}/></label><label>Teléfono<input name="phone" type="tel" maxLength={40} disabled={busy||stockLocked}/></label><button className="primary" disabled={busy||stockLocked}>{busy ? 'Guardando…' : 'Guardar cliente'}</button><button type="button" disabled={busy||stockLocked} onClick={() => setShowForm(false)}>Cancelar</button></form>}
-    <label>Buscar clientes<input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre o dirección"/></label><div className="table-wrap"><table><thead><tr><th>Cliente</th><th>Dirección</th><th>Teléfono</th><th/></tr></thead><tbody>{workspace.customers.filter(c => `${c.name} ${c.address}`.toLowerCase().includes(search.toLowerCase())).map(c => <tr key={c.id}><td>{c.name}</td><td>{c.address}</td><td>{c.phone || '—'}</td><td><button disabled={busy||stockLocked} onClick={() => archive(c)}>Archivar</button></td></tr>)}</tbody></table></div>{!workspace.customers.length && <p className="empty">Tu reparto todavía no tiene clientes. Agregá el primero para comenzar.</p>}</section>}</>}
+    {view==='overview' ? <OwnerOverview company={workspace.tenantName} customers={workspace.customers} go={navigate} addCustomer={()=>{setView('customers');setShowForm(true);}}/> : view!=='customers' ? <OwnerStock section={view==='stock'?'inventory':view} key={tenantId} client={client} tenantId={tenantId} customers={workspace.customers} onLock={setStockLocked}/> : selectedCustomer&&!showForm?<OwnerCustomerSheet key={`${tenantId}.${selectedCustomer.id}`} client={client} tenantId={tenantId} customer={selectedCustomer} onLock={setStockLocked} onClose={()=>setSelectedCustomer(null)} onEdit={()=>{setEditing(selectedCustomer);setShowForm(true);}}/> : <section className="panel"><div className="section-heading"><div><h2>Clientes de tu reparto</h2><p className="muted">{workspace.customers.length} clientes activos</p></div><button className="primary" disabled={busy||stockLocked} onClick={() => {setEditing(null);setSelectedCustomer(null);setShowForm(value=>!value);}}><Plus size={16}/> Nuevo cliente</button></div>
+    {showForm && <form key={editing?.id||'new'} className="customer-form" onSubmit={createCustomer}><h3>{editing?'Editar cliente':'Nuevo cliente'}</h3><label>Nombre completo<input name="name" defaultValue={editing?.name||''} required maxLength={100} autoFocus disabled={busy||stockLocked}/></label><label>Dirección<input name="address" defaultValue={editing?.address||''} required maxLength={200} disabled={busy||stockLocked}/></label><label>Teléfono<input name="phone" defaultValue={editing?.phone||''} type="tel" maxLength={40} disabled={busy||stockLocked}/></label><button className="primary" disabled={busy||stockLocked}>{busy ? 'Guardando…' : 'Guardar cliente'}</button><button type="button" disabled={busy||stockLocked} onClick={() => {setShowForm(false);setEditing(null);}}>Cancelar</button></form>}
+    <label>Buscar clientes<input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre o dirección"/></label><div className="table-wrap"><table className="owner-customers-table"><thead><tr><th>Cliente</th><th>Dirección</th><th>Teléfono</th><th/></tr></thead><tbody>{workspace.customers.filter(c => `${c.name} ${c.address}`.toLowerCase().includes(search.toLowerCase())).map(c => <tr key={c.id}><td><button className="customer-name-link" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}>{c.name}</button></td><td>{c.address}</td><td>{c.phone || '—'}</td><td><div className="customer-actions"><button className="primary" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}><FileText size={16}/>Abrir ficha</button><button disabled={busy||stockLocked} onClick={()=>{setEditing(c);setShowForm(true);setSelectedCustomer(null);}}><Pencil size={16}/>Editar</button><button className="customer-delete" disabled={busy||stockLocked} onClick={()=>archive(c)}><Trash2 size={16}/>Eliminar</button></div></td></tr>)}</tbody></table></div>{!workspace.customers.length && <p className="empty">Tu reparto todavía no tiene clientes. Agregá el primero para comenzar.</p>}</section>}</>}
     {notice && <p className="notice" role="status">{notice}</p>}
   </OwnerShell>;
 }

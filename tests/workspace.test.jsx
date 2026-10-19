@@ -23,7 +23,7 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
         single: () => chain,
         maybeSingle: () => {call.single=true;return chain;},
         then: (resolve, reject) => {
-          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : table==='customers' ? [...records] : [];
+          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { ...records[0], ...call.value } : table==='customers' ? [...records] : [];
           return Promise.resolve({ data, error: null }).then(resolve, reject);
         },
       };
@@ -33,6 +33,37 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   return { client, calls };
 }
 describe('panel conectado del titular', () => {
+  it('abre edición con los datos existentes y actualiza solo el cliente de la empresa',async()=>{
+    const {client,calls}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
+    fireEvent.click(screen.getByRole('button',{name:'Editar',exact:true}));
+    expect(screen.getByLabelText('Nombre completo').value).toBe('María');
+    expect(screen.getByLabelText('Dirección').value).toBe('Calle 123');
+    fireEvent.change(screen.getByLabelText('Nombre completo'),{target:{value:'María actualizada'}});
+    fireEvent.click(screen.getByText('Guardar cliente'));
+    await screen.findByText('María actualizada');
+    const update=calls.find(c=>c.operation==='update');
+    expect(update.filters).toEqual([['tenant_id','tenant-a'],['id','customer-a']]);
+    expect(update.value).toEqual({name:'María actualizada',address:'Calle 123',phone:''});
+    expect(calls.some(c=>c.operation==='insert')).toBe(false);
+  });
+  it('abre la ficha desde la lista y bloquea la navegación ante una apertura incierta',async()=>{
+    const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
+    fireEvent.click(screen.getByRole('button',{name:'Abrir ficha'}));
+    await screen.findByText('Bidones y envases que tiene');
+    fireEvent.click(screen.getByRole('button',{name:'Registrar bidones que ya tiene'}));
+    fireEvent.change(screen.getByLabelText('Envases iniciales de Bidón 20'),{target:{value:'3'}});
+    fireEvent.click(screen.getByText('Guardar envases iniciales'));
+    await screen.findByText('Reintentar misma operación');
+    expect(screen.getByRole('button',{name:'Volver a clientes'}).disabled).toBe(true);
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Ver stock'}).disabled).toBe(true));
+    client.rpc.mockResolvedValue({data:'ok',error:null});
+    fireEvent.click(screen.getByText('Reintentar misma operación'));
+    await screen.findByText('Envases iniciales registrados en este cliente.');
+    expect(client.rpc.mock.calls[0]).toEqual(client.rpc.mock.calls[1]);
+  });
   it('ofrece inicio, menú lateral y navegación móvil con las secciones conectadas',async()=>{
     const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');
@@ -111,7 +142,7 @@ describe('panel conectado del titular', () => {
     await screen.findByText('Ana');
     expect(calls.find(call => call.operation === 'insert').value).toEqual({ tenant_id: 'tenant-a', name: 'Ana', address: 'Mitre 100', phone: '' });
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    fireEvent.click(screen.getAllByText('Archivar')[1]);
+    fireEvent.click(screen.getAllByText('Eliminar')[1]);
     await waitFor(() => expect(screen.queryByText('María')).toBeNull());
     const update = calls.find(call => call.operation === 'update');
     expect(update.value).toEqual({ active: false });
