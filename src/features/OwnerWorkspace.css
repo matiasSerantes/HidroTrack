@@ -12,7 +12,7 @@
 .hd.owner-real .connected-workspace .panel>label{max-width:420px;margin-bottom:20px}
 .hd.owner-real .connected-workspace input,.hd.owner-real .connected-workspace select{margin-top:6px;font-size:14px;background:#fff;color:var(--ink);border-color:#bdd6e6}
 .hd.owner-real .connected-workspace button{min-height:44px;background:#dff1fc;border:1px solid #85bcd9;color:#214f68;border-radius:9px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px #21526c12}
-.hd.owner-real .connected-workspace button:not(.primary):not(.hd-btn):not(.customer-delete):hover:not(:disabled){background:#c9e7f8;border-color:#529bbf;color:#163e55}
+.hd.owner-real .connected-workspace button:not(.primary):not(.hd-btn):not(.customer-delete):not(.stock-delete):hover:not(:disabled){background:#c9e7f8;border-color:#529bbf;color:#163e55}
 .hd.owner-real .connected-workspace button:focus-visible{outline:3px solid #087f87;outline-offset:3px}
 .hd.owner-real .connected-workspace button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .hd.owner-real .connected-workspace button.primary{background:#087f87;color:#fff;border:1px solid #087f87;font-weight:650}

@@ -28,6 +28,14 @@ export function demoRefill(s: DemoProgramState, productId: string, quantity: num
   if(!product||!quantity||(next.depotEmpties[productId]||0)<quantity) throw new Error('No hay suficientes vacíos de ese artículo para rellenar.');
   next.depotEmpties[productId]-=quantity; product.depot+=quantity; return next;
 }
+export function archiveDemoProduct(state:DemoProgramState,productId:string,actor:string){
+  if(!state.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede eliminar artículos.');
+  const product=state.products.find(p=>p.id===productId&&p.active);
+  if(!product)throw new Error('Artículo no habilitado.');
+  const placed=state.clients.reduce((n,c)=>n+c.rentals.filter(r=>r.productId===productId&&r.mode!=='customer_owned').length,0);
+  if(demoOwnedStock(state,productId).total+placed>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
+  return {...state,products:state.products.map(p=>p.id===productId?{...p,active:false}:p)};
+}
 export const DEMO_ORIGIN = { lat: -34.60905, lng: -58.3832 };
 export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng: number }> = {
   c1: { address: 'Av. de Mayo 1200', lat: -34.60935, lng: -58.38365 },

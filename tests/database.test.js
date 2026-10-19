@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261019180000_inventory_incidents','20261019190000_dispenser_model_assignments']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261019180000_inventory_incidents','20261019190000_dispenser_model_assignments','20261019200000_product_archive_guard']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -296,6 +296,14 @@ describe('stock transaccional PostgreSQL', () => {
     expect((await db.query('select status from public.dispenser_assignments where id=$1',[assignment])).rows[0].status).toBe('returned');
     await assign(op());
     expect((await db.query("select count(*)::int as n from public.dispenser_assignments where status='active'")).rows[0].n).toBe(2);
+  });
+  it('impide eliminar de activos un artículo con stock y conserva su historial después de la baja',async()=>{
+    await post('receive',items(2));
+    await rejected(()=>db.query('update public.products set active=false where id=$1',[product]),/unidades activas/);
+    await db.query("select public.inventory_remove($1,$2,'remove',$3,2,'depot_ready',null,null,'2026-10-19','owner',$4,'Retiro de unidades')",[tenant,op(),product,owner]);
+    await db.query('update public.products set active=false where id=$1',[product]);
+    expect((await db.query('select active from public.products where id=$1',[product])).rows[0].active).toBe(false);
+    expect((await db.query('select count(*)::int as n from public.inventory_movements where product_id=$1',[product])).rows[0].n).toBe(2);
   });
   it('una rotura en el cliente cierra la asignación y no vuelve a hacer disponible esa unidad',async()=>{
     const model='30000000-0000-0000-0000-000000000005',assignment=op();

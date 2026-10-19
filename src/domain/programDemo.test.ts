@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { approveClose, closeTrip, decideRequest, demoOwnedStock, demoRefill, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
+import { archiveDemoProduct, approveClose, closeTrip, decideRequest, demoOwnedStock, demoRefill, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
 
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('eliminar conserva registros y rechaza artículos con unidades o usuarios asistentes',()=>{
+    const state=seedProgram();state.products.push({id:'empty',name:'Bidón sin stock',unit:'unidad',price:0,returnable:true,depot:0,active:true,kind:'sale'});
+    const next=archiveDemoProduct(state,'empty','owner');
+    expect(next.products).toHaveLength(state.products.length);expect(next.products.find(p=>p.id==='empty')?.active).toBe(false);
+    expect(()=>archiveDemoProduct(state,'b20','owner')).toThrow(/unidades activas/);
+    expect(()=>archiveDemoProduct(state,'empty','luz')).toThrow(/Solo el jefe/);
+  });
   it('conserva los envases propios al entregar y rellenar; solo el jefe registra recargas', () => {
     const original=seedProgram(), total=demoOwnedStock(original,'b20').total;
     const delivered=recordVisit(original,input);

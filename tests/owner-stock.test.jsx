@@ -3,7 +3,7 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OwnerStock } from '../src/features/OwnerStock';
-afterEach(()=>cleanup());
+afterEach(()=>{cleanup();vi.restoreAllMocks();});
 function fixture(section,{legacy=false}={}) {
   const filters=[];
   const records={
@@ -19,6 +19,31 @@ function fixture(section,{legacy=false}={}) {
   return {client,filters,records,rendered};
 }
 describe('inventario conectado del jefe',()=>{
+  it('elimina un bidón sin existencias de activos conservando su registro',async()=>{
+    const {records,filters}=fixture('catalog');records.inventory_owned_stock=[];records.inventory_customer_containers=[];
+    await screen.findByRole('button',{name:'Eliminar Bidón 20'});
+    vi.spyOn(window,'confirm').mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button',{name:'Eliminar Bidón 20'}));
+    await screen.findByText('Artículo eliminado de activos. Sus registros e historial se conservan.');
+    expect(records.products).toHaveLength(1);expect(records.products[0]).toMatchObject({id:'b20',active:false});
+    expect(screen.queryByRole('heading',{name:'Bidón 20'})).toBeNull();
+    expect(filters).toContainEqual(['inventory_owned_stock','product_id','b20']);
+  });
+  it('ofrece eliminar modelos dispenser y conserva el artículo al cancelar',async()=>{
+    const {records}=fixture('dispensers');records.products.push({id:'model',name:'Dispenser básico',unit:'unidad',price:0,returnable:false,active:true});
+    await screen.findByRole('button',{name:'Eliminar Dispenser básico'});
+    vi.spyOn(window,'confirm').mockReturnValue(false);
+    fireEvent.click(screen.getByRole('button',{name:'Eliminar Dispenser básico'}));
+    await waitFor(()=>expect(window.confirm).toHaveBeenCalled());
+    expect(records.products.find(p=>p.id==='model').active).toBe(true);
+  });
+  it('no permite ocultar un artículo que todavía tiene unidades en stock o clientes',async()=>{
+    const {records}=fixture();await screen.findByRole('button',{name:'Eliminar Bidón 20'});
+    vi.spyOn(window,'confirm').mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button',{name:'Eliminar Bidón 20'}));
+    await screen.findByText(/tiene 20 unidades registradas/);
+    expect(window.confirm).not.toHaveBeenCalled();expect(records.products[0].active).toBe(true);
+  });
   it('muestra modelos dispenser en su sección sin duplicar ni convertir cantidades',async()=>{
     const {client,records,rendered}=fixture('catalog');
     records.products.push({id:'model',name:'Dispenser frío calor',unit:'5',price:2000,returnable:false,active:true});

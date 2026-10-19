@@ -27,6 +27,7 @@ begin
  if exists(select 1 from public.inventory_movements m join public.inventory_operations o on o.tenant_id=m.tenant_id and o.id=m.operation_id where o.customer_id is not null group by m.tenant_id,o.customer_id,m.product_id having sum(m.customer_held)<0) then raise exception 'Saldo negativo en clientes'; end if;
  if exists(select 1 from public.inventory_operations where kind in ('damage','remove') and (involved_kind is null or involved_id is null or source is null or length(trim(note))=0)) then raise exception 'Incidente sin atribución o motivo'; end if;
  if not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='dispenser_assignments' and c.relrowsecurity) then raise exception 'Asignaciones sin RLS'; end if;
+ if not exists(select 1 from pg_trigger where tgname='inventory_product_archive_guard' and tgrelid='public.products'::regclass and not tgisinternal) then raise exception 'Falta protección de eliminación con unidades activas'; end if;
  if exists(select 1 from public.dispenser_assignments a where a.status='active' group by a.tenant_id,a.product_id,a.customer_id having count(*)>(select coalesce(sum(m.customer_held),0) from public.inventory_movements m join public.inventory_operations o on o.tenant_id=m.tenant_id and o.id=m.operation_id where m.tenant_id=a.tenant_id and m.product_id=a.product_id and o.customer_id=a.customer_id)) then raise exception 'Asignaciones activas superiores a las unidades en clientes'; end if;
 end $$;
 rollback;

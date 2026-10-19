@@ -100,3 +100,9 @@ Aplicar `20261019190000_dispenser_model_assignments.sql` después de la migraci�
 La planilla combina modelos disponibles del libro y equipos individualizados previos. No materializa de nuevo todas las existencias ni exige serie para modelos contados por cantidad. Sin tabla nueva, avisa que requiere actualización; los equipos anteriores conservan su flujo. El verificador SQL ahora requiere ambas migraciones y también controla las asignaciones activas contra las unidades en clientes.
 
 102 pruebas locales, incluidas 21 PostgreSQL; 17 tablas locales con RLS. Ninguna de estas dos migraciones fue aplicada al remoto desde esta sesión.
+
+## Eliminar modelos/artículos de activos
+
+Botón Eliminar en stock de bidones y tarjetas de catálogo/dispenser: vuelve a consultar saldos, rechaza existencias positivas y confirma active=false conservando filas e historial. Opera con los permisos de actualización ya existentes. `20261019200000_product_archive_guard.sql` agrega la protección atómica del servidor usando el mismo bloqueo de empresa que las RPC de inventario. Pendiente de aplicar remotamente después de las migraciones 180000 y 190000. Hasta entonces la comprobación de interfaz no cubre una modificación concurrente desde otro dispositivo.
+
+El verificador de solo lectura requiere las tres migraciones y comprueba también este trigger. 107 pruebas locales aprobadas, 22 PostgreSQL. Nuevo OAuth exitoso; cliente MCP de esta conversación aún responde Auth required, sin cambios remotos.

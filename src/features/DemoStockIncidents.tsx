@@ -1,3 +1,4 @@
+import './OwnerStock.css';
 import {OwnerStockIncident} from './OwnerStockIncident';
 import {demoDay,type DemoProgramState} from '../domain/programDemo';
 import {recordDemoStock,type StockEvent} from '../domain/stockIncidentDemo';
