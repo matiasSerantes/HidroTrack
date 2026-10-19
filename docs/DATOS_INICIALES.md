@@ -1,6 +1,6 @@
 # Datos para preparar el reparto de Darío
 
-La pantalla conectada del jefe está en **Ingresar a mi cuenta → Stock y surtidores**. Hace falta provisionar su usuario, empresa, membresía de jefe y licencia antes de entrar. No se creó una cuenta usando datos inventados ni se cargó un inventario real todavía. No enviar contraseñas por el chat ni guardarlas en Git.
+La pantalla conectada del jefe está en **Ingresar a mi cuenta → Stock y surtidores**. El primer usuario jefe ya está provisionado con empresa inicial y licencia activa. Se verificó el inicio de sesión y la lectura real del inventario. Todavía no se cargaron existencias: quedan a cargo del titular con sus cantidades reales. No enviar contraseñas por el chat ni guardarlas en Git.
 
 ## Qué pedirle
 
@@ -25,4 +25,4 @@ Hacer un corte al cierre de un día, con el camión descargado. Contar llenos/va
 
 Al volver, se finaliza el reparto y se aprueba el regreso exacto de llenos y vacíos. Rellenar vacíos transforma esos envases en llenos; no incrementa la cantidad propia. Los movimientos de entrega reales todavía no tienen pantalla del chofer: esa integración es la siguiente parte y debe validarse antes de usarlo para repartir en producción. Las diferencias, pérdidas, roturas y correcciones de apertura aún no tienen circuito; conviene revisar bien el conteo inicial antes de confirmarlo.
 
-La pantalla fue probada con un cliente simulado y la base con PostgreSQL local. Falta la prueba completa de sesión real y revisión visual en celular/PC. Podemos empezar con un inventario controlado después de provisionar la cuenta y validar ese acceso, manteniendo la demo aparte.
+La pantalla fue probada con un cliente simulado y la base con PostgreSQL local. El inicio de sesión y las consultas de inventario ya se verificaron con la cuenta real. Falta revisión visual en celular/PC y validar el flujo operativo al cargar sus cantidades reales, manteniendo la demo aparte.

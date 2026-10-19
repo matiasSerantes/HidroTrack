@@ -76,3 +76,7 @@ Pruebas actuales: 12 PostgreSQL y 70 totales. Incluyen el ciclo apertura→carga
 La pantalla real de ventas/cobros de choferes, aprobaciones de deuda, bajas con revisión, inventario de pérdidas y cuentas corrientes siguen pendientes. Los surtidores registran una cuota pactada; no generan facturas ni cobran alquileres automáticamente. El precio del artículo es el precio de entrega, no el costo de adquirir el envase. Los envases nuevos adquiridos se ingresan; rellenar los propios no es una compra.
 
 Para empezar con Darío: [datos iniciales y corte de inventario](DATOS_INICIALES.md). Las pantallas demo y las conectadas permanecen separadas.
+
+## Primer acceso real habilitado
+
+El primer jefe ya tiene Auth, perfil, empresa inicial y licencia activa sin asistentes. Se comprobó inicio de sesión y lectura REST de catálogo, patrimonio y surtidores con su JWT real. No se insertaron productos, clientes ni movimientos de prueba. El siguiente paso es el conteo inicial desde la pantalla conectada. La función administrativa temporal se deshabilitó después del alta y las credenciales no están en Git.

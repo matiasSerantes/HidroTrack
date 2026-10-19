@@ -6,14 +6,14 @@ Migración aplicada por MCP: `20261019163826_user_profiles`. Hay 16 tablas públ
 
 La pantalla conectada muestra el nombre del jefe; el selector de repartidor usa los nombres disponibles. El alta de perfiles no crea empresas ni usuarios nuevos por sí sola.
 
-## Estado del alta pedida
+## Primer jefe habilitado
 
-Se comprobó que la cuenta solicitada no existe y que no hay empresas provisionadas. Los datos personales y la contraseña suministrados en la sesión no se guardaron en Git. El usuario de jefe, su empresa y su licencia siguen pendientes: no afirmar que ya puede iniciar sesión.
+El usuario autorizó expresamente el mecanismo de alta temporal. Se creó la cuenta solicitada mediante Auth Admin, con correo confirmado, perfil de nombre, membresía owner activa, empresa inicial Reparto principal y licencia permanente activa sin asistentes habilitados (driver_limit=0). No se asignó rol de superadministrador.
 
-Existe un backend admin-users que requiere sesión de superadministrador. No se dispone de esa sesión en esta conversación y no se cambiaron sus restricciones. La revisión automática rechazó desplegar un mecanismo temporal alternativo con privilegios de servicio, incluso una variante con JWT habilitado, porque requiere autorización explícita adicional. No se desplegó ninguna de esas variantes ni se modificó Auth para eludirlas.
+Verificación real: inicio de sesión por contraseña, nombre de perfil correcto, membresía/licencia y consultas REST autenticadas de productos, inventario y surtidores. Se cerró solo la sesión usada para esa comprobación. El inventario queda vacío para que el titular cargue sus cantidades reales.
 
-Se preparó un alta puntual revisable: función temporal con JWT habilitado, token aleatorio adicional, vencimiento a los diez minutos y restricción al único correo solicitado; usa Auth Admin para crear/confirmar el usuario, asigna owner con una empresa inicial vacía y licencia activa sin asistentes, y se deshabilita al terminar. Antes de ejecutarla hace falta autorización explícita del usuario. No imprime ni devuelve contraseñas, tokens de sesión o claves de servicio. Si falla la asignación después de crear Auth, intenta retirar la cuenta nueva y revisar el resultado antes de reintentar.
+La función temporal usó JWT más un token aleatorio, restricción al único correo solicitado y vencimiento. Después del alta se reemplazó por una respuesta HTTP 410 sin código administrativo; se verificó que ya no permita altas. No se modificó el backend admin-users existente. Contraseña, correo, nombre e identificadores del titular no se guardan en el repositorio.
 
-La clave pedida no se añadió al código, a las migraciones ni a documentación. Las cuentas se crean mediante Auth Admin; no insertando manualmente contraseñas en auth.users.
+Entrar por Ingresar a mi cuenta, con las credenciales suministradas por el usuario, y abrir Stock y surtidores. El autenticador 123456 de la demostración no es este acceso. Reparto principal es un nombre inicial, pendiente de reemplazar por la marca comercial que indique el titular.
 
-Verificación: 70 pruebas, incluidas creación de perfiles, aislamiento, permisos de columnas y ausencia de autoasignación de rol. Compilación correcta. Todavía falta crear el jefe y probar inicio de sesión y acceso real al stock.
+Verificación local: 70 pruebas y compilación correctas. Falta revisión visual en teléfono/PC y completar las pantallas de ventas/cobros del chofer. No se cargaron productos, clientes ni operaciones de ejemplo en la empresa real.

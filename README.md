@@ -54,7 +54,7 @@ Crear usuarios con Supabase Auth. El alta inicial de tenant, membresía owner, l
 
 Validar el panel conectado contra el proyecto Supabase, completar administración segura de altas y límites de choferes, sumar productos, rutas/asignaciones y MapLibre. La base transaccional de stock ya está aplicada. Catálogo, ingreso, recarga, carga y regreso ya tienen pantalla real del jefe. Provisionar una cuenta y validar el flujo con Auth/PostgREST; después conectar ventas del chofer. Completar ventas/pagos, diferencias de rendición e IndexedDB. Ninguna operación comercial de producción debe basarse en la lógica de la demo.
 
-`npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. Las cinco migraciones pasan la validación local; la base de stock y sus permisos también se inspeccionaron en el proyecto remoto. No hay cuentas de producción configuradas desde este repositorio.
+`npm test` ejecuta las pruebas de dominio y también la migración y los escenarios SQL en PostgreSQL embebido (PGlite). El entorno de prueba crea un contrato mínimo de `auth.users`, `auth.uid()` y roles; no sustituye la integración con Supabase Auth/PostgREST. Las cinco migraciones pasan la validación local; la base de stock y sus permisos también se inspeccionaron en el proyecto remoto. El primer jefe ya está provisionado; se verificó el inicio de sesión y la lectura de su inventario vacío.
 
 La prueba `supabase/tests/isolation.sql` prepara fixtures y los revierte. Para ejecutarla manualmente usar únicamente Supabase local descartable: `psql "$DATABASE_URL" -f supabase/tests/isolation.sql`. Verifica lectura/escritura entre titulares, autoasignación de membresías, chofer sin asignaciones, privacidad comercial frente al superadmin, suspensión, expiración, relaciones compuestas, acceso anónimo y auditoría de licencias. Los flujos administrativos futuros necesitarán sus propias pruebas.
 
@@ -66,4 +66,4 @@ Consultar [notas de trabajo](docs/NOTAS.md) y [revisión remota de Supabase del 
 
 Para preparar la carga de Darío, ver [datos y plantillas de inventario inicial](docs/DATOS_INICIALES.md). No incluir datos reales de clientes, correos ni inventarios privados en commits.
 
-La base de [perfiles de usuarios](docs/USUARIOS.md) está aplicada. El alta del primer jefe sigue pendiente de autorización del mecanismo administrativo; todavía no hay una cuenta de jefe nueva con acceso real.
+La base de [perfiles de usuarios](docs/USUARIOS.md) está aplicada. El primer jefe ya fue provisionado y se verificó su inicio de sesión y lectura del inventario real. Las existencias siguen vacías para el conteo inicial; las credenciales y datos de la cuenta no están en Git.
