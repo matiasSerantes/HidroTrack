@@ -30,6 +30,10 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Llegada, presencia y envases para devolver — pedido del 2026-10-19
+
+Implementado en demo: cada bidón entregado suma un envase en poder del cliente y los devueltos se descuentan; el saldo se muestra en la próxima visita y durante la carga de cantidades. Al simular llegada se identifica el domicilio y se pregunta presencia. Presente: mostrar envases y equipos prestados/alquilados antes de atender; ausente: volver más tarde, elegir fecha o próxima semana, sin crear venta ni modificar stock. Incluido equipo en préstamo sin cargo como ejemplo para Martín Acosta. La fecha queda en pendientes, pero no crea automáticamente un nuevo reparto. Para producción queda solicitada detección por proximidad GPS con confirmación del cliente, todavía sin implementar.
+
 ### Abrir reparto y retomar la jornada — pedido del 2026-10-19
 
 Implementado en demo: botón principal «Abrir reparto» y pantalla «Mi reparto» con mapa completo y ubicación simulada. Permite atender, registrar venta/alquiler/cobro, ver ficha y cuadra, marcar pendientes, revisar carga, solicitar altas/bajas y rendir. Al cerrar y volver recupera perfil demo, reparto, pantalla, selección/posición del mapa y borrador de atención. No representa autenticación ni sincronización de producción; la recuperación funciona en el mismo navegador si conserva su almacenamiento. Salir explícitamente quita el regreso automático, y reiniciar limpia borradores y posiciones demo.
@@ -71,6 +75,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: agregado flujo de llegada/presencia, reprogramación fechada y vista de envases/equipos con saldo para la próxima visita. Verificación: 36 pruebas y build correctos, incluidos entrega de un bidón sin devolución y posterior recuperación, préstamo sin cargo, llegada y ausencia con próxima semana. La ubicación continúa simulada y la revisión visual en dispositivos reales sigue pendiente.
 
 - 2026-10-19: integrado «Abrir reparto» como centro de trabajo del asistente y recuperación local al reabrir. Verificado mediante 33 pruebas y build; las pruebas cierran/reabren con un borrador de pago parcial, recuperan el mapa y comprueban que confirmar no duplica ventas. Se validan usuario activo, asignación y parada pendiente al recuperar. Revisión visual real sigue pendiente.
 

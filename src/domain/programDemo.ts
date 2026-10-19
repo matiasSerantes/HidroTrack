@@ -4,15 +4,15 @@ export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'delivery' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
-export type Rental = { id: string; productId: string; serial: string; monthly: number };
+export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' };
 export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean };
-export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'no-sale' };
+export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
 export type Trip = { id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
-export type DemoProgramState = { version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
+export type DemoProgramState = { version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export const DEMO_ORIGIN = { lat: -34.60905, lng: -58.3832 };
 export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng: number }> = {
@@ -22,7 +22,8 @@ export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng:
 };
 /** Actualiza solo los tres ejemplos originales; conserva operaciones y altas locales. */
 export function withDemoAddresses(state: DemoProgramState): DemoProgramState {
-  return { ...state, trips: state.trips.map(t => t.id === 't1' && t.name === 'Ballester · mañana' ? { ...t, name: 'Monserrat · tres paradas' } : t), clients: state.clients.map(c => {
+  return { ...state, loanExampleAdded: true, trips: state.trips.map(t => t.id === 't1' && t.name === 'Ballester · mañana' ? { ...t, name: 'Monserrat · tres paradas' } : t), clients: state.clients.map(c => {
+    if (!state.loanExampleAdded && c.id === 'c3' && c.active && !c.rentals.some(r => r.id === 'loan-demo-3')) c = { ...c, rentals: [...c.rentals, { id: 'loan-demo-3', productId: 'frio', serial: 'PRESTAMO-DEMO-03', monthly: 0, mode: 'loan' }] };
     const location = DEMO_ADDRESSES[c.id];
     if (!location || c.geo) return c;
     return { ...c, address: location.address, locality: 'Monserrat, CABA', block: 'avdemayo-1200', geo: { lat: location.lat, lng: location.lng } };
@@ -100,7 +101,7 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   if (!Number.isSafeInteger(total) || !Number.isSafeInteger(before + total)) throw new Error('El importe excede el rango permitido para la demo.');
   if (paid > total + before) throw new Error('El cobro supera la venta más la deuda anterior.');
   if (!items.length && !paid && !rentalFee) throw new Error('Cargá una entrega, devolución o cobro; para una visita sin operación usá «No compró».');
-  client.debt = before + total - paid; visit.status = 'visited';
+  client.debt = before + total - paid; visit.status = 'visited'; delete visit.rescheduleDate;
   const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' });
   s.sales.unshift({ id: uid(), clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time });
   s.presence = { ...s.presence, [input.actorId]: { clientId: client.id, time, attending: false } };
@@ -130,7 +131,7 @@ export function decideRequest(state: DemoProgramState, requestId: string, approv
       c.active = false; c.note = `Baja aprobada: ${r.reason}. ${c.note}`;
       for (const rental of c.rentals) { const p = s.products.find(x => x.id === rental.productId); if (p) p.depot++; }
       c.rentals = [];
-      s.trips.forEach(t => { if (['planned', 'active'].includes(t.stage)) t.stops = t.stops.filter(stop => stop.clientId !== c.id || !['pending', 'later', 'tomorrow'].includes(stop.status)); });
+      s.trips.forEach(t => { if (['planned', 'active'].includes(t.stage)) t.stops = t.stops.filter(stop => stop.clientId !== c.id || !['pending', 'later', 'tomorrow', 'next-week'].includes(stop.status)); });
     }
   }
   r.status = approve ? 'approved' : 'rejected'; notify(s, `${r.title}: ${approve ? 'aprobada' : 'rechazada'} por el jefe.`); return s;
@@ -151,5 +152,15 @@ export function approveClose(state: DemoProgramState, tripId: string) {
   for (const p of s.products) { p.depot += t.declared[p.id] || 0; s.depotEmpties[p.id] = (s.depotEmpties[p.id] || 0) + (t.empties[p.id] || 0); }
   t.stage = 'approved'; notify(s, `${t.name}: rendición aprobada; productos y vacíos ingresaron al depósito.`); return s;
 }
-export const isDone = (s: Stop) => ['visited', 'no-sale', 'tomorrow'].includes(s.status);
+export const isDone = (s: Stop) => ['visited', 'no-sale', 'tomorrow', 'next-week'].includes(s.status);
+export function demoDateAfter(days: number) { const d = new Date(`${demoDay}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+export function scheduleStop(state: DemoProgramState, tripId: string, clientId: string, actor: string, mode: 'later' | 'day' | 'week', date?: string) {
+  const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId), stop = trip?.stops.find(p => p.clientId === clientId);
+  if (!trip || trip.stage !== 'active' || !stop || !['pending', 'later'].includes(stop.status) || !s.members.some(m => m.id === actor && m.active) || actor !== 'owner' && trip.driverId !== actor) throw new Error('No podés reprogramar esta parada.');
+  const target = mode === 'later' ? demoDay : mode === 'week' ? demoDateAfter(7) : date || demoDateAfter(1);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(target) || !Number.isFinite(Date.parse(target)) || new Date(target).toISOString().slice(0, 10) !== target || mode !== 'later' && target <= demoDay) throw new Error('Elegí una fecha posterior al día de la demo.');
+  stop.status = mode === 'later' ? 'later' : mode === 'week' ? 'next-week' : 'tomorrow'; stop.rescheduleDate = target;
+  notify(s, `Cliente ausente: ${s.clients.find(c => c.id === clientId)?.name}. ${mode === 'later' ? 'Volver más tarde' : `Pendiente para ${target}`}.`);
+  return s;
+}
 export const moneyInput = (cents: number) => String(cents / 100);

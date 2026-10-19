@@ -1,9 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { approveClose, closeTrip, decideRequest, loadTrip, recordVisit, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
+import { approveClose, closeTrip, decideRequest, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
 
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('un bidón entregado queda pendiente y en la siguiente visita descuenta lo devuelto', () => {
+    let s = seedProgram(); s.clients[0].held.b20 = 0;
+    s = recordVisit(s, { ...input, items: [{ productId: 'b20', quantity: 1, returned: 0 }], paid: '0' });
+    expect(s.clients[0].held.b20).toBe(1);
+    s.trips[0].stage = 'approved';
+    s.trips.push({ ...structuredClone(s.trips[0]), id: 'next-visit', stage: 'active', stops: [{ clientId: 'c1', status: 'pending' }], stock: { b20: 10 }, empties: {} });
+    s = recordVisit(s, { ...input, tripId: 'next-visit', items: [{ productId: 'b20', quantity: 2, returned: 1 }], paid: '0' });
+    expect(s.clients[0].held.b20).toBe(2);
+    expect(s.trips[2].empties.b20).toBe(1);
+  });
+  it('reprograma con fecha sin tocar envases, stock ni ventas', () => {
+    const s = seedProgram(), next = scheduleStop(s, 't1', 'c1', 'luz', 'day', '2026-10-23');
+    expect(next.trips[0].stops[0]).toMatchObject({ status: 'tomorrow', rescheduleDate: '2026-10-23' });
+    expect(next.clients).toEqual(s.clients); expect(next.sales).toEqual(s.sales); expect(next.trips[0].stock).toEqual(s.trips[0].stock);
+    expect(scheduleStop(s, 't1', 'c1', 'luz', 'week').trips[0].stops[0].rescheduleDate).toBe('2026-10-26');
+    expect(() => scheduleStop(s, 't1', 'c1', 'luz', 'day', '2026-10-18')).toThrow(/fecha posterior/);
+    expect(() => scheduleStop(s, 't1', 'c1', 'nico', 'week')).toThrow(/reprogramar/);
+  });
   it('actualiza tres direcciones cercanas sin borrar visitas ni clientes nuevos', () => {
     const s = recordVisit(seedProgram(), input);
     s.clients.slice(0, 3).forEach(c => { delete c.geo; c.address = 'Dirección anterior'; });

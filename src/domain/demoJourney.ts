@@ -35,5 +35,5 @@ export function readVisitDraft(key: string): VisitDraft {
 }
 export function clearJourney() { try { localStorage.removeItem(JOURNEY_KEY); } catch { /* El botón de salir sigue disponible. */ } }
 export function clearJourneyDrafts() {
-  try { Object.keys(localStorage).filter(k => k.startsWith('hidrotrack.demo-draft.') || k.startsWith('hidrotrack.demo-map.')).forEach(k => localStorage.removeItem(k)); } catch { /* Sin persistencia, la demo trabaja en memoria. */ }
+  try { Object.keys(localStorage).filter(k => k.startsWith('hidrotrack.demo-draft.') || k.startsWith('hidrotrack.demo-map.') || k.startsWith('hidrotrack.demo-arrival.')).forEach(k => localStorage.removeItem(k)); } catch { /* Sin persistencia, la demo trabaja en memoria. */ }
 }

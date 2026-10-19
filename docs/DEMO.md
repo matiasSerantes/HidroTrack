@@ -12,7 +12,15 @@ La empresa de ejemplo es **Agua Clara**. El día operativo es el **19/10/2026**;
 
 Entrar como Lucía y pulsar **Abrir reparto**. La pantalla **Mi reparto** muestra el mapa completo y permite seleccionar clientes, atender con entrega/retiro/alquiler/cobro, consultar ficha y cuadra, marcar ausencia, pasar al siguiente pendiente, revisar carga, solicitar altas/bajas y rendir. La atención se abre encima del reparto; al confirmar vuelve al mapa actualizado. En celular se accede también desde la barra inferior «Mi reparto».
 
-### Cerrar y seguir donde quedaste
+### Llegar a un cliente y controlar lo que debe devolver
+
+En **Mi reparto**, pulsar **Simular avance** o **Llegué al domicilio (demo)**. Aparece «Estás en la casa de…» con dirección y confirmación del cliente. Elegir **Está presente** para ver envases pendientes y equipos en préstamo/alquiler; después **Atender: entrega y cobro** permite indicar cuánto dejás y cuánto devuelve. La pantalla calcula y muestra los envases que quedan para la próxima visita.
+
+Ejemplo: sin bidones pendientes, entregar 1 y retirar 0 deja 1 para devolver. En una visita posterior, entregar 2 y retirar el anterior deja 2. Este saldo es independiente del importe adeudado. Martín Acosta tiene un equipo de ejemplo en préstamo sin cargo; Café La Esquina, uno en alquiler.
+
+Elegir **No está** para volver más tarde hoy, seleccionar una fecha o pasar a la próxima semana. La fecha se conserva en los pendientes sin registrar venta. En esta demo el día base es 19/10/2026, de modo que la próxima semana es 26/10/2026. Todavía no se genera automáticamente un nuevo reparto para esa fecha. La detección por GPS real está pendiente; la llegada actual es siempre simulada.
+
+### Recuperación local
 
 Se guardan el perfil ficticio, pantalla, reparto, cliente seleccionado, posición simulada y cantidades/devoluciones/alquileres/cobro/medio de pago de la atención todavía sin confirmar. Al reabrir la misma web en este navegador, la demo continúa directamente donde quedó. Para probarlo, cargar una cantidad y un pago parcial y recargar sin confirmar: debe recuperar el borrador. Confirmar la visita borra su borrador y evita repetirla al volver.
 
@@ -75,6 +83,6 @@ La demo mantiene barra lateral y disposición amplia para PC, y navegación infe
 
 ## Validación de esta entrega
 
-`npm test`: 33 pruebas aprobadas, incluidas operaciones de la demo, navegación, apertura/avance del mapa, recuperación tras cerrar con atención pendiente y controles de usuario/asignación al restaurar en jsdom. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; la carga real de la cartografía y esa comprobación visual quedan pendientes.
+`npm test`: 36 pruebas aprobadas, incluidas operaciones, navegación, mapa, recuperación de borradores, llegada/presencia, saldo de envases entre visitas, préstamos sin cargo y reprogramación sin alterar ventas/stock. `npm run build`: compilación de producción aprobada. No se pudo realizar una revisión visual en navegador porque no había una superficie de navegador conectada disponible; la carga real de la cartografía y esa comprobación visual quedan pendientes.
 
 Esta entrega permite evaluar el programa completo por partes. Cada parte que pase a producción necesitará su esquema, permisos y validación reales.
