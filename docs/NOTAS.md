@@ -22,6 +22,12 @@ Ver [informe completo](REVISION_SUPABASE_2026-10-19.md). No se probaron flujos r
 
 ## Ideas y próximos pasos propuestos
 
+### Referencia en video revisada el 2026-10-19
+
+Se analizaron visualmente fotogramas distribuidos por el video de una app similar (2:17 aproximadamente), con revisión adicional de atención, cobro y resumen mensual. Observaciones, tiempos y propuestas en [ideas de la referencia](REFERENCIA_VIDEO_2026-10-19.md). No se analizó el audio ni se incorporaron capturas, video, credenciales o datos personales al repositorio.
+
+Ideas destacadas: atención con columnas de entrega/devolución, stock y envases visibles, desglose de venta/deuda/cobro, estados «No estaba» y «No compró», insertar parada después de otra, alquiler recurrente, plantillas de comprobante/mensajes y resumen mensual. Se mantienen como propuestas, sin convertir tarifas, bonificaciones o GPS del ejemplo en decisiones confirmadas. Próximo paso sugerido: diseñar el flujo de atención y regreso a la ruta.
+
 ### Pedidos recibidos el 2026-10-19
 
 Se registró el detalle en [requisitos funcionales](REQUISITOS.md): artículos de venta/alquiler (sifones, cajones, soda suelta, bidones de 12/20 litros, máquinas frío/calor y otros), autenticador, búsqueda por localidad/cliente y vista de cuadra, jefe/asistentes con aprobaciones, recorridos diarios asignables y editables en marcha, calculadora/cobros, alquileres por cliente, baja con motivo/devoluciones/estado y aprobación, stock del transporte y vacíos, múltiples repartos por día, ausentes pendientes, identidad de empresa y seguimiento/notificaciones al jefe.
@@ -37,6 +43,8 @@ Son requisitos solicitados, todavía sin implementar. Quedan por precisar: méto
 Estas propuestas no fueron implementadas durante la revisión.
 
 ## Registro de avances
+
+- 2026-10-19: documentado el análisis visual de la referencia en video con marcas de tiempo, propuestas para jefe/asistente y límites de lo observado. Validación documental y `git diff --check`; no se modificó la aplicación ni Supabase.
 
 - 2026-10-19: incorporados los nuevos pedidos con identificadores y criterios de aceptación; actualizado el plan visible con el alcance recibido y el estado remoto ya verificado. Validación documental, correspondencia de requisitos y `git diff --check`. No se implementaron funciones nuevas ni se modificó Supabase en esta actualización.
 
