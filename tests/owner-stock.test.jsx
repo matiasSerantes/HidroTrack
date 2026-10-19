@@ -21,12 +21,12 @@ function fixture(section) {
 describe('inventario conectado del jefe',()=>{
   it('carga varios artículos juntos y retira el formulario al confirmar el reparto',async()=>{
     const {client,records}=fixture('trips');
-    records.products.push({id:'b4',name:'Bidón 4 litros',unit:'unidad',price:1000,returnable:true,active:true},{id:'dispenser',name:'Surtidor básico',unit:'unidad',price:0,returnable:false,active:true});
+    records.products.push({id:'b4',name:'Bidón 4 litros',unit:'unidad',price:1000,returnable:true,active:true},{id:'dispenser',name:'Dispenser básico',unit:'unidad',price:0,returnable:false,active:true});
     records.inventory_owned_stock.push({product_id:'b4',depot_ready:20},{product_id:'dispenser',depot_ready:4});
     await screen.findByRole('heading',{name:'Carga de camión'});
     fireEvent.change(screen.getByLabelText('Cargar Bidón 20'),{target:{value:'6'}});
     fireEvent.change(screen.getByLabelText('Cargar Bidón 4 litros'),{target:{value:'12'}});
-    fireEvent.change(screen.getByLabelText('Cargar Surtidor básico'),{target:{value:'2'}});
+    fireEvent.change(screen.getByLabelText('Cargar Dispenser básico'),{target:{value:'2'}});
     expect(screen.getByText('20 unidades')).toBeTruthy();
     client.rpc.mockImplementation(async()=>{records.inventory_trips[0].status='active';return {data:'ok',error:null};});
     fireEvent.click(screen.getByText('Registrar carga'));
@@ -87,7 +87,7 @@ describe('inventario conectado del jefe',()=>{
   it('consulta saldos por empresa y registra recarga con la función real, sin comprar envases',async()=>{
     const {client,filters}=fixture(); await screen.findByText('Dónde están los artículos');
     expect(filters.every(([,key,value])=>key!=='tenant_id'||value==='tenant-a')).toBe(true);
-    expect(screen.queryByText('Registrar o ubicar surtidor')).toBeNull();
+    expect(screen.queryByText('Registrar o ubicar dispenser')).toBeNull();
     fireEvent.change(screen.getByLabelText('Movimiento'),{target:{value:'refill'}});
     fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'2'}});
     fireEvent.click(screen.getByText('Registrar stock'));
@@ -106,14 +106,14 @@ describe('inventario conectado del jefe',()=>{
     await screen.findByText(/Inventario registrado/);
     expect(client.rpc.mock.calls[1]).toEqual(client.rpc.mock.calls[0]);
   });
-  it('registra un surtidor del cliente sin alquiler ni ingreso al patrimonio propio',async()=>{
+  it('registra un dispenser del cliente sin alquiler ni ingreso al patrimonio propio',async()=>{
     const {client}=fixture('dispensers'); await screen.findByText('Propiedad del cliente');
-    fireEvent.click(screen.getByText('Registrar o ubicar surtidor'));
-    fireEvent.change(screen.getByLabelText('Nombre o modelo'),{target:{value:'Surtidor particular'}});
+    fireEvent.click(screen.getByText('Registrar o ubicar dispenser'));
+    fireEvent.change(screen.getByLabelText('Nombre o modelo'),{target:{value:'Dispenser particular'}});
     fireEvent.change(screen.getByLabelText('Propiedad'),{target:{value:'customer'}});
-    fireEvent.change(screen.getByLabelText('Cliente del surtidor'),{target:{value:'c1'}});
+    fireEvent.change(screen.getByLabelText('Cliente del dispenser'),{target:{value:'c1'}});
     expect(screen.queryByLabelText('Alquiler mensual ($)')).toBeNull();
-    fireEvent.click(screen.getByText('Guardar ubicación del surtidor'));
+    fireEvent.click(screen.getByText('Guardar ubicación del dispenser'));
     await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_save_dispenser',expect.objectContaining({p_ownership:'customer',p_location:'customer',p_customer:'c1',p_monthly:0,p_mode:'customer_owned'})));
   });
 });

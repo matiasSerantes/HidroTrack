@@ -14,7 +14,7 @@ describe('demo completa: operaciones conectadas', () => {
     expect(() => demoRefill(delivered,'b20',2,'luz')).toThrow(/Solo el jefe/);
     expect(() => demoRefill(delivered,'b20',100000,'owner')).toThrow(/vacíos/);
   });
-  it('la baja no devuelve al depósito un surtidor que pertenece al cliente', () => {
+  it('la baja no devuelve al depósito un dispenser que pertenece al cliente', () => {
     const original=seedProgram(),client=original.clients.find(c=>c.id==='c6');
     expect(client?.rentals[0].mode).toBe('customer_owned');
     original.requests.push({id:'own-leave',kind:'deactivation',clientId:'c6',authorId:'nico',status:'pending',title:'Baja',returns:[]});

@@ -163,7 +163,7 @@ Mantener paleta celeste clara en tarjetas, cuenta y stock; deuda en naranja suav
 
 ### Patrimonio físico confirmado — 19/10/2026
 
-El jefe compra un parque propio de envases. Entregar, recuperar vacíos y rellenar solo cambia ubicación/condición; no aumenta el total. Compra y apertura inicial sí agregan unidades conocidas. Mostrar depósito lleno/vacío, camión lleno/vacío, envases en clientes y total por artículo. No afirmar si el cliente ya consumió el agua. Surtidores propios en préstamo gratuito o alquiler, separados de surtidores del cliente (no suman al patrimonio). Primera pantalla conectada del jefe implementada junto con base, carga única y regreso exacto; todavía falta validar con cuenta real e integrar ventas/cobros del chofer. Darío aportará datos luego; no crear su cuenta ni inventario con datos inventados.
+El jefe compra un parque propio de envases. Entregar, recuperar vacíos y rellenar solo cambia ubicación/condición; no aumenta el total. Compra y apertura inicial sí agregan unidades conocidas. Mostrar depósito lleno/vacío, camión lleno/vacío, envases en clientes y total por artículo. No afirmar si el cliente ya consumió el agua. Dispenser propios en préstamo gratuito o alquiler, separados de dispenser del cliente (no suman al patrimonio). Primera pantalla conectada del jefe implementada junto con base, carga única y regreso exacto; todavía falta validar con cuenta real e integrar ventas/cobros del chofer. Darío aportará datos luego; no crear su cuenta ni inventario con datos inventados.
 
 ### Usuarios reales — 19/10/2026
 
@@ -175,4 +175,4 @@ La cuenta real debe conservar la estructura visual aprobada de la demo: misma pa
 
 Catálogo visible con artículos y precios; cantidades separadas en inventario. La apertura inicial permite registrar los bidones vacíos antes de rellenarlos. Carga y detalle de llenos/vacíos del camión pertenecen a Repartos; Stock solo resume el total en camiones para conservar la distribución del patrimonio.
 
-Carga de camión: lista de artículos del catálogo, cantidad por fila, disponibles en depósito y total. Registrar carga confirma todos los artículos juntos, una sola vez por reparto. Stock del depósito también admite listas de cantidades por movimiento, sin confundir recarga de vacíos con salida al camión. Los equipos individualizados se gestionan por su identificación en Surtidores.
+Carga de camión: lista de artículos del catálogo, cantidad por fila, disponibles en depósito y total. Registrar carga confirma todos los artículos juntos, una sola vez por reparto. Stock del depósito también admite listas de cantidades por movimiento, sin confundir recarga de vacíos con salida al camión. Los equipos individualizados se gestionan por su identificación en Dispenser.

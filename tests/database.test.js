@@ -206,8 +206,8 @@ describe('stock transaccional PostgreSQL', () => {
     await as(driver); await rejected(() => ownerStock('refill',1), /Solo el jefe/);
     expect((await db.query('select * from public.inventory_owned_stock')).rows).toHaveLength(0);
   });
-  it('registra surtidor gratis, alquilado o del cliente sin mezclar propiedad', async () => {
-    const save=(id,operation,ownership,location,mode,monthly,customerId=location==='customer'?customer:null) => db.query('select public.inventory_save_dispenser($1,$2,$3,$4,$5,$6,$7,$8,null,$9,$10)',[tenant,operation,id,'Surtidor de prueba','',ownership,location,customerId,mode,monthly]);
+  it('registra dispenser gratis, alquilado o del cliente sin mezclar propiedad', async () => {
+    const save=(id,operation,ownership,location,mode,monthly,customerId=location==='customer'?customer:null) => db.query('select public.inventory_save_dispenser($1,$2,$3,$4,$5,$6,$7,$8,null,$9,$10)',[tenant,operation,id,'Dispenser de prueba','',ownership,location,customerId,mode,monthly]);
     const asset='70000000-0000-0000-0000-000000000001', own='70000000-0000-0000-0000-000000000002';
     const first=op(); await save(asset,first,'company','depot',null,0); await save(asset,first,'company','depot',null,0);
     await save(asset,op(),'company','customer','loan',0);

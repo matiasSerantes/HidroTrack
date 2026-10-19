@@ -10,10 +10,10 @@ La pantalla conectada muestra el nombre del jefe; el selector de repartidor usa 
 
 El usuario autorizó expresamente el mecanismo de alta temporal. Se creó la cuenta solicitada mediante Auth Admin, con correo confirmado, perfil de nombre, membresía owner activa, empresa inicial Reparto principal y licencia permanente activa sin asistentes habilitados (driver_limit=0). No se asignó rol de superadministrador.
 
-Verificación real: inicio de sesión por contraseña, nombre de perfil correcto, membresía/licencia y consultas REST autenticadas de productos, inventario y surtidores. Se cerró solo la sesión usada para esa comprobación. El inventario queda vacío para que el titular cargue sus cantidades reales.
+Verificación real: inicio de sesión por contraseña, nombre de perfil correcto, membresía/licencia y consultas REST autenticadas de productos, inventario y dispenser. Se cerró solo la sesión usada para esa comprobación. El inventario queda vacío para que el titular cargue sus cantidades reales.
 
 La función temporal usó JWT más un token aleatorio, restricción al único correo solicitado y vencimiento. Después del alta se reemplazó por una respuesta HTTP 410 sin código administrativo; se verificó que ya no permita altas. No se modificó el backend admin-users existente. Contraseña, correo, nombre e identificadores del titular no se guardan en el repositorio.
 
-Entrar por Ingresar a mi cuenta, con las credenciales suministradas por el usuario, y abrir Stock y surtidores. El autenticador 123456 de la demostración no es este acceso. Reparto principal es un nombre inicial, pendiente de reemplazar por la marca comercial que indique el titular.
+Entrar por Ingresar a mi cuenta, con las credenciales suministradas por el usuario, y abrir Stock y dispenser. El autenticador 123456 de la demostración no es este acceso. Reparto principal es un nombre inicial, pendiente de reemplazar por la marca comercial que indique el titular.
 
 Verificación local: 70 pruebas y compilación correctas. Falta revisión visual en teléfono/PC y completar las pantallas de ventas/cobros del chofer. No se cargaron productos, clientes ni operaciones de ejemplo en la empresa real.
