@@ -151,3 +151,7 @@ Pedido autorizado: preparar base de perfiles y provisionar el primer jefe con lo
 - 2026-10-19: el usuario autorizó explícitamente el alta administrativa temporal con JWT, token, restricción de correo y desactivación posterior. Continuar el alta del primer jefe y verificar sesión/acceso antes de darla por terminada. Sin credenciales ni datos personales en Git.
 
 - Alta del primer jefe completada después de la autorización explícita: Auth Admin, perfil, owner, empresa inicial y licencia activa solo para jefe. Verificados login y lecturas REST con JWT real; stock y surtidores vacíos. Función temporal sustituida por HTTP 410 y token local retirado. Se cerró la sesión de comprobación. No se guardan datos personales/credenciales en Git. Siguiente: ingresar desde la web con la cuenta real y cargar catálogo/conteo inicial.
+
+## 2026-10-19 · Igualar acceso real a la estética de la demo
+
+Corrección pedida: conservar diseño aprobado al trabajar con cuenta real. Integrar clientes e inventario conectados en la estructura visual de la demo: barra lateral en PC, encabezado de empresa y navegación inferior/móvil. Usar las mismas hojas de diseño/paleta, sin copiar datos ficticios ni presentar módulos pendientes como reales. Navegación a artículos, camión/repartos y surtidores sobre las secciones ya conectadas. Mantener bloqueo de navegación durante escrituras inciertas. Estado: en implementación.

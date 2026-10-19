@@ -170,3 +170,5 @@ El jefe compra un parque propio de envases. Entregar, recuperar vacíos y rellen
 Reutilizar Supabase Auth para credenciales y perfiles públicos protegidos para nombres. Roles solo desde membresías administrativas, nunca metadatos editables. Primer jefe solicitado: alta aún pendiente por revisión automática del mecanismo, sin guardar datos personales ni contraseña en Git. Perfiles y presentación de nombre implementados. Ver USUARIOS.md.
 
 - Actualización: primer jefe creado tras autorizar el alta administrativa temporal; perfil, empresa y licencia activos. Inicio de sesión y lectura de inventario verificados con sesión real. Alta temporal deshabilitada tras completar la operación. No se cargó stock ficticio.
+
+La cuenta real debe conservar la estructura visual aprobada de la demo: misma paleta, navegaci?n lateral en PC e inferior en celular. Mostrar ?nicamente datos reales y m?dulos conectados.

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { OwnerWorkspace } from '../src/features/OwnerWorkspace';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -9,6 +9,7 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   const calls = [];
   const records = [{ id: 'customer-a', name: 'María', address: 'Calle 123', phone: '' }];
   const client = {
+    rpc: vi.fn(async()=>({data:null,error:{message:'Sin respuesta de la conexión'}})),
     auth: { signOut: vi.fn(async () => ({ error: null })) },
     from: vi.fn(table => {
       const call = { table, filters: [], operation: 'read' }; calls.push(call);
@@ -22,7 +23,7 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
         single: () => chain,
         maybeSingle: () => {call.single=true;return chain;},
         then: (resolve, reject) => {
-          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : table==='customers' ? [...records] : [];
+          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { id: 'customer-a' } : table==='customers' ? [...records] : [];
           return Promise.resolve({ data, error: null }).then(resolve, reject);
         },
       };
@@ -32,6 +33,42 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   return { client, calls };
 }
 describe('panel conectado del titular', () => {
+  it('ofrece inicio, menú lateral y navegación móvil con las secciones conectadas',async()=>{
+    const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');
+    expect(screen.getByRole('heading',{name:'Mi jornada'})).toBeTruthy();
+    const menu=screen.getByRole('navigation',{name:'Secciones del jefe'});
+    fireEvent.click(screen.getByRole('button',{name:'Abrir navegación'}));
+    expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(within(menu).getByRole('button',{name:'Artículos',exact:true}));
+    await screen.findByRole('button',{name:'Guardar artículo'});
+    expect(screen.getByRole('heading',{name:'Artículos'})).toBeTruthy();
+    expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(within(menu).getByRole('button',{name:'Repartos y camión'}));
+    await screen.findByRole('heading',{name:'1. Preparar reparto'});
+    const mobile=screen.getByRole('navigation',{name:'Navegación rápida móvil'});
+    fireEvent.click(within(mobile).getByRole('button',{name:'Ver clientes'}));
+    expect(screen.getByRole('heading',{name:'Clientes de tu reparto'})).toBeTruthy();
+    expect(screen.queryByText(/Elena Duarte/)).toBeNull();
+  });
+  it('bloquea ambos menús ante un movimiento incierto y conserva el ID al reintentar',async()=>{
+    const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');
+    const menu=screen.getByRole('navigation',{name:'Secciones del jefe'});
+    fireEvent.click(within(menu).getByRole('button',{name:'Stock y surtidores'}));
+    await screen.findByText('Dónde están los artículos');
+    fireEvent.change(screen.getByLabelText('Artículo'),{target:{value:'product-a'}});
+    fireEvent.change(screen.getByLabelText('Cantidad'),{target:{value:'2'}});
+    fireEvent.click(screen.getByText('Registrar movimiento'));
+    await screen.findByText('Reintentar misma operación');
+    await waitFor(()=>expect(within(menu).getByRole('button',{name:'Clientes'}).disabled).toBe(true));
+    expect(screen.getByRole('button',{name:'Ver clientes'}).disabled).toBe(true);
+    client.rpc.mockResolvedValue({data:'ok',error:null});
+    fireEvent.click(screen.getByText('Reintentar misma operación'));
+    await screen.findByText(/Inventario registrado/);
+    await waitFor(()=>expect(within(menu).getByRole('button',{name:'Clientes'}).disabled).toBe(false));
+    expect(client.rpc.mock.calls[0]).toEqual(client.rpc.mock.calls[1]);
+  });
   it('abre el inventario real del jefe solo después de validar acceso y licencia', async()=>{
     const {client,calls}=clientFixture();
     render(<OwnerWorkspace client={client} userId="user-a"/>);
