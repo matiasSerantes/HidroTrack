@@ -6,7 +6,7 @@ const admin='00000000-0000-0000-0000-000000000001', owner='00000000-0000-0000-00
 const tenant='10000000-0000-0000-0000-000000000001', other='10000000-0000-0000-0000-000000000002';
 beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth; create table auth.users(id uuid primary key,email text); create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth,public to authenticated,anon;`);
- for(const version of ['20261017193404_foundation','20261017222129_admin_portal','20261020010000_admin_member_access']) await db.exec(await readFile(new URL(`../supabase/migrations/${version}.sql`,import.meta.url),'utf8'));
+ for(const version of ['20261017193404_foundation','20261017222129_admin_portal','20261020010000_admin_member_access','20261020020000_admin_access_history']) await db.exec(await readFile(new URL(`../supabase/migrations/${version}.sql`,import.meta.url),'utf8'));
 },30000);
 afterAll(async()=>{await db.close();});
 beforeEach(async()=>{
@@ -46,4 +46,14 @@ it('rechaza licencia vencida y estado nulo sin generar eventos',async()=>{
  await db.exec(`update public.licenses set kind='monthly',expires_at=now()-interval '1 day' where tenant_id='${tenant}'`);
  await as(admin); await rejected(()=>set(second,true),/licencia vigente/); await rejected(()=>set(driver,null),/Estado inválido/);
  expect((await db.query('select * from public.admin_member_events')).rows).toEqual([]);
+});
+it('el historial identifica acción, empresa y actor y no permite lectura de no administradores',async()=>{
+ await db.query('update auth.users set email=$1 where id=$2',['admin@example.test',admin]);
+ await db.query('update auth.users set email=$1 where id=$2',['driver@example.test',driver]);
+ await as(admin); await set(driver,false);
+ const {rows}=await db.query('select * from public.admin_access_history()');
+ expect(rows).toHaveLength(1);
+ expect(rows[0]).toMatchObject({tenant_name:'A',user_email:'driver@example.test',actor_email:'admin@example.test',is_active:false});
+ await as(owner); await rejected(()=>db.query('select * from public.admin_access_history()'),/Acceso denegado/);
+ expect((await db.query("select has_function_privilege('anon','public.admin_access_history()','execute') as allowed")).rows[0].allowed).toBe(false);
 });

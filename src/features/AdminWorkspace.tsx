@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { Droplets, LogOut, Plus, RefreshCw, LayoutDashboard, Users, ShieldCheck, Search } from 'lucide-react';
 import './OwnerWorkspace.css';
 import './AdminWorkspace.css';
+import { AdminAccessHistory, type AccessEvent } from './AdminAccessHistory';
 import { addDemoUser, initialAdminDemo, readAdminDemo, saveAdminDemo, setDemoDriverAccess, type AdminLicense as License, type AdminTenant as Tenant } from '../domain/adminDemo';
 
 function licenseFields(data: FormData) {
@@ -27,6 +28,8 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
  const [view, setView] = useState<'overview' | 'users' | 'licenses'>('overview');
  const [roleFilter, setRoleFilter] = useState('all');
  const [accessFilter, setAccessFilter] = useState('all');
+ const [showHistory,setShowHistory] = useState(false);
+ const [demoEvents,setDemoEvents] = useState<AccessEvent[]>([]);
  function licenseState(tenant: Tenant) {
   const license = tenant.license;
   if (!license) return 'Sin licencia';
@@ -52,7 +55,7 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
   if (!window.confirm(`${active ? '¿Reactivar' : '¿Pausar'} el acceso de ${member.email} en ${tenant.name}? Se conserva la cuenta y su historial. ${active ? 'Necesita licencia vigente y un cupo disponible.' : 'El cambio afecta únicamente a esta empresa; no cierra repartos ni rendiciones pendientes.'}`)) return;
   setBusy(true); setNotice('');
   try {
-   if (demo) { saveDemo(setDemoDriverAccess(tenants, tenant.id, member.user_id, active)); setNotice('Acceso de demostración actualizado.'); return; }
+   if (demo) { saveDemo(setDemoDriverAccess(tenants, tenant.id, member.user_id, active)); setDemoEvents(events=>[{id:crypto.randomUUID(),tenant_name:tenant.name,user_email:member.email,actor_email:'Administrador de ejemplo',is_active:active,created_at:new Date().toISOString()},...events].slice(0,100)); setNotice('Acceso de demostración actualizado.'); return; }
    if (!client) throw new Error('Sin conexión');
    const result = await client.rpc('admin_set_driver_access', { p_tenant: tenant.id, p_user: member.user_id, p_active: active });
    if (result.error) {
@@ -108,10 +111,11 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
   catch { setNotice('No pudimos cerrar la sesión. Reintentá.'); setBusy(false); }
  }
  return <div className="admin-shell"><aside className="admin-sidebar"><a className="admin-brand" href="/"><Droplets size={27}/> HidroTrack<span>ADMINISTRACIÓN</span></a><nav aria-label="Administración de plataforma">{([['overview','Resumen',LayoutDashboard],['users','Usuarios',Users],['licenses','Empresas y licencias',ShieldCheck]] as const).map(([id,label,Icon])=><button key={id} disabled={busy} aria-current={view===id?'page':undefined} onClick={()=>{setView(id);setSearch('');setForm(null);setEditing(null);}}><Icon size={19}/>{label}</button>)}</nav><p>Gestioná el acceso a la plataforma desde tu cuenta de administrador.</p></aside><main className="connected-workspace admin-workspace"><header><div><span className="eyebrow">HIDROTRACK · ADMINISTRACIÓN</span><h1>{view==='overview'?'Tu panel de administración':view==='users'?'Usuarios de la plataforma':'Empresas y licencias'}</h1><p className="muted">Administrá soderías, cuentas y licencias.</p></div><button onClick={signOut} disabled={busy}><LogOut size={16}/> {demo?'Salir de la vista previa':'Cerrar sesión'}</button></header>
- {demo && <div className="demo-notice"><span><strong>Modo demostración</strong> · Datos ficticios guardados solo en este navegador. Las cuentas y contraseñas son de ejemplo.</span><button disabled={busy} onClick={() => { if (confirm('¿Restablecer las soderías y usuarios de demostración?')) { try { saveDemo(initialAdminDemo()); setForm(null); setEditing(null); setNotice('Demostración restablecida.'); } catch { setNotice('No se pudo guardar en este navegador.'); } } }}>Restablecer demo</button></div>}
+ {demo && <div className="demo-notice"><span><strong>Modo demostración</strong> · Datos ficticios guardados solo en este navegador. Las cuentas y contraseñas son de ejemplo.</span><button disabled={busy} onClick={() => { if (confirm('¿Restablecer las soderías y usuarios de demostración?')) { try { saveDemo(initialAdminDemo());setDemoEvents([]); setForm(null); setEditing(null); setNotice('Demostración restablecida.'); } catch { setNotice('No se pudo guardar en este navegador.'); } } }}>Restablecer demo</button></div>}
  <div className="stats">{[['Soderías', tenants.length], ['Usuarios registrados', people.length], ['Accesos habilitados', people.filter(p=>p.access==='Habilitado').length], ['Empresas por revisar', tenants.filter(t=>licenseState(t)!=='Activa').length]].map(([label, value]) => <article className="stat" key={label}><span className="muted">{label}</span><strong>{loading || error ? '—' : value}</strong></article>)}</div>
  {view==='overview' && <section className="admin-welcome"><div><span className="eyebrow">TU PLATAFORMA, EN ORDEN</span><h2>Un lugar para gestionar a tu equipo de usuarios.</h2><p>Revisá quién tiene acceso, agregá titulares o choferes y mantené sus licencias al día.</p><button onClick={()=>{setView('users');setSearch('');}}>Ver usuarios <Users size={17}/></button></div><ShieldCheck size={76} aria-hidden="true"/></section>}
- <div className="admin-actions"><button className="primary" disabled={busy} onClick={() => { setForm('owner'); setNotice(''); }}><Plus size={16}/> Nueva sodería</button><button className="secondary" disabled={busy || loading || !!error || !tenants.length} onClick={() => { setForm('driver'); setNotice(''); }}><Plus size={16}/> Nuevo chofer</button><button disabled={busy || loading} onClick={() => setRefresh(v => v + 1)}><RefreshCw size={16}/> Actualizar</button></div>
+ <div className="admin-actions"><button className="primary" disabled={busy} onClick={() => { setForm('owner'); setNotice(''); }}><Plus size={16}/> Nueva sodería</button><button className="secondary" disabled={busy || loading || !!error || !tenants.length} onClick={() => { setForm('driver'); setNotice(''); }}><Plus size={16}/> Nuevo chofer</button><button disabled={busy || loading} onClick={() => setRefresh(v => v + 1)}><RefreshCw size={16}/> Actualizar</button><button disabled={busy} aria-expanded={showHistory} onClick={()=>setShowHistory(v=>!v)}>{showHistory?'Ocultar historial':'Ver historial de accesos'}</button></div>
+ {showHistory&&<AdminAccessHistory client={client} demo={demo} events={demoEvents} revision={refresh}/>}
  {notice && <p className="notice" role="status">{notice}</p>}
  {form && <section className="panel"><h2>{form === 'owner' ? 'Nueva sodería y titular' : 'Nuevo chofer'}</h2><p className="muted">La contraseña debe tener al menos 12 caracteres. Compartila con el usuario por un medio privado.</p><form className="customer-form" onSubmit={createUser} key={form}>
  {form === 'owner' ? <label>Nombre de la sodería<input name="name" required maxLength={120} disabled={busy} autoFocus/></label> : <label>Sodería<select name="tenant_id" required disabled={busy}>{tenants.map(t => <option value={t.id} key={t.id}>{t.name}</option>)}</select></label>}

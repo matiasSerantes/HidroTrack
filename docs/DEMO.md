@@ -157,6 +157,8 @@ Resultado remoto 19/10: reinicio ejecutado por MCP en una sola empresa y transac
 
 ## Demo anterior recuperada
 
+En el panel `/?demo=admin`, pulsar Ver historial de accesos. Luego pausar o reactivar al chofer de ejemplo desde Usuarios: aparece la acción con empresa, persona, administrador ficticio y hora argentina. El historial de ejemplo corresponde a esta sesión y se limpia al recargar o restablecer demo; no contiene eventos reales.
+
 Panel del propietario de plataforma: abrir `/?demo=admin`. Incluye Resumen, Usuarios con búsqueda/filtros y Empresas y licencias con altas y edición. En Usuarios, pausar y reactivar al chofer del Norte cambia su estado con confirmación conservando sus datos; al reactivar se verifica licencia y cupo. El titular no muestra esa acción. Todo se realiza con ejemplos locales. Para administrar cuentas reales se requiere ingresar con una cuenta verificada como administrador; la vista previa no otorga ese permiso. La gestión individual requiere además la migración `20261020010000_admin_member_access.sql`, pendiente de aplicación remota.
 
 La web abre el acceso real por defecto, aunque exista una jornada de demo guardada. Para continuar la simulación, elegir Explorar demostración o abrir `/?demo=1`; el progreso se recupera dentro de la demo. Salir vuelve al acceso real y retira `demo` de la URL sin borrar los datos ficticios. Las funciones de demo sin equivalente conectado comprobado siguen disponibles.

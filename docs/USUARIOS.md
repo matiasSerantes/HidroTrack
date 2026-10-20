@@ -2,6 +2,8 @@
 
 ## Panel del administrador de plataforma (20/10/2026)
 
+Ver historial de accesos muestra los últimos 100 cambios de choferes, con empresa, correo del chofer, acción, fecha/hora argentina y correo del administrador. Son cambios administrativos, no un registro de inicios de sesión. En vista previa se conservan únicamente los eventos de esta sesión; restablecer demo también limpia esos eventos. La lectura real usa `admin_access_history`, restringida en servidor a administradores. Aplicar `20261020020000_admin_access_history.sql` después de `20261020010000_admin_member_access.sql`; ambas siguen pendientes de aplicación remota. Los correos se consultan en su estado actual. La pantalla distingue error/actualización pendiente de un historial vacío y permite reintentar.
+
 El acceso real usa Ingresar a mi cuenta y verifica `is_platform_admin` antes de mostrar el panel. Una cuenta de jefe no obtiene permisos de administrador por visitar una URL. La asignación/verificación de tu cuenta administradora y la prueba con Supabase quedan pendientes de conexión; no se cambiaron roles remotos durante este avance.
 
 El panel incluye Resumen, Usuarios y Empresas y licencias. El directorio lista las membresías devueltas por `admin_directory`: correo, empresa, rol y acceso según membresía y licencia. Permite buscar por correo/empresa y filtrar titulares/choferes y accesos habilitados/inactivos/bloqueados. No es una lista de visitantes ni de personas conectadas en vivo; una cuenta con varias empresas puede aparecer varias veces. No incluye cuentas Auth sin empresa.

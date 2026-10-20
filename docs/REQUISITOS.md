@@ -4,6 +4,8 @@ Actualizado: 2026-10-19. Fuente: pedidos transmitidos por el usuario. Este docum
 
 ## Roles y empresa
 
+- Historial administrativo de accesos: mostrar los últimos 100 cambios de choferes con empresa, persona, acción, administrador y horario argentino; acceso exclusivo del administrador. Preparado y probado localmente; lectura real pendiente de migración `20261020020000_admin_access_history.sql`.
+
 - Gestión individual de choferes desde administración (20/10/2026): pausar/reactivar membresía por empresa con confirmación y auditoría, conservando cuenta/historial. Titulares protegidos; reactivación con licencia vigente y cupo. Preparado y probado en web/demo y PostgreSQL local; requiere migración remota antes del uso real.
 
 - Panel del propietario de plataforma: resumen, búsqueda de usuarios por correo/empresa, filtros de rol y acceso, alta de titulares/choferes y administración de licencias. Preparado en web (20/10/2026), con vista previa en `/?demo=admin`. Verificación de la cuenta administradora real pendiente; no confundir membresías registradas con visitantes o sesiones en vivo.
