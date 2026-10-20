@@ -211,3 +211,16 @@ En Nuevo/Editar cliente, guardar cantidades habituales por producto; el texto de
 Crear reparto suma cantidades de los clientes seleccionados y permite indicar dispenser previstos para entregar/cambiar. La sugerencia se ve durante la seleccion y en el recorrido preparado. Dispenser ya instalados no se suman como equipos nuevos. Pedidos de visitas extraordinarias reemplazan el habitual para esa parada. Clientes en futura baja no suman entregas.
 
 Iniciar reparto: cada articulo separa Para el recorrido y Carga extra. Total es la suma; se puede ajustar la cantidad prevista, siempre sujeto a disponibilidad. Confirmar una sola vez guarda carga completa, sugerencia y desglose. El stock del camion muestra lo previsto y lo extra, que puede entregarse luego a nuevos clientes autorizados agregados al recorrido. No habilita segunda carga ni permite editar una carga confirmada. El costo opcional de llenado incluye solo lo que se rellena para el total real, tambien extras. Sin cambios remotos; sugerencias/desglose pendientes de integracion real.
+
+
+## 20/10/2026 - Tablero, repartos activos y comprobantes
+
+Mi jornada del jefe: graficos de ganancia estimada y gastos del mes, semana por dia, mejor dia, ganancia diaria y bidones llenos/vacios/en clientes. Gastos disponibles: solo llenado historico. Si un reparto con actividad no tiene costos, no muestra ganancia completa ni inventa mejor dia. No equivale a caja ni a ganancia neta contable. Repartos fechados y ventas registradas se agrupan por fecha del reparto (dia ficticio por defecto).
+
+Debajo del banner aparecen tarjetas de repartos por salir, en recorrido y rendidos, con entregados/total, nuevas altas de ese dia entre sus paradas y paradas resueltas. Devolver envases, cobrar deuda o reprogramar ausencia no se cuenta como entrega. Numeracion estable segun recorrido. Actualiza al confirmar operaciones y al sincronizar otra pestana del mismo navegador; no es Realtime entre dispositivos reales.
+
+Finalizar reparto del jefe abre conteo; exige paradas resueltas y cantidades conciliadas. Genera snapshot inmutable del cierre. El asistente sigue pudiendo enviar rendicion y esperar aprobacion. Tras aprobar, Comprobantes de cierre ofrece PDF del jefe o del asistente segun rol. Excepcion a pantalla de espera: asistente sin nuevo recorrido puede descargar UNICAMENTE sus propios comprobantes cerrados; no ve modulos ni totales generales del jefe.
+
+Ambos PDF incluyen carga inicial/final, efectivo a rendir y dispenser nuevos/cambiados/retirados con estado. Jefe agrega ventas, efectivo y transferencia. Efectivo incluye cobro de deuda anterior; no descuenta gastos pagados por asistente ni confirma recepcion fisica de dinero. No se envian correos/mensajes. Nombres, precios y cantidades del cierre no cambian por editar luego el catalogo. Copias antiguas sin snapshot no se reconstruyen como historia confirmada.
+
+Implementado en demo; tablero/cierre/PDF conectados de produccion pendientes. PDF de muestra ficticio en output/pdf/cierre-reparto-demo.pdf, generado por prueba y excluido de Git; render revisado en PNG, incluyendo caso extenso de 10 paginas. Fuente generadora y pruebas versionadas. Revision visual de la interfaz en movil/PC pendiente.

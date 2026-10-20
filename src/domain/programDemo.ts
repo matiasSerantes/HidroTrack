@@ -1,3 +1,4 @@
+import { buildDemoTripReceipt, type DemoTripReceipt } from './tripReceiptDemo';
 import { routeLoadSuggestion } from './routeLoadDemo';
 import type { ExtraVisit, DispenserChange } from './customerVisitsDemo';
 import { fillingCostPreview, type FillingCostSnapshot } from './fillingCostDemo';
@@ -12,9 +13,9 @@ export type Rental = { id: string; productId: string; serial: string; monthly: n
 export type Client = { usualItems?:Record<string,number>; joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean; email?: string };
 export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
-export type Trip = { plannedEquipment?:Record<string,number>;loadRecommendation?:Record<string,number>;loadPlan?:Record<string,number>;loadExtras?:Record<string,number>; date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
+export type Trip = { receipt?:DemoTripReceipt; plannedEquipment?:Record<string,number>;loadRecommendation?:Record<string,number>;loadPlan?:Record<string,number>;loadExtras?:Record<string,number>; date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
-export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
+export type Sale = { date?:string; id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
 export type DemoProgramState = { extraVisits?:ExtraVisit[]; dispenserChanges?:DispenserChange[]; fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
@@ -158,7 +159,7 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   if(visit.extraVisitId){const extra=s.extraVisits?.find(v=>v.id===visit.extraVisitId);if(extra)extra.status='completed';}
   client.debt = before - Math.max(paid - total, 0) + (approved ? unpaid : 0); visit.status = 'visited'; delete visit.rescheduleDate;
   const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' });
-  s.sales.unshift({ id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
+  s.sales.unshift({ date:trip.date||demoDay, id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
   if (unpaid && !approved) {
     s.requests.unshift({ id: uid(), kind: 'credit', saleId, amount: unpaid, clientId: client.id, authorId: input.actorId, status: 'pending', title: `Deuda solicitada · ${client.name}` });
   }
@@ -228,6 +229,7 @@ export function approveClose(state: DemoProgramState, tripId: string) {
   if (s.products.some(p => (t.declared[p.id] || 0) !== (t.stock[p.id] || 0))) throw new Error('Hay diferencias: observá la rendición para que el asistente la revise.');
   for (const p of s.products) { p.depot += t.declared[p.id] || 0; s.depotEmpties[p.id] = (s.depotEmpties[p.id] || 0) + (t.empties[p.id] || 0); }
   for(const change of s.dispenserChanges||[]){if(change.tripId===t.id&&change.condition==='good'){const product=s.products.find(p=>p.id===change.previousProductId);if(product)product.depot+=1;}}
+  t.receipt=buildDemoTripReceipt(s,t);
   t.stage = 'approved'; notify(s, `${t.name}: rendición aprobada; productos y vacíos ingresaron al depósito.`); return s;
 }
 export const isDone = (s: Stop) => ['visited', 'no-sale', 'tomorrow', 'next-week'].includes(s.status);

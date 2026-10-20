@@ -84,3 +84,10 @@ Demo ampliada con pedido habitual, dias, alta y coordenadas, pedidos de visita a
 Demo usa cantidades habituales estructuradas, pedido extraordinario por parada y equipos expresamente previstos en el recorrido. No deduce cantidades de texto ni cuenta equipos del cliente como carga nueva. El jefe/chofer confirma cantidades previstas ajustables mas extra en una sola carga; guarda sugerencia y desglose historicos, sin crear inventario ni habilitar recargas.
 
 La RPC real actual admite cantidad inicial total por articulo y mantiene bloqueo de carga unica; falta integrar preferencias, necesidades de equipo por recorrido y snapshot previsto/extra transaccional. Stock insuficiente sigue bloqueado. Nuevos clientes requieren autorizacion existente; extra transportado no habilita por si solo acceso a carteras ajenas. No se aplico migracion para esta idea.
+
+
+## Pendiente: tablero mensual y PDF de rendicion
+
+Demo agrega agregacion por fecha de reparto/venta y gastos historicos de llenado. Servidor aun necesita categorias de gastos reales y contrato de rentabilidad; no inferir ganancia total si faltan costos. Consultas del jefe aisladas por tenant; no permitir al asistente agregados de otros repartos. Clientes nuevos se definen provisionalmente como alta el dia del reparto incluida en sus paradas.
+
+Snapshot PDF local al aprobar cierre; variante del jefe con ventas/cobros y variante del asistente con efectivo propio a rendir y stock. Integracion real debe leer snapshot de trip_closures/ledger, generar idempotentemente, conservar versiones y autorizar solo jefe o asistente de ese reparto, aun si luego queda en espera. No deducir dinero recibido por generar el comprobante. Notificacion, almacenamiento/descarga autenticada y Realtime entre dispositivos quedan pendientes; no se aplico migracion ni se enviaron documentos a terceros.

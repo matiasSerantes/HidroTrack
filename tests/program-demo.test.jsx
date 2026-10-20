@@ -15,6 +15,19 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('finaliza el jefe y deja el PDF disponible también en espera del asistente',()=>{
+    const s=seedProgram();s.trips[0].stops.forEach(p=>{p.status='visited';});localStorage.setItem(DEMO_KEY,JSON.stringify(s));enter();
+    expect(screen.getByRole('heading',{name:'Ganancia y gastos del mes'})).toBeTruthy();
+    expect(screen.getByRole('heading',{name:'Repartos activos'})).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'Finalizar reparto',exact:true}));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Finalizar reparto y generar PDF'}));
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).trips[0].receipt).toBeTruthy();
+    expect(screen.getByRole('button',{name:'Descargar PDF del jefe'})).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'luz'}});
+    expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
+    expect(screen.getByRole('button',{name:'Descargar PDF del asistente'})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'Descargar PDF del jefe'})).toBeNull();
+  });
   it('muestra carga sugerida mientras el jefe arma el recorrido',()=>{
     enter();fireEvent.click(screen.getByRole('button',{name:'Crear reparto',exact:true}));
     const dialog=screen.getByRole('dialog');
