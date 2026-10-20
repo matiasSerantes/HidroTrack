@@ -22,6 +22,15 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => { await db.close(); });
 describe('migración y seguridad PostgreSQL', () => {
+  it('detecta todos los componentes de las tres actualizaciones de inventario', async () => {
+    await db.exec('begin read only');
+    try {
+      const sql = await readFile(new URL('../supabase/tests/inventory_preflight.sql', import.meta.url), 'utf8');
+      const { rows } = await db.query(sql);
+      expect(rows.map(row => row.component_status)).toEqual(['present', 'present', 'present']);
+      expect(rows.every(row => row.missing_components === null)).toBe(true);
+    } finally { await db.exec('rollback'); }
+  });
   it('ejecuta la verificación posterior de incidentes sin modificar datos',async()=>{
     await db.exec(await readFile(new URL('../supabase/tests/inventory_incidents_verify.sql',import.meta.url),'utf8'));
     expect((await db.query('select count(*)::int as count from public.inventory_operations')).rows[0].count).toBe(0);
