@@ -70,3 +70,10 @@ Acceso: sin recorrido asignado, solo estado de espera. Revisar RLS y RPC de TODO
 Implementado solo en demo. Contrato confirmado: configuracion opcional del jefe y costo por producto retornable de venta; cobrar como gasto SOLO unidades rellenadas dentro de fill_and_load, nunca llenos existentes ni vacios transportados sin rellenar. En servidor, guardar costo unitario historico y unidades junto a la recarga/carga, dentro de su transaccion idempotente. No permitir costos enviados por asistente ni recalcular viajes previos al editar catalogo. Separar del precio de venta y del saldo del cliente.
 
 Mostrar solo al jefe vendido menos costo de llenado del reparto, separado de cobrado. Sin costos historicos: no inferir ganancia cero. No contabilizar dos veces al cerrar o reintentar. Definir costos de recarga independiente, devolucion o anulacion antes de incorporarlos al resultado; no forman parte de este pedido. Ninguna migracion aplicada por esta idea; RLS real y E2E pendientes al integrar.
+
+
+## 20/10 - Planilla, coordenadas y flujos de visita
+
+Frontend real de Nuevo/Editar cliente escribe latitude/longitude en customers y lee created_at; campos ya instalados en route_workflow/foundation. Selector en mapa y posicion actual son acciones explicitas, sin geocodificar ni sobrescribir direccion. No se agregaron migraciones ni datos de prueba. Probar guardar/recuperar coordenadas por Auth/PostgREST y permiso GPS real antes de uso operativo.
+
+Demo ampliada con pedido habitual, dias, alta y coordenadas, pedidos de visita adicionales separados de agenda semanal y cambios de dispenser. Pendiente real: alta/edicion transaccional de horarios y preferencias existentes, libro de visitas extraordinarias y asignacion por fecha, cambio atomico de equipos con idempotencia, historia de contrato y retorno separado del stock disponible. No concatenar devolver/asignar desde navegador para simular atomicidad. Mantener cuota/ancla al cambiar salvo regla comercial futura. Equipo del cliente no se retira como propio. Danado a revision; reparar/reingresar pendiente. Devolucion parcial de bidones no cambia regla de saldo; no forzar devolucion total.

@@ -1,3 +1,4 @@
+import { CustomerLocationPicker, readCustomerLocation } from './CustomerLocationPicker';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Plus, RefreshCw, FileText } from 'lucide-react';
@@ -7,7 +8,7 @@ import { OwnerCustomerSheet } from './OwnerCustomerSheet';
 import { OwnerOverview, OwnerShell, ownerViewTitle, type OwnerView } from './OwnerShell';
 
 type Membership = { tenant_id: string; role: string };
-type Customer = { id: string; name: string; address: string; phone: string };
+type Customer = {latitude?:number|null;longitude?:number|null;created_at?:string; id: string; name: string; address: string; phone: string };
 type License = { kind: string; status: string; expires_at: string | null };
 type Workspace = { ownerName: string; tenantName: string; license: License; customers: Customer[] };
 
@@ -54,7 +55,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
         if (license.kind === 'monthly' && (!license.expires_at || Date.parse(license.expires_at) <= Date.now())) throw new Error('La licencia de tu reparto venció. Contactá al administrador.');
         const [tenantResult, customersResult, profileResult] = await Promise.all([
           client.from('tenants').select('name').eq('id', tenantId).single(),
-          client.from('customers').select('id, name, address, phone').eq('tenant_id', tenantId).eq('active', true).order('name'),
+          client.from('customers').select('id, name, address, phone, latitude, longitude, created_at').eq('tenant_id', tenantId).eq('active', true).order('name'),
           client.from('user_profiles').select('full_name').eq('user_id',userId).maybeSingle(),
         ]);
         if (tenantResult.error || customersResult.error || profileResult.error) throw new Error('No pudimos consultar los datos del reparto. Revisá la conexión y tu acceso.');
@@ -71,8 +72,10 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     if (!name || !address) { setNotice('Completá nombre y dirección.'); return; }
     setBusy(true); setNotice('');
     try {
-      const request=editing?client.from('customers').update({name,address,phone}).eq('tenant_id',tenantId).eq('id',editing.id):client.from('customers').insert({tenant_id:tenantId,name,address,phone});
-      const result=await request.select('id, name, address, phone').single();
+      const point=readCustomerLocation(data);
+      const values={name,address,phone,...(point?{latitude:point.lat,longitude:point.lng}:editing?.latitude!=null?{latitude:null,longitude:null}:{})};
+      const request=editing?client.from('customers').update(values).eq('tenant_id',tenantId).eq('id',editing.id):client.from('customers').insert({tenant_id:tenantId,...values});
+      const result=await request.select('id, name, address, phone, latitude, longitude, created_at').single();
       if (result.error) throw result.error;
       setWorkspace(current => current ? { ...current, customers: [...current.customers.filter(c=>c.id!==result.data.id), result.data].sort((a, b) => a.name.localeCompare(b.name, 'es')) } : null);
       setShowForm(false);setEditing(null);setSelectedCustomer(null); setNotice('Cliente guardado en tu reparto.');
@@ -106,7 +109,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     {error ? <section className="notice" role="alert"><p>{error}</p><button onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16}/> Reintentar</button></section> : memberships === null ? <p role="status">Consultando tu acceso…</p> : !owners.length ? <section className="notice">{memberships.some(item => item.role === 'driver') ? 'Tu cuenta es de chofer. El acceso a recorridos asignados se habilitará en la siguiente etapa.' : 'Tu cuenta todavía no está asignada a un reparto como titular. Contactá al administrador para completar el alta.'}</section> : !workspace ? <p role="status">Cargando tu reparto…</p> : <>
     <div className="hd-demo-strip owner-license-strip"><span>Cuenta de titular · {workspace.license.kind === 'permanent' ? 'Licencia permanente' : `Licencia vigente hasta ${new Date(workspace.license.expires_at!).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`}</span><button disabled={busy||stockLocked} onClick={() => setRefresh(value => value + 1)}>Actualizar datos</button></div>
     {view==='overview' ? <OwnerOverview company={workspace.tenantName} customers={workspace.customers} go={navigate} addCustomer={()=>{setView('customers');setShowForm(true);}}/> : view!=='customers' ? <OwnerStock section={view==='stock'?'inventory':view} key={tenantId} client={client} tenantId={tenantId} customers={workspace.customers} onLock={setStockLocked}/> : selectedCustomer&&!showForm?<OwnerCustomerSheet key={`${tenantId}.${selectedCustomer.id}`} client={client} tenantId={tenantId} customer={selectedCustomer} disabled={busy} onArchive={()=>void archive(selectedCustomer)} onLock={setStockLocked} onClose={()=>setSelectedCustomer(null)} onEdit={()=>{setEditing(selectedCustomer);setShowForm(true);}}/> : <section className="panel"><div className="section-heading"><div><h2>Clientes de tu reparto</h2><p className="muted">{workspace.customers.length} clientes activos</p></div><button className="primary" disabled={busy||stockLocked} onClick={() => {setEditing(null);setSelectedCustomer(null);setShowForm(value=>!value);}}><Plus size={16}/> Nuevo cliente</button></div>
-    {showForm && <form key={editing?.id||'new'} className="customer-form" onSubmit={createCustomer}><h3>{editing?'Editar cliente':'Nuevo cliente'}</h3><label>Nombre completo<input name="name" defaultValue={editing?.name||''} required maxLength={100} autoFocus disabled={busy||stockLocked}/></label><label>Dirección<input name="address" defaultValue={editing?.address||''} required maxLength={200} disabled={busy||stockLocked}/></label><label>Teléfono<input name="phone" defaultValue={editing?.phone||''} type="tel" maxLength={40} disabled={busy||stockLocked}/></label><button className="primary" disabled={busy||stockLocked}>{busy ? 'Guardando…' : 'Guardar cliente'}</button><button type="button" disabled={busy||stockLocked} onClick={() => {setShowForm(false);setEditing(null);}}>Cancelar</button></form>}
+    {showForm && <form key={editing?.id||'new'} className="customer-form" onSubmit={createCustomer}><h3>{editing?'Editar cliente':'Nuevo cliente'}</h3><label>Nombre completo<input name="name" defaultValue={editing?.name||''} required maxLength={100} autoFocus disabled={busy||stockLocked}/></label><label>Dirección<input name="address" defaultValue={editing?.address||''} required maxLength={200} disabled={busy||stockLocked}/></label><label>Teléfono<input name="phone" defaultValue={editing?.phone||''} type="tel" maxLength={40} disabled={busy||stockLocked}/></label><CustomerLocationPicker initial={editing?.latitude!=null&&editing.longitude!=null?{lat:editing.latitude,lng:editing.longitude}:undefined} disabled={busy||stockLocked}/><button className="primary" disabled={busy||stockLocked}>{busy ? 'Guardando…' : 'Guardar cliente'}</button><button type="button" disabled={busy||stockLocked} onClick={() => {setShowForm(false);setEditing(null);}}>Cancelar</button></form>}
     <label>Buscar clientes<input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre o dirección"/></label><div className="table-wrap"><table className="owner-customers-table"><thead><tr><th>Cliente</th><th>Dirección</th><th>Teléfono</th><th/></tr></thead><tbody>{workspace.customers.filter(c => `${c.name} ${c.address}`.toLowerCase().includes(search.toLowerCase())).map(c => <tr key={c.id}><td><button className="customer-name-link" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}>{c.name}</button></td><td>{c.address}</td><td>{c.phone || '—'}</td><td><div className="customer-actions"><button className="primary" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}><FileText size={16}/>Planilla</button></div></td></tr>)}</tbody></table></div>{!workspace.customers.length && <p className="empty">Tu reparto todavía no tiene clientes. Agregá el primero para comenzar.</p>}</section>}</>}
     {notice && <p className="notice" role="status">{notice}</p>}
   </OwnerShell>;

@@ -25,13 +25,14 @@ export function readJourney(state: DemoProgramState): Journey | null {
 }
 export const draftKey = (actor: string, tripId: string, clientId: string) => `hidrotrack.demo-draft.${actor}.${tripId}.${clientId}`;
 export const mapPositionKey = (actor: string, tripId: string) => `hidrotrack.demo-map.${actor}.${tripId}`;
-export type VisitDraft = { quantities: Record<string, number>; returns: Record<string, number>; rentals: string[]; paid: string; method: 'Efectivo' | 'Transferencia' };
+export type VisitDraft = { dispenserChange?:{rentalId:string;productId:string;condition:'good'|'damaged'}; quantities: Record<string, number>; returns: Record<string, number>; rentals: string[]; paid: string; method: 'Efectivo' | 'Transferencia' };
 export function readVisitDraft(key: string): VisitDraft {
   const empty: VisitDraft = { quantities: {}, returns: {}, rentals: [], paid: '0', method: 'Efectivo' };
   try {
     const d = JSON.parse(localStorage.getItem(key) || 'null');
     if (!d || typeof d.quantities !== 'object' || !d.quantities || typeof d.returns !== 'object' || !d.returns || !Array.isArray(d.rentals) || typeof d.paid !== 'string' || !['Efectivo', 'Transferencia'].includes(d.method)) return empty;
     if (![...Object.values(d.quantities), ...Object.values(d.returns)].every(n => Number.isSafeInteger(n) && Number(n) >= 0 && Number(n) <= 100000) || !d.rentals.every((id: unknown) => typeof id === 'string')) return empty;
+    if(d.dispenserChange&&!(typeof d.dispenserChange.rentalId==='string'&&typeof d.dispenserChange.productId==='string'&&['good','damaged'].includes(d.dispenserChange.condition)))delete d.dispenserChange;
     return d;
   } catch { return empty; }
 }

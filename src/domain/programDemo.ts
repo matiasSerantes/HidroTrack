@@ -1,3 +1,4 @@
+import type { ExtraVisit, DispenserChange } from './customerVisitsDemo';
 import { fillingCostPreview, type FillingCostSnapshot } from './fillingCostDemo';
 import { currency, parseMoney } from './demo';
 import type {StockEvent} from './stockIncidentDemo';
@@ -7,21 +8,23 @@ export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { fillingCostEnabled?:boolean; fillingCost?:number; id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' | 'customer_owned' };
-export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
+export type Client = { joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean; email?: string };
-export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
-export type Trip = { fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
+export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
+export type Trip = { date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
-export type DemoProgramState = { fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
+export type DemoProgramState = { extraVisits?:ExtraVisit[]; dispenserChanges?:DispenserChange[]; fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export const pendingDemoRecovery = (s: DemoProgramState, clientId: string) => s.requests.some(r => r.kind === 'deactivation' && r.clientId === clientId && r.status === 'pending');
 export function demoOwnedStock(s: DemoProgramState, productId: string) {
   const product=s.products.find(p=>p.id===productId);
   const trips=s.trips.filter(t=>['active','submitted'].includes(t.stage));
   const depot=product?.depot||0, empty=s.depotEmpties[productId]||0, truck=trips.reduce((n,t)=>n+(t.stock[productId]||0),0), truckEmpty=trips.reduce((n,t)=>n+(t.empties[productId]||0),0), held=s.clients.reduce((n,c)=>n+(c.held[productId]||0),0);
-  return {depot,empty,truck,truckEmpty,held,total:depot+empty+truck+truckEmpty+held};
+  const equipmentReturns=(s.dispenserChanges||[]).filter(c=>c.previousProductId===productId&&s.trips.some(t=>t.id===c.tripId&&t.stage!=='approved')).length;
+  const repair=(s.dispenserChanges||[]).filter(c=>c.previousProductId===productId&&c.condition==='damaged'&&s.trips.some(t=>t.id===c.tripId&&t.stage==='approved')).length;
+  return {depot,empty,truck,truckEmpty,held,equipmentReturns,repair,total:depot+empty+truck+truckEmpty+held+equipmentReturns+repair};
 }
 export function demoRefill(s: DemoProgramState, productId: string, quantity: number, actor: string) {
   if(!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active)) throw new Error('Solo el jefe puede registrar recargas.');
@@ -46,7 +49,7 @@ export function archiveDemoProduct(state:DemoProgramState,productId:string,actor
   if(!product)throw new Error('Artículo no habilitado.');
   const placed=state.clients.reduce((n,c)=>n+c.rentals.filter(r=>r.productId===productId&&r.mode!=='customer_owned').length,0);
   const b=demoOwnedStock(state,productId);
-  if(b.truck+b.truckEmpty+b.held+placed>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
+  if(b.truck+b.truckEmpty+b.held+placed+b.equipmentReturns+b.repair>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
   const next=structuredClone(state),target=next.products.find(p=>p.id===productId)!;
   for(const [source,quantity] of [['depot_ready',b.depot],['depot_empty',b.empty]] as const){if(quantity>0)next.stockEvents=[{id:uid(),productId,quantity,kind:'remove',source,date:demoDay,registeredAt:new Date().toISOString(),actorId:actor,involvedKind:'owner',involvedId:actor,note:'Corrección de alta: artículo ingresado por error.'},...(next.stockEvents||[])];}
   target.depot=0;next.depotEmpties[productId]=0;target.active=false;return next;
@@ -81,7 +84,7 @@ export function seedProgram(): DemoProgramState {
     ],
     members: [{ id: 'owner', name: 'Santiago · jefe', role: 'owner', active: true }, { id: 'luz', name: 'Lucía Medina', role: 'driver', active: true }, { id: 'nico', name: 'Nicolás Ríos', role: 'driver', active: true }],
     clients: [
-      { id: 'c1', name: 'Elena Duarte', address: 'Alvear 1240', locality: 'Villa Ballester', block: 'alvear-1200', x: 28, y: 27, active: true, debt: 480000, held: { b20: 2, soda: 3 }, rentals: [], usual: '2 bidones de 20 L', note: 'Tocar timbre del local. Prefiere por la mañana.' },
+      { joinedOn:'2026-09-07',visitDays:[1], id: 'c1', name: 'Elena Duarte', address: 'Alvear 1240', locality: 'Villa Ballester', block: 'alvear-1200', x: 28, y: 27, active: true, debt: 480000, held: { b20: 2, soda: 3 }, rentals: [], usual: '2 bidones de 20 L', note: 'Tocar timbre del local. Prefiere por la mañana.' },
       { id: 'c2', name: 'Café La Esquina', address: 'Alvear 1278', locality: 'Villa Ballester', block: 'alvear-1200', x: 37, y: 30, active: true, debt: 0, held: { b20: 3 }, rentals: [{ id: 'rent1', productId: 'frio', serial: 'FC-DEMO-021', monthly: 1800000 }], usual: '3 bidones de 20 L', note: 'Entrada por el café. Equipo en alquiler.' },
       { id: 'c3', name: 'Martín Acosta', address: 'Lacroze 840', locality: 'Villa Ballester', block: 'lacroze-800', x: 60, y: 46, active: true, debt: 0, held: { b12: 2 }, rentals: [], usual: '2 bidones de 12 L', note: 'Si no está, consultar si puede recibir después.' },
       { id: 'c4', name: 'Almacén Los Tilos', address: 'Independencia 215', locality: 'San Andrés', block: 'independencia-200', x: 76, y: 68, active: true, debt: 220000, held: { cajon: 2 }, rentals: [], usual: '1 cajón de soda', note: 'Abierto hasta las 18 h.' },
@@ -107,7 +110,7 @@ export function readProgram(): DemoProgramState {
 }
 function integer(n: number) { if (!Number.isSafeInteger(n) || n < 0 || n > 100000) throw new Error('Usá cantidades enteras entre 0 y 100.000.'); }
 function notify(s: DemoProgramState, text: string) { s.notices.unshift({ id: uid(), text, read: false }); }
-export function recordVisit(state: DemoProgramState, input: { tripId: string; clientId: string; actorId: string; items: { productId: string; quantity: number; returned: number }[]; rentalIds?: string[]; paid: string; method: Sale['method'] }): DemoProgramState {
+export function recordVisit(state: DemoProgramState, input: { tripId: string; clientId: string; actorId: string; items: { productId: string; quantity: number; returned: number }[]; rentalIds?: string[]; paid: string; method: Sale['method']; dispenserChange?:{rentalId:string;productId:string;condition:'good'|'damaged'} }): DemoProgramState {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === input.tripId), client = s.clients.find(c => c.id === input.clientId);
   if (!trip || !client?.active || trip.stage !== 'active') throw new Error('Necesitás un reparto activo y un cliente habilitado.');
   if (input.actorId !== 'owner' && trip.driverId !== input.actorId) throw new Error('Este reparto no está asignado a tu usuario.');
@@ -133,14 +136,25 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
     if (product.kind === 'rental') for (let n = 0; n < item.quantity; n++) { const id = uid(); newRentals.push(id); client.rentals.push({ id, productId: product.id, serial: `DEMO-${s.sales.length + 1}-${n + 1}`, monthly: product.price }); }
     items.push({ ...item, price: product.price });
   }
+  if(input.dispenserChange){
+    const change=input.dispenserChange,rental=client.rentals.find(r=>r.id===change.rentalId),product=s.products.find(p=>p.id===change.productId&&p.active&&p.kind==='rental');
+    if(pendingDemoRecovery(s,client.id))throw new Error('Futura baja: no entregar un dispenser nuevo.');
+    if(!rental||rental.mode==='customer_owned'||!product||!['good','damaged'].includes(change.condition))throw new Error('Elegí un dispenser del reparto, reemplazo y estado del retirado.');
+    if((trip.stock[product.id]||0)<1)throw new Error('No hay un dispenser de reemplazo disponible en el camión.');
+    trip.stock[product.id]-=1;
+    const serial=`CAMBIO-DEMO-${uid()}`;
+    s.dispenserChanges=[...(s.dispenserChanges||[]),{id:uid(),clientId:client.id,tripId:trip.id,previousProductId:rental.productId,previousSerial:rental.serial,productId:product.id,serial,condition:change.condition,date:demoDay}];
+    rental.productId=product.id;rental.serial=serial;
+  }
   const rentalIds = [...new Set(input.rentalIds || [])];
   const rentalFee = rentalIds.reduce((sum, id) => { const rental = client.rentals.find(r => r.id === id); if (!rental || s.sales.some(sale => sale.rentalIds?.includes(id))) throw new Error('El alquiler ya se cobró en el período demo o no pertenece al cliente.'); return sum + rental.monthly; }, 0);
   rentalIds.push(...newRentals);
   const total = items.reduce((a, i) => a + i.price * i.quantity, 0) + rentalFee, paid = parseMoney(input.paid), before = client.debt;
   if (!Number.isSafeInteger(total) || !Number.isSafeInteger(before + total)) throw new Error('El importe excede el rango permitido para la demo.');
   if (paid > total + before) throw new Error('El cobro supera la venta más la deuda anterior.');
-  if (!items.length && !paid && !rentalFee) throw new Error('Cargá una entrega, devolución o cobro; para una visita sin operación usá «No compró».');
+  if (!items.length && !paid && !rentalFee && !input.dispenserChange) throw new Error('Cargá una entrega, devolución o cobro; para una visita sin operación usá «No compró».');
   const unpaid = Math.max(total - paid, 0), approved = input.actorId === 'owner', saleId = uid();
+  if(visit.extraVisitId){const extra=s.extraVisits?.find(v=>v.id===visit.extraVisitId);if(extra)extra.status='completed';}
   client.debt = before - Math.max(paid - total, 0) + (approved ? unpaid : 0); visit.status = 'visited'; delete visit.rescheduleDate;
   const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' });
   s.sales.unshift({ id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
@@ -210,6 +224,7 @@ export function approveClose(state: DemoProgramState, tripId: string) {
   if (!t || t.stage !== 'submitted') throw new Error('La rendición no está pendiente de aprobación.');
   if (s.products.some(p => (t.declared[p.id] || 0) !== (t.stock[p.id] || 0))) throw new Error('Hay diferencias: observá la rendición para que el asistente la revise.');
   for (const p of s.products) { p.depot += t.declared[p.id] || 0; s.depotEmpties[p.id] = (s.depotEmpties[p.id] || 0) + (t.empties[p.id] || 0); }
+  for(const change of s.dispenserChanges||[]){if(change.tripId===t.id&&change.condition==='good'){const product=s.products.find(p=>p.id===change.previousProductId);if(product)product.depot+=1;}}
   t.stage = 'approved'; notify(s, `${t.name}: rendición aprobada; productos y vacíos ingresaron al depósito.`); return s;
 }
 export const isDone = (s: Stop) => ['visited', 'no-sale', 'tomorrow', 'next-week'].includes(s.status);

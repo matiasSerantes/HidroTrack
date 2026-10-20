@@ -191,3 +191,14 @@ Como jefe: Mi empresa > Configuracion de llenado > Controlar costo de llenado y 
 Para probar: preparar un reparto con faltante de llenos, habilitar Rellenar los vacios que falten y cargar. Se previsualizan cantidad y costo de los que se rellenan, no de los llenos ya disponibles. Ejemplo: cargar 5, deposito 2 llenos, costo $100: se rellenan 3, costo $300, resultado inicial -$300. Stock del camion e informe del jefe muestran vendido, costo y resultado estimado. Cobros y deuda previa no se confunden con venta.
 
 Los costos de la carga quedan congelados; cambiar precio o desactivar opcion no cambia historia. Repartos anteriores sin registro no calculan retroactivamente. Simulacion local, sin base remota ni margen contable completo: excluye combustible, salarios, recargas previas y otros gastos.
+
+
+## 20/10/2026 - Ubicacion, ficha y visitas especiales
+
+Nuevo/Editar cliente: direccion escrita mas Ubicar en el mapa, Usar posicion actual (GPS del navegador solo al tocar y aceptar permiso), o coordenadas manuales. El mapa carga al abrirlo, necesita internet y no geocodifica direcciones. En demo hay Usar ubicacion de ejemplo para no necesitar GPS. Este permiso puntual no activa seguimiento de choferes; el mapa de recorrido sigue simulado. La fecha de alta de clientes nuevos es el dia ficticio; copias antiguas sin fecha no la inventan. Ficha muestra coordenadas, pedido habitual y dias semanales.
+
+En ficha del jefe: Generar visita adicional, elegir fecha, producto y cantidad. Asignar a un reparto abierto de esa fecha que no incluya al cliente. Si no existe, crear uno desde Repartos y mapa (incluye fecha). No cambia rutina semanal, carga ni stock; al atender queda el registro.
+
+Devolucion parcial existente verificada: tenia 2, devuelve 1 sin recibir nuevos, queda 1 pendiente; si ademas recibe otro, quedan 2. Cambiar dispenser desde Atender cliente: elegir equipo del cliente, reemplazo disponible y estado del retirado. Conserva contrato/modalidad/cuota, no cobra nueva cuota automaticamente, descuenta reemplazo del camion y registra retirado separado. Al aprobar cierre, bueno vuelve al deposito y danado queda en revision. No hay reparacion/reingreso desde revision implementada por esta idea.
+
+Conectado real: selector mapa/GPS, guardado de coordenadas en clientes y lectura de fecha de alta en planilla, usando columnas existentes. Dias, pedido habitual, visitas extras y reemplazos corresponden a esta demo; sus pantallas y contratos remotos completos siguen pendientes. No se cargaron datos de prueba en Supabase. Validacion visual y permiso GPS en dispositivos reales pendientes.

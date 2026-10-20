@@ -15,6 +15,38 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('guarda ubicación, alta y día habitual al crear cliente',()=>{
+    enter();fireEvent.click(screen.getByRole('button',{name:'Nuevo cliente',exact:true}));
+    fireEvent.change(screen.getByLabelText('Nombre del cliente'),{target:{value:'Cliente de prueba mapa'}});
+    fireEvent.change(screen.getByLabelText('Dirección'),{target:{value:'Calle de ejemplo 50'}});
+    fireEvent.change(screen.getByLabelText('Cuadra (calle-altura, para agrupar)'),{target:{value:'ejemplo-0'}});
+    fireEvent.change(screen.getByLabelText('Pedido habitual'),{target:{value:'Siempre pide 2 bidones'}});
+    fireEvent.click(screen.getByRole('button',{name:'Usar ubicación de ejemplo'}));fireEvent.click(screen.getByLabelText('Lunes'));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
+    const saved=JSON.parse(localStorage.getItem(DEMO_KEY)).clients.find(c=>c.name==='Cliente de prueba mapa');
+    expect(saved.geo).toEqual({lat:-34.60905,lng:-58.3832});expect(saved.visitDays).toEqual([1]);expect(saved.joinedOn).toBe('2026-10-19');
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));fireEvent.click(screen.getByRole('button',{name:'Abrir ficha de Cliente de prueba mapa'}));
+    expect(within(screen.getByRole('dialog')).getByText('Lunes')).toBeTruthy();expect(within(screen.getByRole('dialog')).getByText('19/10/2026')).toBeTruthy();
+  });
+  it('genera visita adicional desde planilla sin cambiar lunes ni duplicar carga',()=>{
+    const initial=seedProgram();initial.trips[1].date='2026-10-20';localStorage.setItem(DEMO_KEY,JSON.stringify(initial));enter();fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));fireEvent.click(screen.getByRole('button',{name:'Abrir ficha de Elena Duarte'}));
+    fireEvent.click(screen.getByRole('button',{name:'Generar visita adicional'}));
+    fireEvent.change(screen.getByLabelText('Fecha de visita adicional'),{target:{value:'2026-10-20'}});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar visita adicional'}));
+    fireEvent.change(screen.getByLabelText('Reparto para visita adicional'),{target:{value:'t2'}});
+    fireEvent.click(screen.getByRole('button',{name:'Asignar visita adicional'}));
+    const s=JSON.parse(localStorage.getItem(DEMO_KEY));expect(s.extraVisits[0]).toMatchObject({quantity:2,status:'assigned',tripId:'t2'});
+    expect(s.clients[0].visitDays).toEqual([1]);expect(s.trips[1].load).toEqual({});
+  });
+  it('cambia dispenser desde atención y registra retirado sin una cuota adicional',()=>{
+    enter(true);fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));fireEvent.click(screen.getByRole('button',{name:'Abrir ficha de Café La Esquina'}));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:/Atender cliente/}));
+    fireEvent.click(screen.getByLabelText('Cambiar dispenser en esta visita'));
+    fireEvent.change(screen.getByLabelText('Estado del dispenser retirado'),{target:{value:'damaged'}});
+    fireEvent.click(screen.getByRole('button',{name:'Confirmar visita'}));
+    const s=JSON.parse(localStorage.getItem(DEMO_KEY));expect(s.dispenserChanges[0]).toMatchObject({clientId:'c2',condition:'damaged',previousSerial:'FC-DEMO-021'});
+    expect(s.trips[0].stock.frio).toBe(0);expect(s.sales[0].total).toBe(0);
+  });
   it('habilita llenado en configuración y guarda costo independiente del precio de venta',()=>{
     enter();fireEvent.click(screen.getByRole('button',{name:'Catálogo',exact:true}));
     const card=screen.getByRole('heading',{name:'Bidón 20 litros'}).closest('article');fireEvent.click(within(card).getByRole('button',{name:/Editar/}));

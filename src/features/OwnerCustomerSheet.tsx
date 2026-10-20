@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { parseMoney, currency } from '../domain/demo';
 import {isDispenserModel,stockToday} from './OwnerStockIncident';
 
-type Customer = {id:string;name:string;address:string;phone:string};
+type Customer = {latitude?:number|null;longitude?:number|null;created_at?:string;id:string;name:string;address:string;phone:string};
 type Product = {family?:string;id:string;name:string;active:boolean;returnable:boolean};
 type Asset = {retired?:boolean;id:string;name:string;serial:string;ownership:string;location:string;customer_id:string|null;mode:string|null;monthly:number};
 type ModelAssignment={id:string;product_id:string;customer_id:string;mode:string;monthly:number;status:string;occurred_on:string};
@@ -64,6 +64,7 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
   function returnModel(event:FormEvent<HTMLFormElement>,id:string){event.preventDefault();const f=new FormData(event.currentTarget);void execute({name:'inventory_return_dispenser_model',args:{p_tenant:tenantId,p_id:crypto.randomUUID(),p_assignment:id,p_date:f.get('date')},message:'Devolución registrada. El dispenser vuelve a estar disponible en depósito.'});}
   const locked=busy||!!pending||disabled, assignedModels=data?.assignments.filter(a=>a.status==='active')||[], assigned=data?.assets.filter(a=>a.customer_id===customer.id&&a.location==='customer'&&!a.retired)||[];
   return <section className="panel owner-customer-sheet" aria-labelledby="customer-sheet-title"><div className="section-heading"><div><span className="hd-kicker">PLANILLA DEL CLIENTE</span><h2 id="customer-sheet-title">{customer.name}</h2><p>{customer.address}{customer.phone?` · ${customer.phone}`:''}</p></div><div className="customer-actions"><button disabled={locked} onClick={onEdit}>Editar datos</button><button disabled={locked} onClick={onClose}>Volver a clientes</button></div></div>
+    <section className="customer-profile"><h3>Datos de la planilla</h3><p>Fecha de alta: {customer.created_at?new Date(customer.created_at).toLocaleDateString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'}):'No registrada'}</p><p>Ubicación exacta: {customer.latitude!=null&&customer.longitude!=null?`${customer.latitude.toFixed(6)}, ${customer.longitude.toFixed(6)}`:'Sin punto de mapa registrado'}</p>{customer.latitude!=null&&customer.longitude!=null&&<a target="_blank" rel="noopener noreferrer" href={`https://www.openstreetmap.org/?mlat=${customer.latitude}&mlon=${customer.longitude}#map=19/${customer.latitude}/${customer.longitude}`}>Ver ubicación exacta en el mapa</a>}</section>
     {error&&<p className="stock-error" role="alert">{error}</p>}{notice&&<p className="notice" role="status">{notice}</p>}
     {pending&&!busy&&<div className="notice"><p>No se confirmó el resultado. No cierres la ficha; reintentá para verificarlo sin duplicar.</p><button onClick={()=>void execute(pending)}>Reintentar misma operación</button></div>}
     {!data?<><p role="status">{error?'Ficha sin actualizar.':'Consultando ficha…'}</p><button disabled={locked} onClick={()=>setVersion(v=>v+1)}>Actualizar ficha</button></>:<>

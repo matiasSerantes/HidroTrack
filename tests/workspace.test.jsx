@@ -33,6 +33,19 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   return { client, calls };
 }
 describe('panel conectado del titular', () => {
+  it('guarda el punto exacto del cliente en su empresa y lo muestra en planilla',async()=>{
+    const {client,calls}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
+    fireEvent.click(screen.getByRole('button',{name:'Planilla'}));await screen.findByText('Bidones y envases que tiene');
+    fireEvent.click(screen.getByRole('button',{name:'Editar datos'}));
+    expect(screen.getByRole('button',{name:'Ubicar en el mapa'})).toBeTruthy();expect(screen.getByRole('button',{name:'Usar posición actual'})).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Latitud'),{target:{value:'-34.61'}});fireEvent.change(screen.getByLabelText('Longitud'),{target:{value:'-58.38'}});
+    fireEvent.click(screen.getByText('Guardar cliente'));
+    await waitFor(()=>expect(calls.find(c=>c.operation==='update')?.value).toMatchObject({latitude:-34.61,longitude:-58.38}));
+    expect(calls.find(c=>c.operation==='update').filters).toEqual([['tenant_id','tenant-a'],['id','customer-a']]);
+    await screen.findByRole('button',{name:'Planilla'});fireEvent.click(screen.getByRole('button',{name:'Planilla'}));
+    expect(await screen.findByRole('link',{name:'Ver ubicación exacta en el mapa'})).toBeTruthy();
+  });
   it('abre edición con los datos existentes y actualiza solo el cliente de la empresa',async()=>{
     const {client,calls}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');
