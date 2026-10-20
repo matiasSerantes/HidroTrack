@@ -1,10 +1,27 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { AdminWorkspace } from '../src/features/AdminWorkspace';
 import { AccountWorkspace } from '../src/features/AccountWorkspace';
 afterEach(cleanup);
+
+it('guarda la licencia solo para la empresa seleccionada y vuelve a consultar el directorio', async () => {
+ const tenant = { id: 'tenant-a', name: 'Empresa A', license: { kind: 'permanent', status: 'active', expires_at: null, driver_limit: 2 }, members: [] };
+ const chain = { update: vi.fn(), eq: vi.fn(), select: vi.fn(), single: vi.fn(async()=>({data:{tenant_id:'tenant-a'},error:null})) };
+ chain.update.mockReturnValue(chain); chain.eq.mockReturnValue(chain); chain.select.mockReturnValue(chain);
+ const client = { rpc: vi.fn(async()=>({data:[tenant],error:null})), from: vi.fn(()=>chain) };
+ render(<AdminWorkspace client={client}/>);
+ const card = (await screen.findByRole('heading', { name: 'Empresa A' })).closest('article');
+ fireEvent.click(within(card).getByRole('button', { name: 'Editar licencia' }));
+ fireEvent.change(within(card).getByLabelText('Estado'), { target: { value: 'suspended' } });
+ fireEvent.click(within(card).getByRole('button', { name: 'Guardar licencia' }));
+ await screen.findByText('Licencia actualizada.');
+ expect(client.from).toHaveBeenCalledWith('licenses');
+ expect(chain.eq).toHaveBeenCalledWith('tenant_id','tenant-a');
+ expect(chain.update).toHaveBeenCalledWith({kind:'permanent',status:'suspended',expires_at:null,driver_limit:2});
+ expect(client.rpc.mock.calls.filter(([name])=>name==='admin_directory').length).toBe(2);
+});
 
 it('impide mostrar el panel si falla la verificación del rol', async () => {
  const client = { rpc: vi.fn(async () => ({ error: new Error('offline') })), auth: { signOut: vi.fn() } };

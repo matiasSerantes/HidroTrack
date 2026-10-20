@@ -5,8 +5,10 @@ import { supabase } from './lib/supabase';
 const AccountWorkspace=lazy(()=>import('./features/AccountWorkspace').then(m=>({default:m.AccountWorkspace})));
 const LegacyApp=lazy(()=>import('./features/LegacyApp').then(m=>({default:m.LegacyApp})));
 const DemoProgram=lazy(()=>import('./features/DemoProgram').then(m=>({default:m.DemoProgram})));
+const AdminWorkspace=lazy(()=>import('./features/AdminWorkspace').then(m=>({default:m.AdminWorkspace})));
 
 export function App() {
+  if (new URLSearchParams(window.location.search).get('demo') === 'admin') return <Suspense fallback={<main><p role="status">Abriendo administración de ejemplo…</p></main>}><AdminWorkspace demo onExit={() => { const url = new URL(window.location.href); url.searchParams.delete('demo'); window.location.assign(url.pathname + url.search + url.hash); }}/></Suspense>;
   if (new URLSearchParams(window.location.search).get('demo') === 'legacy') return <Suspense fallback={<main><p role="status">Abriendo demostración anterior…</p></main>}><LegacyApp/></Suspense>;
   return <MainApp/>;
 }

@@ -4,6 +4,8 @@ Actualizado: 2026-10-19. Fuente: pedidos transmitidos por el usuario. Este docum
 
 ## Roles y empresa
 
+- Panel del propietario de plataforma: resumen, búsqueda de usuarios por correo/empresa, filtros de rol y acceso, alta de titulares/choferes y administración de licencias. Preparado en web (20/10/2026), con vista previa en `/?demo=admin`. Verificación de la cuenta administradora real pendiente; no confundir membresías registradas con visitantes o sesiones en vivo.
+
 - Transición gradual a la web real (19/10/2026): el acceso real es la entrada predeterminada; la demo se abre por elección explícita. Conservar simulaciones hasta comprobar su equivalente conectado y mantener separados los datos ficticios y reales. Implementado localmente el acceso explícito; retiro de funciones individuales pendiente de validación de sus reemplazos.
 
 - **Repartidor jefe:** corresponde al titular (`owner`) de una empresa/reparto independiente. Puede trabajar en la calle y registrar sus propias visitas, además de administrar asistentes.

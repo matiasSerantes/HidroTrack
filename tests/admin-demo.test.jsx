@@ -1,10 +1,44 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { AdminWorkspace } from '../src/features/AdminWorkspace';
 import { DemoAccess } from '../src/features/DemoAccess';
 afterEach(() => { cleanup(); localStorage.clear(); });
+it('filtra personas por correo, empresa, rol y acceso, y abre su empresa', async () => {
+ render(<AdminWorkspace demo/>);
+ fireEvent.click(within(screen.getByRole('navigation', { name: 'Administración de plataforma' })).getByRole('button', { name: 'Usuarios' }));
+ await screen.findByRole('heading', { name: 'Directorio de usuarios' });
+ expect(screen.getByText('4 de 4')).toBeTruthy();
+ fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'driver' } });
+ expect(screen.getByText('1 de 4')).toBeTruthy();
+ expect(screen.getByText('chofer.norte@example.com')).toBeTruthy();
+ fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'all' } });
+ fireEvent.change(screen.getByLabelText('Acceso'), { target: { value: 'Bloqueado por licencia' } });
+ expect(screen.getByText('titular.centro@example.com')).toBeTruthy();
+ expect(screen.queryByText('chofer.norte@example.com')).toBeNull();
+ fireEvent.change(screen.getByLabelText('Buscar usuarios'), { target: { value: '  CENTRAL  ' } });
+ expect(screen.getByText('1 de 4')).toBeTruthy();
+ fireEvent.click(screen.getByRole('button', { name: 'Ver empresa de titular.centro@example.com' }));
+ expect(screen.getByRole('heading', { name: 'Soda Central' })).toBeTruthy();
+ expect(screen.queryByRole('heading', { name: 'Sodería del Norte' })).toBeNull();
+});
+
+it('gestiona la suspensión en demo sin modificar otros repartos ni llamar al servidor', async () => {
+ const client = { rpc: vi.fn(), from: vi.fn() };
+ render(<AdminWorkspace demo client={client}/>);
+ const tenant = (await screen.findByRole('heading', { name: 'Sodería del Norte' })).closest('article');
+ fireEvent.click(within(tenant).getByRole('button', { name: 'Editar licencia' }));
+ fireEvent.change(within(tenant).getByLabelText('Estado'), { target: { value: 'suspended' } });
+ fireEvent.click(within(tenant).getByRole('button', { name: 'Guardar licencia' }));
+ await screen.findByText('Licencia de demostración actualizada.');
+ fireEvent.click(within(screen.getByRole('navigation', { name: 'Administración de plataforma' })).getByRole('button', { name: 'Usuarios' }));
+ fireEvent.change(screen.getByLabelText('Acceso'), { target: { value: 'Habilitado' } });
+ expect(screen.getByText('titular.sur@example.com')).toBeTruthy();
+ expect(screen.queryByText('titular.norte@example.com')).toBeNull();
+ expect(client.from).not.toHaveBeenCalled();
+ expect(client.rpc).not.toHaveBeenCalled();
+});
 it('muestra ejemplos y crea una sodería sin consultar Supabase ni guardar contraseñas', async () => {
  const client = { rpc: vi.fn(), functions: { invoke: vi.fn() } };
  render(<AdminWorkspace demo client={client}/>);

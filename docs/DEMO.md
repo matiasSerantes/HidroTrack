@@ -157,6 +157,8 @@ Resultado remoto 19/10: reinicio ejecutado por MCP en una sola empresa y transac
 
 ## Demo anterior recuperada
 
+Panel del propietario de plataforma: abrir `/?demo=admin`. Incluye Resumen, Usuarios con búsqueda/filtros y Empresas y licencias con altas y edición. Todo se realiza con ejemplos locales. Para administrar cuentas reales se requiere ingresar con una cuenta verificada como administrador; la vista previa no otorga ese permiso.
+
 La web abre el acceso real por defecto, aunque exista una jornada de demo guardada. Para continuar la simulación, elegir Explorar demostración o abrir `/?demo=1`; el progreso se recupera dentro de la demo. Salir vuelve al acceso real y retira `demo` de la URL sin borrar los datos ficticios. Las funciones de demo sin equivalente conectado comprobado siguen disponibles.
 
 Siguiente paso del proyecto: [cierre de inventario](CIERRE_INVENTARIO.md). Diagnóstico previo preparado y probado localmente; las tres migraciones adicionales siguen sin confirmación remota en esta sesión.
