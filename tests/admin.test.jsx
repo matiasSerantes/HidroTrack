@@ -4,7 +4,21 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { AdminWorkspace } from '../src/features/AdminWorkspace';
 import { AccountWorkspace } from '../src/features/AccountWorkspace';
-afterEach(cleanup);
+afterEach(() => {cleanup(); vi.restoreAllMocks();});
+
+it('informa la actualización pendiente sin fingir que el chofer fue pausado',async()=>{
+ vi.spyOn(window,'confirm').mockReturnValue(true);
+ const tenant={id:'company',name:'Empresa',license:{kind:'permanent',status:'active',expires_at:null,driver_limit:1},members:[{user_id:'driver',email:'chofer@example.test',role:'driver',active:true}]};
+ const client={rpc:vi.fn(async(name)=>name==='admin_directory'?{data:[tenant],error:null}:{data:null,error:{code:'PGRST202'}})};
+ render(<AdminWorkspace client={client}/>);
+ await screen.findByRole('heading',{name:'Empresa'});
+ fireEvent.click(within(screen.getByRole('navigation',{name:'Administración de plataforma'})).getByRole('button',{name:'Usuarios'}));
+ fireEvent.click(screen.getByRole('button',{name:'Pausar acceso de chofer@example.test'}));
+ await screen.findByText(/requiere una actualización del servidor/);
+ expect(client.rpc).toHaveBeenCalledWith('admin_set_driver_access',{p_tenant:'company',p_user:'driver',p_active:false});
+ expect(screen.getByRole('button',{name:'Pausar acceso de chofer@example.test'})).toBeTruthy();
+ expect(screen.queryByText('Acceso actualizado. Se conserva la cuenta y su historial.')).toBeNull();
+});
 
 it('guarda la licencia solo para la empresa seleccionada y vuelve a consultar el directorio', async () => {
  const tenant = { id: 'tenant-a', name: 'Empresa A', license: { kind: 'permanent', status: 'active', expires_at: null, driver_limit: 2 }, members: [] };

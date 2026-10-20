@@ -19,6 +19,18 @@ export function readAdminDemo(): AdminTenant[] {
  return initialAdminDemo();
 }
 export function saveAdminDemo(data: AdminTenant[]) { localStorage.setItem(storageKey, JSON.stringify(data)); }
+export function setDemoDriverAccess(tenants: AdminTenant[], tenantId: string, userId: string, active: boolean): AdminTenant[] {
+ const tenant = tenants.find(t => t.id === tenantId);
+ const member = tenant?.members.find(m => m.user_id === userId);
+ if (!tenant || !member || member.role !== 'driver') throw new Error('Seleccioná un chofer de esta empresa.');
+ if (member.active === active) return tenants;
+ if (active) {
+  const license = tenant.license;
+  if (!license || license.status !== 'active' || (license.kind === 'monthly' && (!license.expires_at || !Number.isFinite(Date.parse(license.expires_at)) || Date.parse(license.expires_at) <= Date.now()))) throw new Error('La empresa debe tener una licencia vigente.');
+  if (tenant.members.filter(m => m.role === 'driver' && m.active).length >= license.driver_limit) throw new Error('Se alcanzó el límite de choferes.');
+ }
+ return tenants.map(t => t.id === tenantId ? { ...t, members: t.members.map(m => m.user_id === userId ? { ...m, active } : m) } : t);
+}
 export function addDemoUser(tenants: AdminTenant[], body: { role: string; email: string; name: string; tenant_id: unknown; kind: string; expires_at: string | null; driver_limit: number }): AdminTenant[] {
  const email = body.email.trim().toLowerCase();
  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresá un correo válido.');

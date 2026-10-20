@@ -4,7 +4,22 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { AdminWorkspace } from '../src/features/AdminWorkspace';
 import { DemoAccess } from '../src/features/DemoAccess';
-afterEach(() => { cleanup(); localStorage.clear(); });
+afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); });
+it('pausa y reactiva un chofer con confirmación conservando la membresía de ejemplo', async () => {
+ const confirm = vi.spyOn(window,'confirm').mockReturnValue(false);
+ render(<AdminWorkspace demo/>);
+ fireEvent.click(within(screen.getByRole('navigation',{name:'Administración de plataforma'})).getByRole('button',{name:'Usuarios'}));
+ fireEvent.click(await screen.findByRole('button',{name:'Pausar acceso de chofer.norte@example.com'}));
+ expect(screen.getByRole('button',{name:'Pausar acceso de chofer.norte@example.com'})).toBeTruthy();
+ confirm.mockReturnValue(true);
+ fireEvent.click(screen.getByRole('button',{name:'Pausar acceso de chofer.norte@example.com'}));
+ expect(await screen.findByText('Acceso de demostración actualizado.')).toBeTruthy();
+ expect(within(screen.getByRole('button',{name:'Reactivar acceso de chofer.norte@example.com'}).closest('tr')).getByText('Inactivo')).toBeTruthy();
+ expect(screen.queryByRole('button',{name:'Pausar acceso de titular.norte@example.com'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'Reactivar acceso de chofer.norte@example.com'}));
+ expect(await screen.findByRole('button',{name:'Pausar acceso de chofer.norte@example.com'})).toBeTruthy();
+ expect(JSON.parse(localStorage.getItem('hidrotrack.admin-demo.v1'))[0].members).toHaveLength(2);
+});
 it('filtra personas por correo, empresa, rol y acceso, y abre su empresa', async () => {
  render(<AdminWorkspace demo/>);
  fireEvent.click(within(screen.getByRole('navigation', { name: 'Administración de plataforma' })).getByRole('button', { name: 'Usuarios' }));
