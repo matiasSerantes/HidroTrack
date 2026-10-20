@@ -127,3 +127,6 @@ Resultado 20/10: Catálogo unificado en web real y demo, sin menú separado Disp
 ## 20/10/2026 - Modelo de dispenser sin existencias
 
 Crear un modelo en Catalogo no suma unidades. La ficha real ahora explica cuando no hay disponibles y permite Registrar unidades de dispenser: modelo, cantidad no contada previamente, fecha y referencia. Usa inventory_record_stock (receive), sin crear modelos ni duplicar equipos individualizados. Luego Asignar dispenser mueve una unidad al cliente mediante la RPC existente. Si ya estaban contadas, no volver a ingresarlas: revisar ubicacion, asignaciones o roturas. Actualizar disponibilidad vuelve a leer stock sin crear movimientos. Guardar asignacion queda deshabilitado sin seleccion o sin disponibilidad.
+
+
+20/10: al crear producto/dispenser, Cantidad inicial en stock permite registrar modelo y unidades juntos. Dispenser nuevo tiene unidad fija; cantidad no va en unidad de venta. Una sola operacion transaccional y reintento estable. Si se ingresa cero se crea solo catalogo. Asignar dispenser actualiza stock al abrirse, tambien si se ingreso desde otra pantalla. No volver a cargar unidades existentes desde ficha. Las vistas de saldo requieren identidad de jefe al diagnosticar por MCP.

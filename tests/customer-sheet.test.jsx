@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import {afterEach,it,expect,vi} from 'vitest';
-import {cleanup,render,screen,fireEvent} from '@testing-library/react';
+import {cleanup,render,screen,fireEvent,waitFor} from '@testing-library/react';
 import {OwnerCustomerSheet} from '../src/features/OwnerCustomerSheet';
 afterEach(cleanup);
 function fixture(fail=false,{model=false,unavailable=false,noIndividual=false}={}){
@@ -41,8 +41,13 @@ it('explica catálogo sin unidades y registra existencias antes de permitir asig
 it('actualiza una ficha abierta cuando el stock se cargó desde otra pantalla',async()=>{
   const {client,records}=fixture(false,{model:true,unavailable:true,noIndividual:true});await screen.findByText('No hay unidades de dispenser disponibles para asignar.');
   records.inventory_owned_stock[0].depot_ready=4;
-  fireEvent.click(screen.getByRole('button',{name:'Actualizar disponibilidad'}));fireEvent.click(screen.getByText('Asignar dispenser'));
+  fireEvent.click(screen.getByRole('button',{name:'Actualizar disponibilidad'}));await waitFor(()=>expect(screen.getByText('Asignar dispenser').disabled).toBe(false));fireEvent.click(screen.getByText('Asignar dispenser'));
   expect(await screen.findByRole('option',{name:'Dispenser básico · 4 disponibles en depósito'})).toBeTruthy();expect(client.rpc).not.toHaveBeenCalled();
+});
+it('abrir asignación vuelve a consultar el stock sin pedir otra carga',async()=>{
+  const {client,records}=fixture(false,{model:true,unavailable:true,noIndividual:true});await screen.findByText('No hay unidades de dispenser disponibles para asignar.');
+  records.inventory_owned_stock[0].depot_ready=5;fireEvent.click(screen.getByText('Asignar dispenser'));
+  expect(await screen.findByRole('option',{name:'Dispenser básico · 5 disponibles en depósito'})).toBeTruthy();expect(client.rpc).not.toHaveBeenCalled();
 });
 it('consulta la ficha por empresa y cliente y separa equipos propios del cliente',async()=>{
   const {calls}=fixture();await screen.findByText('2 para devolver');

@@ -4,7 +4,7 @@ Fuente de continuidad para retomar desde otra PC. Supabase está conectado por M
 
 ## Instalado y verificado por MCP
 
-19 migraciones, 31 tablas públicas con RLS. Archivos locales renombrados a los identificadores asignados por Supabase para que un futuro despliegue no intente aplicar nuevamente la misma migración. Se aplicó únicamente lo que faltaba, sin insertar datos comerciales de prueba. Cuenta, licencia y cliente existentes conservados; inventario y ventas siguen vacíos para la carga inicial.
+20 migraciones, 31 tablas públicas con RLS. Archivos locales renombrados a los identificadores asignados por Supabase para que un futuro despliegue no intente aplicar nuevamente la misma migración. Se aplicó únicamente lo que faltaba, sin insertar datos comerciales de prueba. Cuenta, licencia y cliente existentes conservados; inventario y ventas siguen vacíos para la carga inicial.
 
 | Bloque | Tablas principales | Comportamiento de servidor |
 |---|---|---|
@@ -95,4 +95,13 @@ Snapshot PDF local al aprobar cierre; variante del jefe con ventas/cobros y vari
 
 ## 20/10 - Diagnostico de selector de dispenser vacio
 
-Revision por MCP de solo lectura confirmo modelos activos correctamente clasificados y cero unidades en inventario; tampoco habia equipos individualizados disponibles. No fue un fallo de familia ni una asignacion perdida. No se insertaron cantidades, asignaciones ni equipos remotos. Ficha mejorada con registro explicito de existencias no contadas, fecha y referencia, usando RPC instalada; asignacion posterior consume una unidad. Dos operaciones intencionales e independientes, con reintento por ID existente: no afirmar registro+asignacion atomicos. Sin migracion. No guardar correos, identificadores ni salidas crudas del diagnostico en Git.
+DIAGNOSTICO INICIAL INVALIDADO: la vista inventory_owned_stock filtra por private.has_role aun desde MCP. No se puede interpretar ausencia de filas como cero sin identidad del titular. La revision posterior del libro de movimientos y con identidad de jefe confirmo existencias ya registradas. Ver correccion posterior; no repetir ingresos desde este diagnostico. No se insertaron cantidades, asignaciones ni equipos remotos. Ficha mejorada con registro explicito de existencias no contadas, fecha y referencia, usando RPC instalada; asignacion posterior consume una unidad. Dos operaciones intencionales e independientes, con reintento por ID existente: no afirmar registro+asignacion atomicos. Sin migracion. No guardar correos, identificadores ni salidas crudas del diagnostico en Git.
+
+
+## 20/10 - Alta atomica con stock y correccion del diagnostico
+
+Migracion 20261020182832_catalog_initial_stock aplicada: crear modelo con cantidad positiva registra su existencia en la misma transaccion; errores revierten alta y movimientos. Dos IDs estables para reintento, guardas de jefe y licencia, cantidad/fecha/estado. Dispenser disponible inmediatamente; envase puede ingresar vacio o lleno. Cero crea solo catalogo mediante contrato anterior. 20 migraciones, 31 tablas con RLS; RPC nueva sin acceso anonimo.
+
+AL REVISAR POR MCP: comprobar auth.uid()/private.has_role y contrastar movimientos del tenant. Las vistas filtran explicitamente aun usando conexion administrativa; una fila ausente no prueba saldo cero. La carga adicional realizada por ese diagnostico errado se compenso con retiros auditados de la misma cantidad, preservando asignaciones y datos previos. Saldo final verificado con identidad de titular y libro de movimientos; coincide con cantidades confirmadas por usuario. No guardar SQL con identidad ni registros comerciales en Git.
+
+Unidad historica numerica: guarda de identidad bloquea cambiar unidad cuando hay movimientos, incluso si saldo neto fuera cero. No desactivar trigger ni crear otro modelo para ocultar historial. Para nuevas altas, unidad de dispenser fija y cantidad separada; ediciones de modelos antiguos conservan unidad historica para no bloquear otros cambios.

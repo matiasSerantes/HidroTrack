@@ -23,6 +23,7 @@ begin
  ,'public.commerce_open_customer_balance(uuid,uuid,uuid,numeric,date,text)'
  ,'public.inventory_fill_and_load(uuid,uuid,uuid,uuid,jsonb,date,text)'
  ,'public.catalog_create_item(uuid,uuid,text,numeric,text,boolean,text)'
+ ,'public.catalog_create_stocked_item(uuid,uuid,uuid,text,numeric,text,boolean,text,integer,boolean,date)'
  ,'public.catalog_archive_item(uuid,uuid,uuid,date,text)'
  ,'public.inventory_writeoff_dispenser(uuid,uuid,uuid,date,text,uuid,text,text)'
  ] loop

@@ -227,3 +227,6 @@ Implementado en demo; tablero/cierre/PDF conectados de produccion pendientes. PD
 
 
 20/10: correccion en ficha REAL del cliente para catalogo sin unidades. Mensaje explicito, boton Registrar unidades de dispenser (solo existencias aun no contadas), Actualizar disponibilidad y bloqueo de asignacion vacia. No se ingresaron cantidades remotas ni se duplicaron equipos. El alta de catalogo por si sola sigue sin crear inventario; en demo las cantidades se ingresan en su campo de stock.
+
+
+20/10: formulario REAL de Catalogo ofrece Cantidad inicial en stock, fecha y estado de envases. Dispenser nuevo queda disponible al confirmar junto al modelo. Guardar con cero solo crea catalogo. Selector REAL actualiza disponibilidad al abrir Asignar dispenser; no pide registrar equipos ya existentes. RPC atomica instalada en Supabase. Diagnostico MCP anterior de stock cero fue incorrecto por vista filtrada sin identidad; registro duplicado compensado y saldos verificados. No se cambiaron precios ni asignaciones existentes. Demo ya permite alta con cantidad en deposito; conserva separacion de datos ficticios.

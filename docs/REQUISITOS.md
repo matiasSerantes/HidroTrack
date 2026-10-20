@@ -239,3 +239,6 @@ Pedido: graficos ganancia/gasto mensual, mejor dia de semana y ganancia diaria, 
 
 
 20/10: ficha de asignacion debe distinguir modelo del catalogo de unidades fisicas. Si no hay disponibles, explicar motivo y ofrecer registro de existencias no contadas con fecha y cantidad; luego asignar. Nunca sumar equipos automaticamente por mostrar el selector ni por refrescar. Equipos ya con clientes, en camiones no autorizados o retirados no se vuelven disponibles por este cambio.
+
+
+20/10: usuario confirma disponibilidad automatica desde stock. Modelo mas cantidad inicial deben guardarse juntos; no obligar a segunda carga desde cliente. Campo de cantidad separado de unidad de venta, dispenser nuevo usa unidad fija. Preservar movimientos y asignaciones previas. Basico de canilla se presta gratis y corresponde uno por cliente; frio/calor es de alquiler. Validacion de unicidad por cliente pendiente de regla de servidor, sin reinterpretar precios como cuotas.

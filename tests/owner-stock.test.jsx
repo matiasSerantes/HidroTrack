@@ -19,6 +19,17 @@ function fixture(section,{legacy=false}={}) {
   return {client,filters,records,rendered};
 }
 describe('inventario conectado del jefe',()=>{
+  it('alta de dispenser registra la cantidad inicial como stock en una sola operación',async()=>{
+    const {client}=fixture('catalog');await screen.findByRole('button',{name:'Agregar dispenser'});
+    fireEvent.click(screen.getByRole('button',{name:'Agregar dispenser'}));
+    fireEvent.change(screen.getByLabelText('Nombre del artículo'),{target:{value:'Básico'}});
+    expect(screen.getByLabelText('Unidad de venta (no cantidad)').readOnly).toBe(true);
+    fireEvent.change(screen.getByLabelText('Cantidad inicial en stock'),{target:{value:'5'}});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar artículo'}));
+    await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('catalog_create_stocked_item',expect.objectContaining({p_quantity:5,p_unit:'unidad',p_family:'dispenser',p_empty:false})));
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+    await screen.findByText('Artículo y stock inicial registrados. Las unidades disponibles ya se pueden cargar o asignar.');
+  });
   it('crea un dispenser con categoría explícita y muestra retiro al final',async()=>{
     const {client}=fixture('catalog');await screen.findByRole('button',{name:'Agregar dispenser'});
     const buttons=screen.getByRole('button',{name:'Agregar dispenser'}).parentElement;

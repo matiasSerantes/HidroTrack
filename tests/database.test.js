@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -118,6 +118,22 @@ describe('stock transaccional PostgreSQL', () => {
   afterEach(async () => { await db.exec('rollback; reset role'); });
 
   const deliver = (id, paid=0, method=null, quantity=2) => db.query('select public.commerce_deliver($1,$2,$3,$4,$5::jsonb,$6,$7)',[tenant,id,trip,customer,JSON.stringify(items(quantity)),paid,method]);
+  it('crea modelo con stock inicial disponible en la misma transaccion y reintenta sin duplicar',async()=>{
+    const id=op(),stock=op(),create=(q=5)=>db.query("select public.catalog_create_stocked_item($1,$2,$3,'Basico',0,'unidad',false,'dispenser',$4,false,'2026-10-20')",[tenant,id,stock,q]);
+    await create();await create();
+    expect(Number((await db.query('select depot_ready from public.inventory_owned_stock where product_id=$1',[id])).rows[0].depot_ready)).toBe(5);
+    await rejected(()=>create(7),'ID');
+    await db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'loan',0,'2026-10-20',null)",[tenant,op(),id,customer]);
+    expect(Number((await db.query('select depot_ready from public.inventory_owned_stock where product_id=$1',[id])).rows[0].depot_ready)).toBe(4);
+    const bad=op();await rejected(()=>db.query("select public.catalog_create_stocked_item($1,$2,$3,'Otro',0,'unidad',false,'dispenser',5,false,'2099-01-01')",[tenant,bad,op()]),'Fecha');
+    expect((await db.query('select id from public.products where id=$1',[bad])).rows).toHaveLength(0);
+    await as(driver);await rejected(()=>create(),'Solo el jefe');
+  });
+  it('alta con vacios conserva estado y rechaza cantidad escrita como unidad',async()=>{
+    const id=op();await db.query("select public.catalog_create_stocked_item($1,$2,$3,'Agua',3500,'unidad',true,'article',600,true,'2026-10-20')",[tenant,id,op()]);
+    expect(Number((await db.query('select depot_empty from public.inventory_owned_stock where product_id=$1',[id])).rows[0].depot_empty)).toBe(600);
+    await rejected(()=>db.query("select public.catalog_create_stocked_item($1,$2,$3,'Otro',0,'600',false,'dispenser',5,false,'2026-10-20')",[tenant,op(),op()]),'unidad de venta');
+  });
   it('crea dispenser por tipo explícito aunque el nombre no contenga dispenser',async()=>{
     const id=op(); const create=()=>db.query("select public.catalog_create_item($1,$2,'Básico',0,'unidad',false,'dispenser')",[tenant,id]);
     await create();await create();expect((await db.query('select family from public.products where id=$1',[id])).rows[0].family).toBe('dispenser');
