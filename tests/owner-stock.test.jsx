@@ -19,6 +19,29 @@ function fixture(section,{legacy=false}={}) {
   return {client,filters,records,rendered};
 }
 describe('inventario conectado del jefe',()=>{
+  it('elige vacíos o llenos al ingresar sin perder la cantidad escrita',async()=>{
+    const {client}=fixture();await screen.findByLabelText('Cantidad de Bidón 20');
+    expect(screen.getByRole('radio',{name:'Vacíos'}).checked).toBe(true);
+    fireEvent.change(screen.getByLabelText('Cantidad de Bidón 20'),{target:{value:'600'}});
+    fireEvent.click(screen.getByRole('radio',{name:'Llenos'}));
+    expect(screen.getByLabelText('Cantidad de Bidón 20').value).toBe('600');
+    fireEvent.click(screen.getByText('Registrar stock'));
+    await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_kind:'receive',p_items:[{product_id:'b20',quantity:600}]})));
+  });
+  it('relleno y carga se envían juntos con identificadores estables al reintentar',async()=>{
+    const {client}=fixture('trips');await screen.findByRole('heading',{name:'Carga de camión'});
+    expect(screen.getByLabelText('Cargar Bidón 20').max).toBe('10');
+    fireEvent.click(screen.getByRole('checkbox',{name:/Rellenar los vacíos/}));
+    expect(screen.getByLabelText('Cargar Bidón 20').max).toBe('15');
+    fireEvent.change(screen.getByLabelText('Cargar Bidón 20'),{target:{value:'13'}});
+    client.rpc.mockRejectedValueOnce(new Error('Sin respuesta'));
+    fireEvent.click(screen.getByText('Registrar carga'));
+    await screen.findByText('Reintentar misma operación');
+    expect(client.rpc).toHaveBeenCalledWith('inventory_fill_and_load',expect.objectContaining({p_trip:'t1',p_items:[{product_id:'b20',quantity:13}],p_refill_id:expect.any(String),p_date:expect.any(String)}));
+    const first=client.rpc.mock.calls[0];expect(first[1].p_id).not.toBe(first[1].p_refill_id);
+    fireEvent.click(screen.getByText('Reintentar misma operación'));
+    await screen.findByText(/Carga única confirmada/);expect(client.rpc.mock.calls[1]).toEqual(first);
+  });
   it('elimina un bidón sin existencias de activos conservando su registro',async()=>{
     const {records,filters}=fixture('catalog');records.inventory_owned_stock=[];records.inventory_customer_containers=[];
     await screen.findByRole('button',{name:'Eliminar Bidón 20'});

@@ -29,6 +29,16 @@ export function demoRefill(s: DemoProgramState, productId: string, quantity: num
   if(!product||!quantity||(next.depotEmpties[productId]||0)<quantity) throw new Error('No hay suficientes vacíos de ese artículo para rellenar.');
   next.depotEmpties[productId]-=quantity; product.depot+=quantity; return next;
 }
+export function demoReceiveStock(state:DemoProgramState,quantities:Record<string,number>,full:boolean,actor:string){
+  if(!state.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede ingresar stock.');
+  const s=structuredClone(state);let total=0;
+  for(const [id,q] of Object.entries(quantities)){
+    integer(q);if(!q)continue;const p=s.products.find(p=>p.id===id&&p.active);
+    if(!p||(!full&&!p.returnable))throw new Error('Solo los envases retornables pueden ingresar vacíos.');
+    if(full)p.depot+=q;else s.depotEmpties[id]=(s.depotEmpties[id]||0)+q;total+=q;
+  }
+  if(!total)throw new Error('Ingresá al menos una unidad.');return s;
+}
 export function archiveDemoProduct(state:DemoProgramState,productId:string,actor:string){
   if(!state.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede eliminar artículos.');
   const product=state.products.find(p=>p.id===productId&&p.active);
@@ -137,12 +147,13 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   notify(s, `${member.name}: visita registrada en ${client.name}. ${unpaid && !approved ? `Solicita dejar ${currency(unpaid)} de deuda; pendiente de autorización del jefe.` : 'Venta y cobro actualizados.'}`);
   return s;
 }
-export function loadTrip(state: DemoProgramState, tripId: string, quantities: Record<string, number>) {
+export function loadTrip(state: DemoProgramState, tripId: string, quantities: Record<string, number>,fillEmpties=false,actor='owner') {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId);
   if (!trip || trip.stage !== 'planned') throw new Error('Solo podés cargar un reparto que todavía no comenzó.');
   if (s.trips.some(t => t.id !== trip.id && t.driverId === trip.driverId && ['active', 'submitted'].includes(t.stage))) throw new Error('Cerrá y aprobá el reparto anterior de este repartidor antes de iniciar otro.');
   if (!Object.values(quantities).some(q => q > 0)) throw new Error('Ingresá al menos un artículo para salir.');
-  for (const p of s.products) { const q = quantities[p.id] || 0; integer(q); if (q > p.depot) throw new Error(`No alcanza el stock de depósito de ${p.name}.`); p.depot -= q; }
+  if(fillEmpties&&!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede rellenar y cargar.');
+  for (const p of s.products) { const q = quantities[p.id] || 0; integer(q); const missing=Math.max(q-p.depot,0);if(fillEmpties&&missing>0&&p.returnable&&p.kind==='sale'){if(missing>(s.depotEmpties[p.id]||0))throw new Error(`No hay suficientes vacíos de ${p.name}.`);s.depotEmpties[p.id]-=missing;p.depot+=missing;}if (q > p.depot) throw new Error(`No alcanza el stock de depósito de ${p.name}.`); p.depot -= q; }
   trip.load = { ...quantities }; trip.stock = { ...quantities }; trip.stage = 'active';
   notify(s, `Comenzó ${trip.name}. Carga del transporte registrada.`); return s;
 }

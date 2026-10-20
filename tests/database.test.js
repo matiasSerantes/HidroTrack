@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -69,7 +69,7 @@ describe('migración y seguridad PostgreSQL', () => {
   });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
-    expect(rows).toHaveLength(29);
+    expect(rows).toHaveLength(30);
     expect(rows.every(row => row.relrowsecurity)).toBe(true);
   });
   it('ejecuta escenarios de aislamiento, roles, licencias y auditoría con rollback', async () => {
@@ -118,6 +118,38 @@ describe('stock transaccional PostgreSQL', () => {
   afterEach(async () => { await db.exec('rollback; reset role'); });
 
   const deliver = (id, paid=0, method=null, quantity=2) => db.query('select public.commerce_deliver($1,$2,$3,$4,$5::jsonb,$6,$7)',[tenant,id,trip,customer,JSON.stringify(items(quantity)),paid,method]);
+  const fillLoad=(id,refill,quantity=7,tripId=trip)=>db.query("select public.inventory_fill_and_load($1,$2,$3,$4,$5::jsonb,'2026-10-20','Carga con recarga')",[tenant,id,refill,tripId,JSON.stringify(items(quantity))]);
+  it('rellena solo el faltante y carga una vez sin aumentar patrimonio, incluso al reintentar',async()=>{
+    await post('receive',items(2));
+    await db.query("select public.inventory_owner_stock($1,$2,'receive_empty',null,$3::jsonb,'Inicial')",[tenant,op(),JSON.stringify(items(10))]);
+    await createTrip();const id=op(),refill=op();await fillLoad(id,refill);await fillLoad(id,refill);
+    const b=(await db.query('select * from public.inventory_owned_stock')).rows[0];
+    expect(Number(b.total_owned)).toBe(12);expect(Number(b.depot_ready)).toBe(0);expect(Number(b.depot_empty)).toBe(5);expect(Number(b.truck_ready)).toBe(7);
+    const prep=(await db.query('select * from public.inventory_load_preparations')).rows[0]; expect(prep.refill_items).toEqual([{product_id:product,quantity:5}]);
+    expect((await db.query("select * from public.inventory_operations where kind='refill'")).rows).toHaveLength(1);
+    await rejected(()=>fillLoad(id,refill,8),'otros datos');await rejected(()=>fillLoad(op(),op(),1),'Carga ya confirmada');
+  });
+  it('si ya hay llenos no registra una recarga ficticia y el chofer no rellena inventario',async()=>{
+    await post('receive',items(10));await createTrip();const id=op(),refill=op();
+    await as(driver);await rejected(()=>fillLoad(id,refill),'Solo el jefe');
+    await as(owner);await fillLoad(id,refill);
+    expect((await db.query('select * from public.inventory_load_preparations')).rows[0].refill_operation).toBeNull();
+    expect((await db.query("select * from public.inventory_operations where kind='refill'")).rows).toHaveLength(0);
+    await as(stranger);expect((await db.query('select * from public.inventory_load_preparations')).rows).toHaveLength(0);
+  });
+  it('si falla la carga posterior se revierte también el relleno',async()=>{
+    await post('receive',items(1));await createTrip();await post('load',items(1));await createTrip(nextTrip);
+    await db.query("select public.inventory_owner_stock($1,$2,'receive_empty',null,$3::jsonb,'Inicial')",[tenant,op(),JSON.stringify(items(10))]);
+    await rejected(()=>fillLoad(op(),op(),7,nextTrip),'reparto anterior');
+    const b=(await db.query('select * from public.inventory_owned_stock')).rows[0];expect(Number(b.depot_empty)).toBe(10);expect(Number(b.depot_ready)).toBe(0);
+    expect((await db.query("select * from public.inventory_operations where kind='refill'")).rows).toHaveLength(0);
+  });
+  it('rechaza vacíos insuficientes y no permite rellenar dispenser',async()=>{
+    await createTrip();await rejected(()=>fillLoad(op(),op()),'suficientes bidones');
+    await db.query("update public.products set family='dispenser' where id=$1",[product]);
+    await rejected(()=>fillLoad(op(),op()),'No se puede rellenar');
+    expect((await db.query('select * from public.inventory_load_preparations')).rows).toHaveLength(0);
+  });
   async function readyCommerce() {
     await post('receive',items(10)); await createTrip(); await post('load',items(10)); await as(driver);
   }

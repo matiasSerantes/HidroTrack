@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { archiveDemoProduct, approveClose, closeTrip, decideRequest, demoOwnedStock, demoRefill, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
+import { archiveDemoProduct, approveClose, closeTrip, decideRequest, demoOwnedStock, demoReceiveStock, demoRefill, editDemoStop, loadTrip, recordVisit, scheduleStop, seedProgram, withDemoAddresses, type DemoProgramState } from './programDemo';
 
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('ingresa vacíos o llenos y rellena únicamente el faltante al cargar',()=>{
+    const s=seedProgram();const p=s.products.find(p=>p.id==='b20')!;p.depot=2;s.depotEmpties.b20=0;
+    s.trips[0].stage='planned';s.trips[0].stock={};s.trips[0].load={};s.trips[0].empties={};
+    const received=demoReceiveStock(s,{b20:10},false,'owner');expect(received.depotEmpties.b20).toBe(10);expect(received.products.find(p=>p.id==='b20')!.depot).toBe(2);
+    const full=demoReceiveStock(s,{b20:3},true,'owner');expect(full.products.find(p=>p.id==='b20')!.depot).toBe(5);
+    const loaded=loadTrip(received,'t1',{b20:7},true,'owner');expect(loaded.depotEmpties.b20).toBe(5);expect(loaded.trips[0].stock.b20).toBe(7);
+    expect(demoOwnedStock(loaded,'b20').total).toBe(demoOwnedStock(received,'b20').total);
+    expect(()=>loadTrip(received,'t1',{b20:7},true,'luz')).toThrow(/Solo el jefe/);
+    expect(()=>loadTrip(loaded,'t1',{b20:1},true,'owner')).toThrow(/todavía no comenzó/);
+  });
   it('eliminar conserva registros y rechaza artículos con unidades o usuarios asistentes',()=>{
     const state=seedProgram();state.products.push({id:'empty',name:'Bidón sin stock',unit:'unidad',price:0,returnable:true,depot:0,active:true,kind:'sale'});
     const next=archiveDemoProduct(state,'empty','owner');

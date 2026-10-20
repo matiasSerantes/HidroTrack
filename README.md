@@ -86,7 +86,7 @@ Archivar conserva la ficha y las entregas, y retira al cliente del recorrido. Re
 
 ## Supabase
 
-Estado vigente al 20/10/2026: [base instalada y contratos de integración](docs/BASE_DE_DATOS.md). Son 17 migraciones y 29 tablas con RLS; los nombres locales coinciden con el historial remoto. Las referencias históricas siguientes a cinco migraciones o funciones pendientes describen etapas anteriores. No repetir el reinicio ni las migraciones aplicadas. La base de recorridos/ventas/caja está instalada; su conexión completa a la web sigue pendiente.
+Estado vigente al 20/10/2026: [base instalada y contratos de integración](docs/BASE_DE_DATOS.md). Son 18 migraciones y 30 tablas con RLS; los nombres locales coinciden con el historial remoto. Las referencias históricas siguientes a cinco migraciones o funciones pendientes describen etapas anteriores. No repetir el reinicio ni las migraciones aplicadas. La base de recorridos/ventas/caja está instalada; su conexión completa a la web sigue pendiente.
 
 Copiar `.env.example` a `.env` y completar la URL y clave pública de un proyecto propio. Nunca usar `service_role` en Vite. Las migraciones de `supabase/migrations` coinciden con el historial remoto: foundation, admin_portal, inventory, owned_inventory y user_profiles. En un proyecto nuevo se aplican en orden; no volver a ejecutar foundation sobre HidroTrack. La base de stock se aplicó mediante MCP el 19/10/2026. Ver [modelo y funciones de stock](docs/STOCK.md). El acceso real del jefe incluye Stock y surtidores; requiere membresía owner y licencia. La demostración mantiene datos locales.
 

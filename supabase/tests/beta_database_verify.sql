@@ -21,12 +21,13 @@ begin
  'public.admin_access_history()'
  ,'public.commerce_charge_rental(uuid,uuid,uuid,uuid,integer,date)'
  ,'public.commerce_open_customer_balance(uuid,uuid,uuid,numeric,date,text)'
+ ,'public.inventory_fill_and_load(uuid,uuid,uuid,uuid,jsonb,date,text)'
  ] loop
   if to_regprocedure(signature) is null then raise exception 'Falta RPC: %',signature; end if;
   if has_function_privilege('anon',signature,'EXECUTE') or not has_function_privilege('authenticated',signature,'EXECUTE') then raise exception 'Permisos RPC incorrectos: %',signature; end if;
   if not exists(select 1 from pg_proc where oid=to_regprocedure(signature) and prosecdef and array_to_string(proconfig,',') like '%search_path=%') then raise exception 'RPC sin configuración segura: %',signature; end if;
  end loop;
- foreach table_name in array array['sales','sale_items','payments','credit_requests','owner_notifications','route_stops','route_events','driver_positions','customer_deactivations','trip_closures','rental_charges'] loop
+ foreach table_name in array array['sales','sale_items','payments','credit_requests','owner_notifications','route_stops','route_events','driver_positions','customer_deactivations','trip_closures','rental_charges','inventory_load_preparations'] loop
   if not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname=table_name and c.relrowsecurity) then raise exception 'Falta RLS: %',table_name; end if;
   if has_table_privilege('authenticated','public.'||table_name,'INSERT') or has_table_privilege('authenticated','public.'||table_name,'UPDATE') or has_table_privilege('authenticated','public.'||table_name,'DELETE') then raise exception 'Escritura directa indebida: %',table_name; end if;
  end loop;
