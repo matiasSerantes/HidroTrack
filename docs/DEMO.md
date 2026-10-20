@@ -157,5 +157,7 @@ Resultado remoto 19/10: reinicio ejecutado por MCP en una sola empresa y transac
 
 ## Demo anterior recuperada
 
+La web abre el acceso real por defecto, aunque exista una jornada de demo guardada. Para continuar la simulación, elegir Explorar demostración o abrir `/?demo=1`; el progreso se recupera dentro de la demo. Salir vuelve al acceso real y retira `demo` de la URL sin borrar los datos ficticios. Las funciones de demo sin equivalente conectado comprobado siguen disponibles.
+
 Siguiente paso del proyecto: [cierre de inventario](CIERRE_INVENTARIO.md). Diagnóstico previo preparado y probado localmente; las tres migraciones adicionales siguen sin confirmación remota en esta sesión.
 La demo integral sigue en /?demo=1. Para revisar los mapas, recorridos diarios y equipos de clientes de la copia local anterior, abrir /?demo=legacy. Sus datos permanecen separados en el navegador; no se sincronizan con la demo integral ni con Supabase.

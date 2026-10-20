@@ -4,6 +4,8 @@ Actualizado: 2026-10-19. Fuente: pedidos transmitidos por el usuario. Este docum
 
 ## Roles y empresa
 
+- Transición gradual a la web real (19/10/2026): el acceso real es la entrada predeterminada; la demo se abre por elección explícita. Conservar simulaciones hasta comprobar su equivalente conectado y mantener separados los datos ficticios y reales. Implementado localmente el acceso explícito; retiro de funciones individuales pendiente de validación de sus reemplazos.
+
 - **Repartidor jefe:** corresponde al titular (`owner`) de una empresa/reparto independiente. Puede trabajar en la calle y registrar sus propias visitas, además de administrar asistentes.
 - **Repartidor asistente:** corresponde al chofer (`driver`) asignado a ese jefe. Trabaja en los recorridos asignados y presenta altas/propuestas para aprobación de su jefe. El alcance exacto de lo que puede crear está pendiente de definir.
 - **Administrador de plataforma:** se mantiene separado del jefe de una empresa; el nuevo pedido no amplía sus permisos comerciales.
