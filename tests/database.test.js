@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock','20261020210000_promotions']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -37,6 +37,7 @@ describe('migración y seguridad PostgreSQL', () => {
   });
   it('verifica permisos y consistencia de ventas, recorridos y cierres sin modificar datos',async()=>{
     await db.exec(await readFile(new URL('../supabase/tests/beta_database_verify.sql',import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../supabase/tests/promotions_verify.sql',import.meta.url),'utf8'));
   });
   it('protege el directorio y limita el alta de choferes desde el servidor', async () => {
     await db.exec(`begin;
@@ -69,7 +70,7 @@ describe('migración y seguridad PostgreSQL', () => {
   });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
-    expect(rows).toHaveLength(31);
+    expect(rows).toHaveLength(34);
     expect(rows.every(row => row.relrowsecurity)).toBe(true);
   });
   it('ejecuta escenarios de aislamiento, roles, licencias y auditoría con rollback', async () => {
@@ -118,6 +119,54 @@ describe('stock transaccional PostgreSQL', () => {
   afterEach(async () => { await db.exec('rollback; reset role'); });
 
   const deliver = (id, paid=0, method=null, quantity=2) => db.query('select public.commerce_deliver($1,$2,$3,$4,$5::jsonb,$6,$7)',[tenant,id,trip,customer,JSON.stringify(items(quantity)),paid,method]);
+  const offerPromo=(id,tripId=null,lines=items(2))=>db.query("select public.promotion_offer($1,$2,$3,'Persona demo','Direccion demo','','Prueba pactada',case when $3::uuid is null then current_date else '2026-10-19'::date end,current_date+7,$4::jsonb)",[tenant,id,tripId,JSON.stringify(lines)]);
+  it('promocion exige permiso del jefe, usa camion propio y notifica una sola vez',async()=>{
+    await post('receive',items(10));await createTrip();await post('load',items(5));
+    const id=op();await as(driver);
+    await rejected(()=>offerPromo(id,trip),'habilitar');
+    await rejected(()=>db.query('select public.promotion_set_permission($1,$2,$3,true)',[tenant,op(),driver]),'Solo el jefe');
+    await as(owner);await db.query('select public.promotion_set_permission($1,$2,$3,true)',[tenant,op(),driver]);
+    await as(driver);await offerPromo(id,trip);await offerPromo(id,trip);
+    expect((await db.query('select count(*)::int as n from public.promotions')).rows[0].n).toBe(1);
+    expect((await db.query('select count(*)::int as n from public.promotion_notifications')).rows[0].n).toBe(0);
+    await rejected(()=>db.query("select public.promotion_resolve($1,$2,$3,'reject',current_date)",[tenant,op(),id]),'Solo el jefe');
+    await as(owner);
+    expect((await db.query('select count(*)::int as n from public.promotion_notifications')).rows[0].n).toBe(1);
+    const stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];
+    expect(Number(stock.total_owned)).toBe(10);expect(Number(stock.truck_ready)).toBe(3);expect(Number(stock.in_promotions)).toBe(2);
+    await db.query('select public.promotion_set_permission($1,$2,$3,false)',[tenant,op(),driver]);
+    await as(driver);expect((await db.query('select count(*)::int as n from public.promotions')).rows[0].n).toBe(0);
+    await rejected(()=>offerPromo(op(),trip),'habilitar');
+    await as(stranger);expect((await db.query('select count(*)::int as n from public.promotions')).rows[0].n).toBe(0);
+  });
+  it('convierte promocion con envases y dispenser sin nueva salida ni cobro y reintenta',async()=>{
+    const equipment=op(),promo=op(),event=op(),client=op();
+    await db.query("select public.catalog_create_stocked_item($1,$2,$3,'Equipo demo',0,'unidad',false,'dispenser',1,false,current_date)",[tenant,equipment,op()]);
+    await post('receive',items(4));await offerPromo(promo,null,[{product_id:product,quantity:2},{product_id:equipment,quantity:1}]);
+    const resolve=()=>db.query("select public.promotion_resolve($1,$2,$3,'convert',current_date,$4,$5::jsonb)",[tenant,event,promo,client,JSON.stringify({[equipment]:2000})]);
+    await resolve();await resolve();
+    expect((await db.query('select count(*)::int as n from public.customers where id=$1',[client])).rows[0].n).toBe(1);
+    const held=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];
+    expect(Number(held.total_owned)).toBe(4);expect(Number(held.in_customers)).toBe(2);expect(Number(held.in_promotions)).toBe(0);
+    expect((await db.query('select monthly from public.dispenser_assignments where customer_id=$1',[client])).rows[0].monthly).toBe('2000.00');
+    expect((await db.query('select count(*)::int as n from public.sales')).rows[0].n).toBe(0);
+    await rejected(()=>db.query("select public.promotion_resolve($1,$2,$3,'convert',current_date,$4)",[tenant,op(),promo,op()]),'no disponible');
+    await db.query('select public.inventory_return_dispenser_model($1,$2,id,current_date) from public.dispenser_assignments where customer_id=$3',[tenant,op(),client]);
+    expect(Number((await db.query('select depot_ready from public.inventory_owned_stock where product_id=$1',[equipment])).rows[0].depot_ready)).toBe(1);
+  });
+  it('recupera parcialmente y registra dano sin volverlo disponible; rechaza sobredevolucion',async()=>{
+    await post('receive',items(4));const promo=op();await offerPromo(promo);
+    await db.query("select public.promotion_resolve($1,$2,$3,'reject',current_date)",[tenant,op(),promo]);
+    const recover=(id,good,damaged)=>db.query('select public.promotion_recover($1,$2,$3,current_date,$4::jsonb)',[tenant,id,promo,JSON.stringify([{product_id:product,good,damaged}])]);
+    await rejected(()=>recover(op(),3,0),'mas de lo pendiente');
+    await recover(op(),1,0);
+    expect((await db.query('select status from public.promotions where id=$1',[promo])).rows[0].status).toBe('recovery');
+    const id=op();await recover(id,0,1);await recover(id,0,1);
+    expect((await db.query('select status from public.promotions where id=$1',[promo])).rows[0].status).toBe('closed');
+    const b=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];
+    expect(Number(b.depot_ready)).toBe(2);expect(Number(b.depot_empty)).toBe(1);expect(Number(b.promotion_damaged)).toBe(1);expect(Number(b.total_owned)).toBe(4);
+    await rejected(()=>db.query("select public.catalog_archive_item($1,$2,$3,current_date,'Correccion')",[tenant,op(),product]),'promociones');
+  });
   it('crea modelo con stock inicial disponible en la misma transaccion y reintenta sin duplicar',async()=>{
     const id=op(),stock=op(),create=(q=5)=>db.query("select public.catalog_create_stocked_item($1,$2,$3,'Basico',0,'unidad',false,'dispenser',$4,false,'2026-10-20')",[tenant,id,stock,q]);
     await create();await create();
