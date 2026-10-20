@@ -5,10 +5,35 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DemoPromotions } from '../src/features/DemoPromotions';
 import { DemoProgram } from '../src/features/DemoProgram';
 import { archiveDemoProduct, demoOwnedStock, seedProgram } from '../src/domain/programDemo';
-import { createPromotion, decidePromotion, recoverPromotion } from '../src/domain/promotionsDemo';
+import { canOfferPromotion, createPromotion, decidePromotion, recoverPromotion, setPromotionPermission } from '../src/domain/promotionsDemo';
 afterEach(()=>{cleanup();localStorage.clear();});
 const input={name:'Persona demo',address:'Dirección de ejemplo',phone:'',terms:'Prueba por una semana; condiciones de ejemplo.',followUp:'2026-10-26',items:{b20:2,frio:1}};
 const start=()=>createPromotion(seedProgram(),'owner',input);
+it('solo el jefe habilita; asistente usa su camión, notifica y pierde permiso al revocar',()=>{
+  const base=seedProgram();expect(canOfferPromotion(base,'luz')).toBe(false);
+  expect(()=>setPromotionPermission(base,'luz','luz',true)).toThrow(/jefe/);
+  const permitted=setPromotionPermission(base,'owner','luz',true);
+  expect(()=>createPromotion(permitted,'luz',{...input,tripId:'t2'})).toThrow(/recorrido activo/);
+  const next=createPromotion(permitted,'luz',{...input,tripId:'t1'});
+  expect(next.trips[0].stock.b20).toBe(permitted.trips[0].stock.b20-2);
+  expect(next.products).toEqual(permitted.products);
+  expect(next.promotions[0]).toMatchObject({authorId:'luz',tripId:'t1'});
+  expect(next.notices[0]).toMatchObject({recipientId:'owner',read:false});
+  expect(next.notices[0].text).toContain(input.name);expect(next.notices[0].text).toContain('Lucía');
+  expect(demoOwnedStock(next,'b20').total).toBe(demoOwnedStock(permitted,'b20').total);
+  expect(()=>decidePromotion(next,'luz',next.promotions[0].id,true)).toThrow(/jefe/);
+  const revoked=setPromotionPermission(next,'owner','luz',false);
+  expect(()=>createPromotion(revoked,'luz',{...input,tripId:'t1'})).toThrow(/habilitarte/);
+  expect(revoked.promotions).toEqual(next.promotions);
+});
+it('asistente ve solo sus promociones y no puede decidir su continuidad',()=>{
+  let state=setPromotionPermission(start(),'owner','luz',true);
+  state=createPromotion(state,'luz',{...input,name:'Su propia promoción',tripId:'t1'});
+  render(<DemoPromotions state={state} actor="luz" onChange={()=>{}}/>);
+  expect(screen.queryByText('Persona demo')).toBeNull();
+  expect(screen.getByRole('heading',{name:'Su propia promoción'})).toBeTruthy();
+  expect(screen.queryByText('Acepta · pasar a cliente')).toBeNull();
+});
 it('separa prospectos de clientes y conserva patrimonio, disponibilidad y permisos',()=>{
   const original=seedProgram(),s=start();expect(s.clients).toHaveLength(original.clients.length);
   expect(s.products.find(p=>p.id==='b20').depot).toBe(original.products[0].depot-2);

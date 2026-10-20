@@ -1,6 +1,7 @@
 import { demoDay, uid, type DemoProgramState } from './programDemo';
 
 export type Promotion = {
+  authorId?:string; tripId?:string;
   id:string; name:string; address:string; phone:string; terms:string; startedOn:string; followUp:string;
   status:'trial'|'recovery'|'converted'|'closed'; delivered:Record<string,number>; held:Record<string,number>;
   damaged:Record<string,number>; clientId?:string; history:string[];
@@ -9,19 +10,33 @@ function owner(s:DemoProgramState, actor:string) {
   if(!s.members.some(m=>m.id===actor&&m.active&&m.role==='owner'))throw new Error('Solo el jefe administra promociones en esta demo.');
 }
 function quantity(q:number) { if(!Number.isSafeInteger(q)||q<0||q>100000)throw new Error('Ingresá cantidades enteras entre 0 y 100.000.'); }
-export function createPromotion(state:DemoProgramState,actor:string,input:{name:string;address:string;phone:string;terms:string;followUp:string;items:Record<string,number>}) {
-  owner(state,actor);
+export function canOfferPromotion(s:DemoProgramState,actor:string){
+  return s.members.some(m=>m.id===actor&&m.active&&(m.role==='owner'||m.promotionAllowed===true));
+}
+export function setPromotionPermission(state:DemoProgramState,actor:string,memberId:string,allowed:boolean){
+  owner(state,actor);const s=structuredClone(state),member=s.members.find(m=>m.id===memberId&&m.active&&m.role==='driver');
+  if(!member)throw new Error('Asistente no vinculado.');
+  member.promotionAllowed=allowed;return s;
+}
+export function createPromotion(state:DemoProgramState,actor:string,input:{name:string;address:string;phone:string;terms:string;followUp:string;items:Record<string,number>;tripId?:string}) {
+  if(!canOfferPromotion(state,actor))throw new Error('El jefe debe habilitarte para ofrecer promociones.');
+  const isOwner=state.members.some(m=>m.id===actor&&m.active&&m.role==='owner');
+  const trip=isOwner?undefined:state.trips.find(t=>t.id===input.tripId&&t.driverId===actor&&t.stage==='active');
+  if(!isOwner&&!trip)throw new Error('Necesitás tu recorrido activo para entregar una promoción.');
   if(!input.name.trim()||!input.address.trim()||!input.terms.trim())throw new Error('Completá nombre, dirección y condiciones de la promoción.');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(input.followUp)||!Number.isFinite(Date.parse(input.followUp))||new Date(input.followUp).toISOString().slice(0,10)!==input.followUp||input.followUp<demoDay)throw new Error('Elegí una fecha de seguimiento desde el día de la demo.');
   const s=structuredClone(state),items:Record<string,number>={};
   for(const [id,q] of Object.entries(input.items)){
     quantity(q);if(!q)continue;
     const p=s.products.find(p=>p.id===id&&p.active&&(p.returnable||p.kind==='rental'));
-    if(!p||q>p.depot)throw new Error('No hay suficientes unidades disponibles en depósito.');
-    p.depot-=q;items[id]=q;
+    const target=trip?s.trips.find(t=>t.id===trip.id)!:undefined;
+    if(!p||q>(target?target.stock[id]||0:p.depot))throw new Error('No hay suficientes unidades disponibles en depósito o camión.');
+    if(target)target.stock[id]-=q;else p.depot-=q;
+    items[id]=q;
   }
   if(!Object.keys(items).length)throw new Error('Indicá qué entregás para probar.');
-  s.promotions=[{id:uid(),name:input.name.trim(),address:input.address.trim(),phone:input.phone.trim(),terms:input.terms.trim(),startedOn:demoDay,followUp:input.followUp,status:'trial',delivered:items,held:{...items},damaged:{},history:[`${demoDay}: entrega de prueba desde depósito.`]},...(s.promotions||[])];
+  s.promotions=[{id:uid(),authorId:actor,tripId:trip?.id,name:input.name.trim(),address:input.address.trim(),phone:input.phone.trim(),terms:input.terms.trim(),startedOn:demoDay,followUp:input.followUp,status:'trial',delivered:items,held:{...items},damaged:{},history:[`${demoDay}: entrega de prueba desde ${trip?'camión':'depósito'}.`]},...(s.promotions||[])];
+  if(!isOwner)s.notices.unshift({id:uid(),recipientId:'owner',read:false,text:`${s.members.find(m=>m.id===actor)!.name} entregó una promoción a ${input.name.trim()}. Próxima visita: ${input.followUp}. Entregó: ${Object.entries(items).map(([id,q])=>`${q} ${s.products.find(p=>p.id===id)!.name}`).join(', ')}. Condiciones: ${input.terms.trim()}`});
   return s;
 }
 export function decidePromotion(state:DemoProgramState,actor:string,id:string,accept:boolean,monthly:Record<string,number>={}){

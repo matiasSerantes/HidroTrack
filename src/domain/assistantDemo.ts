@@ -28,7 +28,7 @@ export function unlinkAssistant(s:DemoProgramState,id:string,actor:string){
   owner(s,actor);
   if(!s.members.some(m=>m.id===id&&m.role==='driver'&&m.active))throw new Error('Asistente no vinculado.');
   if(s.trips.some(t=>t.driverId===id&&t.stage!=='approved'))throw new Error('Reasigná o cerrá sus recorridos y rendiciones antes de quitarlo.');
-  return {...s,assistantAccounts:assistantAccounts(s),otherEmployerLinks:otherEmployerLinks(s),members:s.members.map(m=>m.id===id?{...m,active:false}:m)};
+  return {...s,assistantAccounts:assistantAccounts(s),otherEmployerLinks:otherEmployerLinks(s),members:s.members.map(m=>m.id===id?{...m,active:false,promotionAllowed:false}:m)};
 }
 export function registerDemoAssistant(s:DemoProgramState,name:string,email:string){
   name=name.trim();email=email.trim().toLowerCase();

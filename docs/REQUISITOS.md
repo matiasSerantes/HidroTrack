@@ -244,6 +244,8 @@ Pedido: graficos ganancia/gasto mensual, mejor dia de semana y ganancia diaria, 
 20/10: usuario confirma disponibilidad automatica desde stock. Modelo mas cantidad inicial deben guardarse juntos; no obligar a segunda carga desde cliente. Campo de cantidad separado de unidad de venta, dispenser nuevo usa unidad fija. Preservar movimientos y asignaciones previas. Basico de canilla se presta gratis y corresponde uno por cliente; frio/calor es de alquiler. Validacion de unicidad por cliente pendiente de regla de servidor, sin reinterpretar precios como cuotas.
 # Promociones en prueba (20/10/2026)
 
+- Permiso confirmado: únicamente el jefe habilita/revoca por asistente la capacidad de ofrecer promociones; por defecto deshabilitada. Cada promoción entregada por asistente habilitado notifica al jefe. En demo necesita recorrido activo, usa stock de ese camión y ve solo sus promociones. La conversión y recuperación quedan a cargo del jefe. Desvincular revoca el permiso y conserva historial. Producción requiere permiso en vínculo empresa-asistente, no en cuenta global (puede trabajar con varios jefes).
+
 - Separar personas en prueba de clientes activos. Registrar contacto, dirección, condiciones/precio pactados, fecha de entrega, próxima visita y bienes en su poder.
 - Estados: en prueba, pendiente de recuperación, convertida en cliente y cerrada. Aceptar crea una sola ficha de cliente y transfiere tenencias sin descontar nuevamente inventario; conserva historial.
 - Rechazar bloquea nuevas entregas. Recuperar parcialmente mantiene pendiente; cerrar solo con cero bienes por recuperar. Los envases buenos vuelven vacíos, los equipos buenos disponibles y los dañados quedan fuera del disponible, conservando trazabilidad.
