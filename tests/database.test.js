@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock','20261020210000_promotions']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock','20261020203608_promotions']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);

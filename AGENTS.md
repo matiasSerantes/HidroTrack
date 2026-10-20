@@ -26,3 +26,7 @@ Acuerdo del usuario del 19/10/2026. Estas instrucciones viven en el repositorio 
 - No incluir cambios ajenos, credenciales, tokens, `.env`, datos personales ni salidas de diagnóstico sin revisar en los commits. No usar force push ni descartar trabajo existente.
 - Registrar qué se verificó y qué queda sin verificar. Las notas no sustituyen pruebas ni confirman cambios remotos que no se hayan comprobado.
 - Para Supabase, usar el MCP autenticado. Una revisión de base es de solo lectura; la autorización para llevar notas y hacer push no amplía el alcance de cambios en la base o despliegues.
+
+## Autorizaciones claras (20/10/2026)
+
+Antes de pedir autorizacion, explicar concretamente que se hara, para que, si afecta la base real, que tablas/permisos/datos cambia y que riesgo o requisito origina el pedido. No repetir aprobaciones ya concedidas. El usuario pidio este detalle para entender cada autorizacion.
