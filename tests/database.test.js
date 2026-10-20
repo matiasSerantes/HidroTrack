@@ -26,6 +26,35 @@ describe('migración y seguridad PostgreSQL', () => {
     await db.exec(await readFile(new URL('../supabase/tests/inventory_incidents_verify.sql',import.meta.url),'utf8'));
     expect((await db.query('select count(*)::int as count from public.inventory_operations')).rows[0].count).toBe(0);
   });
+  it('protege el directorio y limita el alta de choferes desde el servidor', async () => {
+    await db.exec(`begin;
+      insert into auth.users(id,email) values
+      ('00000000-0000-0000-0000-000000000001','admin@example.test'),
+      ('00000000-0000-0000-0000-000000000002','owner@example.test'),
+      ('00000000-0000-0000-0000-000000000003','driver@example.test'),
+      ('00000000-0000-0000-0000-000000000004','driver2@example.test');
+      insert into public.platform_admins values('00000000-0000-0000-0000-000000000001');
+      do $$ declare t uuid; begin
+       begin
+        perform public.admin_directory();
+        raise exception 'Directory leaked';
+       exception when insufficient_privilege then null; end;
+       begin
+        perform public.admin_provision('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003','Forbidden',null,'owner','permanent',null,1);
+        raise exception 'Unauthorized provisioning';
+       exception when insufficient_privilege then null; end;
+       t:=public.admin_provision('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','Test',null,'owner','permanent',null,1);
+       perform public.admin_provision('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003',null,t,'driver',null,null,null);
+       begin
+        perform public.admin_provision('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000004',null,t,'driver',null,null,null);
+        raise exception 'Limit not enforced';
+       exception when raise_exception then if SQLERRM <> 'Límite de choferes alcanzado' then raise; end if; end;
+       if jsonb_array_length(public.admin_directory())<>1 then raise exception 'Missing directory'; end if;
+       if not exists(select 1 from public.license_events where tenant_id=t and actor_id='00000000-0000-0000-0000-000000000001') then raise exception 'Missing audit actor'; end if;
+       if has_function_privilege('authenticated','public.admin_provision(uuid,uuid,text,uuid,text,text,timestamptz,integer)','execute') then raise exception 'Provision exposed'; end if;
+      end $$;
+      rollback;`);
+  });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
     expect(rows).toHaveLength(17);

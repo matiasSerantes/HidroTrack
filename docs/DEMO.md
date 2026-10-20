@@ -154,3 +154,6 @@ Cuenta real: el bloqueo de Eliminar con unidades muestra un aviso inmediato. El 
 Actualización 19/10: MCP conectado y proyecto verificado. Limpieza remota sin ejecutar porque existe un reparto pendiente de rendición; resolverlo antes del reinicio. Migraciones adicionales pendientes.
 
 Resultado remoto 19/10: reinicio ejecutado por MCP en una sola empresa y transacción. Eliminado el reparto de prueba autorizado. Verificados cero artículos, equipos, movimientos y repartos; conservados cliente, cuenta Auth, miembros y licencia mediante comparación dentro de la transacción. Las tres migraciones adicionales siguen pendientes; esta limpieza no las aplica.
+
+## Demo anterior recuperada
+La demo integral sigue en /?demo=1. Para revisar los mapas, recorridos diarios y equipos de clientes de la copia local anterior, abrir /?demo=legacy. Sus datos permanecen separados en el navegador; no se sincronizan con la demo integral ni con Supabase.
