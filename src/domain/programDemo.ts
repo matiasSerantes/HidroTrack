@@ -1,3 +1,4 @@
+import type { Promotion } from './promotionsDemo';
 import { buildDemoTripReceipt, type DemoTripReceipt } from './tripReceiptDemo';
 import { routeLoadSuggestion } from './routeLoadDemo';
 import type { ExtraVisit, DispenserChange } from './customerVisitsDemo';
@@ -7,17 +8,17 @@ import type {StockEvent} from './stockIncidentDemo';
 
 export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
-export type Page = 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
+export type Page = 'promotions' | 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { fillingCostEnabled?:boolean; fillingCost?:number; id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' | 'customer_owned' };
-export type Client = { usualItems?:Record<string,number>; joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
+export type Client = { promotionId?:string; phone?:string; usualItems?:Record<string,number>; joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean; email?: string };
 export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
 export type Trip = { receipt?:DemoTripReceipt; plannedEquipment?:Record<string,number>;loadRecommendation?:Record<string,number>;loadPlan?:Record<string,number>;loadExtras?:Record<string,number>; date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { date?:string; id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
-export type DemoProgramState = { extraVisits?:ExtraVisit[]; dispenserChanges?:DispenserChange[]; fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
+export type DemoProgramState = { promotions?:Promotion[]; extraVisits?:ExtraVisit[]; dispenserChanges?:DispenserChange[]; fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export const pendingDemoRecovery = (s: DemoProgramState, clientId: string) => s.requests.some(r => r.kind === 'deactivation' && r.clientId === clientId && r.status === 'pending');
 export function demoOwnedStock(s: DemoProgramState, productId: string) {
@@ -25,8 +26,10 @@ export function demoOwnedStock(s: DemoProgramState, productId: string) {
   const trips=s.trips.filter(t=>['active','submitted'].includes(t.stage));
   const depot=product?.depot||0, empty=s.depotEmpties[productId]||0, truck=trips.reduce((n,t)=>n+(t.stock[productId]||0),0), truckEmpty=trips.reduce((n,t)=>n+(t.empties[productId]||0),0), held=s.clients.reduce((n,c)=>n+(c.held[productId]||0),0);
   const equipmentReturns=(s.dispenserChanges||[]).filter(c=>c.previousProductId===productId&&s.trips.some(t=>t.id===c.tripId&&t.stage!=='approved')).length;
-  const repair=(s.dispenserChanges||[]).filter(c=>c.previousProductId===productId&&c.condition==='damaged'&&s.trips.some(t=>t.id===c.tripId&&t.stage==='approved')).length;
-  return {depot,empty,truck,truckEmpty,held,equipmentReturns,repair,total:depot+empty+truck+truckEmpty+held+equipmentReturns+repair};
+  const promotionHeld=(s.promotions||[]).reduce((n,p)=>n+(p.held[productId]||0),0);
+  const promotionDamage=(s.promotions||[]).reduce((n,p)=>n+(p.damaged[productId]||0),0);
+  const repair=promotionDamage+(s.dispenserChanges||[]).filter(c=>c.previousProductId===productId&&c.condition==='damaged'&&s.trips.some(t=>t.id===c.tripId&&t.stage==='approved')).length;
+  return {depot,empty,truck,truckEmpty,held,promotionHeld,equipmentReturns,repair,total:depot+empty+truck+truckEmpty+held+promotionHeld+equipmentReturns+repair};
 }
 export function demoRefill(s: DemoProgramState, productId: string, quantity: number, actor: string) {
   if(!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active)) throw new Error('Solo el jefe puede registrar recargas.');
@@ -51,7 +54,7 @@ export function archiveDemoProduct(state:DemoProgramState,productId:string,actor
   if(!product)throw new Error('Artículo no habilitado.');
   const placed=state.clients.reduce((n,c)=>n+c.rentals.filter(r=>r.productId===productId&&r.mode!=='customer_owned').length,0);
   const b=demoOwnedStock(state,productId);
-  if(b.truck+b.truckEmpty+b.held+placed+b.equipmentReturns+b.repair>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
+  if(b.truck+b.truckEmpty+b.held+b.promotionHeld+placed+b.equipmentReturns+b.repair>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
   const next=structuredClone(state),target=next.products.find(p=>p.id===productId)!;
   for(const [source,quantity] of [['depot_ready',b.depot],['depot_empty',b.empty]] as const){if(quantity>0)next.stockEvents=[{id:uid(),productId,quantity,kind:'remove',source,date:demoDay,registeredAt:new Date().toISOString(),actorId:actor,involvedKind:'owner',involvedId:actor,note:'Corrección de alta: artículo ingresado por error.'},...(next.stockEvents||[])];}
   target.depot=0;next.depotEmpties[productId]=0;target.active=false;return next;

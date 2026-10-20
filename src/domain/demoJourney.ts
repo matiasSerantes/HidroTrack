@@ -3,7 +3,7 @@ import { assistantAccounts, assignedAssistantTrips } from './assistantDemo';
 
 export const JOURNEY_KEY = 'hidrotrack.demo-journey.v1';
 export type Journey = { actor: string; page: Page; tripId: string; dialog: { type: 'visit' | 'detail' | 'map'; id?: string; tripId?: string } | null };
-const pages: Page[] = ['overview', 'routes', 'delivery', 'fleet', 'customers', 'catalog', 'inventory', 'team', 'approvals', 'reports', 'company'];
+const pages: Page[] = ['promotions', 'overview', 'routes', 'delivery', 'fleet', 'customers', 'catalog', 'inventory', 'team', 'approvals', 'reports', 'company'];
 export function readJourney(state: DemoProgramState): Journey | null {
   try {
     const saved = JSON.parse(localStorage.getItem(JOURNEY_KEY) || 'null');
@@ -12,7 +12,7 @@ export function readJourney(state: DemoProgramState): Journey | null {
     if(!owner&&!assignedAssistantTrips(state,saved.actor).length)return {actor:saved.actor,page:'overview',tripId:'',dialog:null};
     const trip = state.trips.find(t => t.id === saved.tripId && (owner || t.driverId === saved.actor));
     let page: Page = pages.includes(saved.page) ? saved.page : 'overview';
-    if ((!owner && ['team', 'company', 'fleet'].includes(page)) || (page === 'delivery' && !trip)) page = 'overview';
+    if ((!owner && ['team', 'company', 'fleet', 'promotions'].includes(page)) || (page === 'delivery' && !trip)) page = 'overview';
     let dialog: Journey['dialog'] = null;
     const d = saved.dialog;
     if (d && ['visit', 'detail', 'map'].includes(d.type)) {

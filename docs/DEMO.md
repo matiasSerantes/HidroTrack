@@ -230,3 +230,10 @@ Implementado en demo; tablero/cierre/PDF conectados de produccion pendientes. PD
 
 
 20/10: formulario REAL de Catalogo ofrece Cantidad inicial en stock, fecha y estado de envases. Dispenser nuevo queda disponible al confirmar junto al modelo. Guardar con cero solo crea catalogo. Selector REAL actualiza disponibilidad al abrir Asignar dispenser; no pide registrar equipos ya existentes. RPC atomica instalada en Supabase. Diagnostico MCP anterior de stock cero fue incorrecto por vista filtrada sin identidad; registro duplicado compensado y saldos verificados. No se cambiaron precios ni asignaciones existentes. Demo ya permite alta con cantidad en deposito; conserva separacion de datos ficticios.
+# Promociones en prueba
+
+En `/?demo=1`, entrar como jefe y abrir **Promociones** desde el menú (en celular, Abrir navegación). Crear una persona con condiciones y precio escritos, próxima visita y cantidades a entregar desde depósito. No figura en Clientes durante la prueba.
+
+Al aceptar pasa a Clientes con sus envases y equipos, sin segunda salida de stock; se puede indicar cuota mensual por modelo de equipo (0 = préstamo gratuito). No se registra cobro ni deuda automática. Al rechazar queda pendiente de recuperación, permite devoluciones parciales y roturas; solo cierra cuando recuperó todo. Historial conservado y stock en promociones visible en catálogo; dañados en revisión.
+
+Simulación local del jefe: todavía no se integra con recorridos del asistente, facturación ni Supabase. Fechas de operaciones siguen el día ficticio de la demo. Configurar hábitos y visitas después de convertir.

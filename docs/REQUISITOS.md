@@ -242,3 +242,10 @@ Pedido: graficos ganancia/gasto mensual, mejor dia de semana y ganancia diaria, 
 
 
 20/10: usuario confirma disponibilidad automatica desde stock. Modelo mas cantidad inicial deben guardarse juntos; no obligar a segunda carga desde cliente. Campo de cantidad separado de unidad de venta, dispenser nuevo usa unidad fija. Preservar movimientos y asignaciones previas. Basico de canilla se presta gratis y corresponde uno por cliente; frio/calor es de alquiler. Validacion de unicidad por cliente pendiente de regla de servidor, sin reinterpretar precios como cuotas.
+# Promociones en prueba (20/10/2026)
+
+- Separar personas en prueba de clientes activos. Registrar contacto, dirección, condiciones/precio pactados, fecha de entrega, próxima visita y bienes en su poder.
+- Estados: en prueba, pendiente de recuperación, convertida en cliente y cerrada. Aceptar crea una sola ficha de cliente y transfiere tenencias sin descontar nuevamente inventario; conserva historial.
+- Rechazar bloquea nuevas entregas. Recuperar parcialmente mantiene pendiente; cerrar solo con cero bienes por recuperar. Los envases buenos vuelven vacíos, los equipos buenos disponibles y los dañados quedan fuera del disponible, conservando trazabilidad.
+- Demo del jefe disponible en Promociones. Salida directa desde depósito; cuotas de equipos al continuar explícitas (cero = préstamo gratuito). Las condiciones de precio son referencia, sin cobros ni deuda automática.
+- Pendiente de producción: tablas de prospectos/promociones, eventos y movimientos atómicos, RLS por empresa, asignación de visita al asistente, carga del camión y rendición, aprobación comercial y tratamiento contable del precio promocional. No implementar automáticamente descuentos/gratuidad/plazo fijo sin definición. No confundir esta demo con autorización de cambios remotos.
