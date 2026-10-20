@@ -1,19 +1,20 @@
+import { fillingCostPreview, type FillingCostSnapshot } from './fillingCostDemo';
 import { currency, parseMoney } from './demo';
 import type {StockEvent} from './stockIncidentDemo';
 
 export const DEMO_KEY = 'hidrotrack.complete-demo.v1';
 export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
-export type Product = { id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
+export type Product = { fillingCostEnabled?:boolean; fillingCost?:number; id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' | 'customer_owned' };
 export type Client = { id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean; email?: string };
 export type Stop = { clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
-export type Trip = { id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
+export type Trip = { fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
-export type DemoProgramState = { assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
+export type DemoProgramState = { fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export const pendingDemoRecovery = (s: DemoProgramState, clientId: string) => s.requests.some(r => r.kind === 'deactivation' && r.clientId === clientId && r.status === 'pending');
 export function demoOwnedStock(s: DemoProgramState, productId: string) {
@@ -156,7 +157,9 @@ export function loadTrip(state: DemoProgramState, tripId: string, quantities: Re
   if (s.trips.some(t => t.id !== trip.id && t.driverId === trip.driverId && ['active', 'submitted'].includes(t.stage))) throw new Error('Cerrá y aprobá el reparto anterior de este repartidor antes de iniciar otro.');
   if (!Object.values(quantities).some(q => q > 0)) throw new Error('Ingresá al menos un artículo para salir.');
   if(fillEmpties&&!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede rellenar y cargar.');
+  const fillingCost=fillingCostPreview(s,quantities,fillEmpties);
   for (const p of s.products) { const q = quantities[p.id] || 0; integer(q); const missing=Math.max(q-p.depot,0);if(fillEmpties&&missing>0&&p.returnable&&p.kind==='sale'){if(missing>(s.depotEmpties[p.id]||0))throw new Error(`No hay suficientes vacíos de ${p.name}.`);s.depotEmpties[p.id]-=missing;p.depot+=missing;}if (q > p.depot) throw new Error(`No alcanza el stock de depósito de ${p.name}.`); p.depot -= q; }
+  trip.fillingCost=fillingCost;
   trip.load = { ...quantities }; trip.stock = { ...quantities }; trip.stage = 'active';
   notify(s, `Comenzó ${trip.name}. Carga del transporte registrada.`); return s;
 }

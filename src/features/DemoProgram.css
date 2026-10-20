@@ -17,6 +17,9 @@
 
 .catalog-demo-create{display:flex;flex-direction:column;gap:12px;max-width:480px;margin-bottom:24px}.catalog-demo-create button{min-height:52px;text-align:left}
 .hd-assistant-register{margin:18px 0}.hd-assistant-register form{margin-top:16px}
+.hd-filling-cost,.hd-filling-fields{padding:18px;margin:18px 0;background:#e9f6fd;border:1px solid #b2d8ed;border-radius:14px;color:#214f67}
+.hd-filling-cost p{line-height:1.6}.hd-filling-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.hd-filling-totals strong{display:block;font-size:24px;margin-top:8px;overflow-wrap:anywhere}
+@media(max-width:600px){.hd-filling-totals{grid-template-columns:1fr}.hd-filling-totals p{margin:4px 0}.hd-filling-cost,.hd-filling-fields{padding:14px}}
 .hd.hd-assistant-wait{min-height:100dvh;display:grid;place-items:center;padding:24px;background:#edf7fd;color:#174c65}
 .hd-assistant-wait>.hd-card{width:min(100%,560px);box-sizing:border-box;padding:32px;border:1px solid #b9dcee;border-radius:22px;background:#fff}
 .hd-assistant-wait .hd-tag{display:table;margin:18px 0}.hd-assistant-wait h1{font-size:clamp(26px,6vw,36px);line-height:1.2}

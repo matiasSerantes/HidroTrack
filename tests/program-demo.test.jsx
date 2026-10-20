@@ -15,6 +15,34 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('habilita llenado en configuración y guarda costo independiente del precio de venta',()=>{
+    enter();fireEvent.click(screen.getByRole('button',{name:'Catálogo',exact:true}));
+    const card=screen.getByRole('heading',{name:'Bidón 20 litros'}).closest('article');fireEvent.click(within(card).getByRole('button',{name:/Editar/}));
+    expect(screen.queryByLabelText('Este producto tiene costo de llenado')).toBeNull();fireEvent.click(screen.getByRole('button',{name:'Cerrar ventana'}));
+    fireEvent.click(screen.getByRole('button',{name:'Mi empresa',exact:true}));
+    fireEvent.click(screen.getByLabelText('Controlar costo de llenado y ganancia estimada'));
+    fireEvent.click(screen.getByRole('button',{name:'Catálogo',exact:true}));
+    fireEvent.click(within(screen.getByRole('heading',{name:'Bidón 20 litros'}).closest('article')).getByRole('button',{name:/Editar/}));
+    fireEvent.click(screen.getByLabelText('Este producto tiene costo de llenado'));
+    fireEvent.change(screen.getByLabelText('Costo unitario de llenado ($)'),{target:{value:'100'}});
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
+    const product=JSON.parse(localStorage.getItem(DEMO_KEY)).products.find(p=>p.id==='b20');
+    expect(product.fillingCostEnabled).toBe(true);expect(product.fillingCost).toBe(10000);expect(product.price).toBe(350000);
+  });
+  it('previsualiza solo el faltante y muestra resultado negativo al confirmar carga',()=>{
+    const s=seedProgram();s.fillingCost={enabled:true};Object.assign(s.products[0],{depot:2,fillingCostEnabled:true,fillingCost:10000});
+    s.trips[0].stage='planned';s.trips[0].stock={};s.trips[0].load={};localStorage.setItem(DEMO_KEY,JSON.stringify(s));enter();
+    fireEvent.click(screen.getByRole('button',{name:'Carga y rendición',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'Cargar transporte'}));
+    fireEvent.click(screen.getByLabelText('Rellenar los vacíos que falten para esta carga'));
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText(/Bidón 20 litros/),{target:{value:'5'}});
+    expect(screen.getByText(/Costo de llenado de esta carga:/).textContent).toContain('300');
+    fireEvent.click(screen.getByRole('button',{name:'Registrar carga'}));
+    fireEvent.click(screen.getByRole('button',{name:'Carga y rendición',exact:true}));
+    const result=screen.getByRole('region',{name:'Resultado de llenado del reparto'});
+    expect(within(result).getByText('Resultado estimado').textContent).toContain('-');
+    expect(JSON.parse(localStorage.getItem(DEMO_KEY)).trips[0].fillingCost.total).toBe(30000);
+  });
   it('registra cuenta personal y mantiene espera privada al recargar',()=>{
     render(<DemoProgram onExit={()=>{}}/>);
     fireEvent.click(screen.getByRole('button',{name:'Crear mi cuenta de asistente · demo'}));

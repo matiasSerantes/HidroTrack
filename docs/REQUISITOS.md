@@ -214,3 +214,10 @@ Catálogo único: Agregar dispenser arriba y Agregar producto debajo, inventario
 - Agregar asistente o empleado desde el equipo del jefe. Sin recorrido asignado, unica pantalla En espera de recorrido, sin datos comerciales del jefe ni navegacion a sus modulos. Con recorrido, solo datos autorizados de ese recorrido y empresa. Al terminar o revocarse, volver a espera.
 - Licencia basica: 1 asistente; intermedia: 3; superior: ilimitados. Cupos independientes por empresa. Propuesta: contar vinculos habilitados, no solo quienes estan trabajando; bloquear bajas de plan por debajo del equipo actual y quitar asistentes con recorrido abierto hasta resolverlo.
 - Implementar registro verificado, vinculacion con consentimiento y revocacion auditada en servidor antes de activar datos reales. No exponer listado global de correos ni permitir acceso por pertenencia sin asignacion. Demo no crea cuentas Auth, no cobra licencias ni cambia planes reales.
+
+
+## 20/10/2026 - Llenado y ganancia estimada
+
+Opcion desactivada por defecto en configuracion del jefe. Al habilitarla, el producto retornable de venta permite activar costo de llenado e ingresar monto unitario. Precio de venta y costo de llenado independientes. Congelar costo y cantidades aplicados al confirmar carga unica; no duplicar gasto en reintento, no cambiar historia al editar precio o desactivar configuracion. Mostrar al jefe costo inicial negativo, vendido y resultado estimado vendido menos llenado de la carga; cobrado por separado. No presentar como ganancia neta contable ni como costo de envases vacios que no se rellenaron. Demostracion local antes de integracion real.
+
+Confirmado por el usuario: descontar solamente los bidones que se rellenan al cargar. Los ya llenos del deposito no suman costo de esta carga. Mantener visible el resultado historico aunque luego se desactive la opcion.

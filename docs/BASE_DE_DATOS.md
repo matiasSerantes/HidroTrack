@@ -63,3 +63,10 @@ Nueva definicion representada en demo; NO aplicada como migracion. tenant_member
 Planes: basico 1, intermedio 3, superior ilimitados; actualmente licenses usa driver_limit entero no nulo. Representar ilimitado explicitamente al migrar y actualizar tambien validaciones administrativas; no usar un numero magico ni cambiar licencias existentes sin politica de conversion. El asistente usa licencia vigente de cada jefe, sin una propia. Definir precios, conversion de licencias antiguas y cobro aparte antes de activarlos.
 
 Acceso: sin recorrido asignado, solo estado de espera. Revisar RLS y RPC de TODOS los datos comerciales (catalogo, saldos, movimientos, equipo, avisos) y consultas de frontend: ocultar el menu no basta. Con recorrido, limitar a empresa y asignacion vigentes; cierre/reasignacion/revocacion quita acceso. Estado de rendicion pendiente mantiene solo lo necesario hasta resolverla (criterio provisional). Probar dos jefes, misma cuenta, revocacion y concurrencia de cupos por Auth/PostgREST antes de publicar esta funcion real.
+
+
+## Pendiente: costo de llenado (20/10)
+
+Implementado solo en demo. Contrato confirmado: configuracion opcional del jefe y costo por producto retornable de venta; cobrar como gasto SOLO unidades rellenadas dentro de fill_and_load, nunca llenos existentes ni vacios transportados sin rellenar. En servidor, guardar costo unitario historico y unidades junto a la recarga/carga, dentro de su transaccion idempotente. No permitir costos enviados por asistente ni recalcular viajes previos al editar catalogo. Separar del precio de venta y del saldo del cliente.
+
+Mostrar solo al jefe vendido menos costo de llenado del reparto, separado de cobrado. Sin costos historicos: no inferir ganancia cero. No contabilizar dos veces al cerrar o reintentar. Definir costos de recarga independiente, devolucion o anulacion antes de incorporarlos al resultado; no forman parte de este pedido. Ninguna migracion aplicada por esta idea; RLS real y E2E pendientes al integrar.

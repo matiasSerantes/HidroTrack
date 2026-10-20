@@ -320,3 +320,12 @@ Criterio provisional: el cupo cuenta vinculos habilitados, incluso esperando rec
 
 
 Resultado 20/10: demo implementada con registro ficticio independiente, agregar cuenta existente por correo, asignar recorrido desde la tarjeta y quitar/reagregar sin perder identidad ni historial. Espera privada sin menu, datos comerciales ni ficha restaurada; persiste al recargar. Cupos 1/3/ilimitados y bloqueo de reduccion por debajo del equipo. Ejemplo de relacion con otra empresa conservado, sin segundo espacio comercial navegable. 200 pruebas aprobadas en 22 archivos y build correcto. Sin modificaciones remotas de cuentas, licencias o RLS. Revision visual manual movil/PC pendiente; estilos adaptados a ambos. Siguiente: registro Auth verificado y contrato de vinculacion/consentimiento y permisos por recorrido antes de activar este flujo real.
+
+
+## 2026-10-20 - Costo de llenado opcional
+
+Pedido: opcion del jefe en configuracion para habilitar costo de llenado por producto. Al habilitarla, cada producto ofrece activar llenado e ingresar costo; la carga del camion muestra costo negativo inicial y evolucion de ganancia estimada al vender. Registrar precio historico para que cambios futuros no alteren repartos. Estado: demo en implementacion; no modifica Supabase. Consultado si costo corresponde a todos los llenos cargados o solo a los rellenados al cargar; no resolver sin dejar criterio explicito. No descontar costo por cargar envases vacios sin llenar ni para dispenser. Ganancia estimada no incluye otros gastos ni equivale a efectivo cobrado.
+
+Confirmado: SOLO los bidones que se rellenan al cargar. Llenos existentes en deposito quedan excluidos del costo de esa carga. No imputar retroactivamente recargas previas ni usar costo de todos los llenos transportados.
+
+Resultado 20/10: opcion desactivada por defecto en Mi empresa, costo optativo por producto del catalogo, vista previa del faltante rellenado y snapshot historico al cargar. Stock del camion e informe muestran vendido, costo y resultado estimado solo al jefe. No retroactivo; desactivar o cambiar precio no altera cargas confirmadas. 206 pruebas aprobadas en 23 archivos y build correcto. Sin migraciones ni cambios remotos; revision visual manual movil/PC pendiente. Siguiente: contrato transaccional de costos historicos en fill_and_load y permisos reales antes de conectar esta opcion a Supabase.

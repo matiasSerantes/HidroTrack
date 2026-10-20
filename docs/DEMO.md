@@ -182,3 +182,12 @@ En el acceso de la demo: Crear mi cuenta de asistente, usando datos ficticios. I
 Como jefe: Mi equipo > Agregar asistente o empleado; usar sofia@example.com, o la cuenta ficticia creada antes. Asignar recorrido abre el formulario con esa persona seleccionada. Volver a su rol muestra el recorrido. Al aprobar su ultimo cierre vuelve a espera. Quitar del equipo exige resolver recorridos abiertos y conserva cuenta e historial; luego puede volver a agregarse con el mismo correo.
 
 Selector de licencia ficticia: basica 1, intermedia 3 (ejemplo inicial), superior ilimitados. No cobra ni modifica licencias reales. Lucia tiene ademas un vinculo ficticio con otra empresa, que se conserva al quitarla de este jefe; no hay un segundo espacio comercial navegable ni recorridos remotos multiempresa en esta demo. Registro Auth y permisos de produccion pendientes.
+
+
+## 20/10/2026 - Costo opcional de llenado
+
+Como jefe: Mi empresa > Configuracion de llenado > Controlar costo de llenado y ganancia estimada. Desactivada por defecto. En Catalogo > Editar producto, tildar Este producto tiene costo de llenado e ingresar costo unitario separado del precio de venta. Solo envases retornables de venta; no dispenser.
+
+Para probar: preparar un reparto con faltante de llenos, habilitar Rellenar los vacios que falten y cargar. Se previsualizan cantidad y costo de los que se rellenan, no de los llenos ya disponibles. Ejemplo: cargar 5, deposito 2 llenos, costo $100: se rellenan 3, costo $300, resultado inicial -$300. Stock del camion e informe del jefe muestran vendido, costo y resultado estimado. Cobros y deuda previa no se confunden con venta.
+
+Los costos de la carga quedan congelados; cambiar precio o desactivar opcion no cambia historia. Repartos anteriores sin registro no calculan retroactivamente. Simulacion local, sin base remota ni margen contable completo: excluye combustible, salarios, recargas previas y otros gastos.
