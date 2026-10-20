@@ -91,3 +91,8 @@ La RPC real actual admite cantidad inicial total por articulo y mantiene bloqueo
 Demo agrega agregacion por fecha de reparto/venta y gastos historicos de llenado. Servidor aun necesita categorias de gastos reales y contrato de rentabilidad; no inferir ganancia total si faltan costos. Consultas del jefe aisladas por tenant; no permitir al asistente agregados de otros repartos. Clientes nuevos se definen provisionalmente como alta el dia del reparto incluida en sus paradas.
 
 Snapshot PDF local al aprobar cierre; variante del jefe con ventas/cobros y variante del asistente con efectivo propio a rendir y stock. Integracion real debe leer snapshot de trip_closures/ledger, generar idempotentemente, conservar versiones y autorizar solo jefe o asistente de ese reparto, aun si luego queda en espera. No deducir dinero recibido por generar el comprobante. Notificacion, almacenamiento/descarga autenticada y Realtime entre dispositivos quedan pendientes; no se aplico migracion ni se enviaron documentos a terceros.
+
+
+## 20/10 - Diagnostico de selector de dispenser vacio
+
+Revision por MCP de solo lectura confirmo modelos activos correctamente clasificados y cero unidades en inventario; tampoco habia equipos individualizados disponibles. No fue un fallo de familia ni una asignacion perdida. No se insertaron cantidades, asignaciones ni equipos remotos. Ficha mejorada con registro explicito de existencias no contadas, fecha y referencia, usando RPC instalada; asignacion posterior consume una unidad. Dos operaciones intencionales e independientes, con reintento por ID existente: no afirmar registro+asignacion atomicos. Sin migracion. No guardar correos, identificadores ni salidas crudas del diagnostico en Git.

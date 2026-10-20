@@ -224,3 +224,6 @@ Finalizar reparto del jefe abre conteo; exige paradas resueltas y cantidades con
 Ambos PDF incluyen carga inicial/final, efectivo a rendir y dispenser nuevos/cambiados/retirados con estado. Jefe agrega ventas, efectivo y transferencia. Efectivo incluye cobro de deuda anterior; no descuenta gastos pagados por asistente ni confirma recepcion fisica de dinero. No se envian correos/mensajes. Nombres, precios y cantidades del cierre no cambian por editar luego el catalogo. Copias antiguas sin snapshot no se reconstruyen como historia confirmada.
 
 Implementado en demo; tablero/cierre/PDF conectados de produccion pendientes. PDF de muestra ficticio en output/pdf/cierre-reparto-demo.pdf, generado por prueba y excluido de Git; render revisado en PNG, incluyendo caso extenso de 10 paginas. Fuente generadora y pruebas versionadas. Revision visual de la interfaz en movil/PC pendiente.
+
+
+20/10: correccion en ficha REAL del cliente para catalogo sin unidades. Mensaje explicito, boton Registrar unidades de dispenser (solo existencias aun no contadas), Actualizar disponibilidad y bloqueo de asignacion vacia. No se ingresaron cantidades remotas ni se duplicaron equipos. El alta de catalogo por si sola sigue sin crear inventario; en demo las cantidades se ingresan en su campo de stock.
