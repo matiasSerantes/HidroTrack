@@ -16,3 +16,9 @@
 .hd .hd-account{margin-bottom:22px;border:1px solid #a4cfe8;border-left:5px solid #62add4;border-radius:14px;padding:20px;background:#e5f4fc;color:#214c63}.hd .hd-account .hd-kicker,.hd .hd-account p{color:#436c82}.hd .hd-account h3{color:#214c63;font-size:24px;margin:12px 0}.hd .hd-account.owing{border-color:#efc397;border-left-color:#eaa05b;background:#fff2e5}.hd .hd-account.waiting{background:#e7f3fd;border-color:#a7cce8}.hd-account-pending{display:grid;gap:6px;padding-top:14px;margin-top:14px;border-top:1px solid #9cbacb60}.hd-account-pending span{font-size:13px;line-height:1.5}.hd-credit-explanation,.hd-credit-request{padding:14px;border-radius:12px;background:#e5f2f0;border-left:4px solid #087e83;margin:14px 0;line-height:1.5}.hd-credit-explanation p,.hd-credit-request p{font-size:13px;margin:8px 0}.hd-credit-status{display:block;color:#8c4a11;font-weight:650;line-height:1.5;margin-top:6px}@media(max-width:600px){.hd .hd-account{padding:16px}.hd .hd-account h3{font-size:22px}}
 
 .catalog-demo-create{display:flex;flex-direction:column;gap:12px;max-width:480px;margin-bottom:24px}.catalog-demo-create button{min-height:52px;text-align:left}
+.hd-assistant-register{margin:18px 0}.hd-assistant-register form{margin-top:16px}
+.hd.hd-assistant-wait{min-height:100dvh;display:grid;place-items:center;padding:24px;background:#edf7fd;color:#174c65}
+.hd-assistant-wait>.hd-card{width:min(100%,560px);box-sizing:border-box;padding:32px;border:1px solid #b9dcee;border-radius:22px;background:#fff}
+.hd-assistant-wait .hd-tag{display:table;margin:18px 0}.hd-assistant-wait h1{font-size:clamp(26px,6vw,36px);line-height:1.2}
+.hd-assistant-wait p{line-height:1.65;overflow-wrap:anywhere}.hd-assistant-wait .hd-btn{min-height:48px;margin:10px 0}.hd-assistant-wait select{width:100%;min-height:48px}
+@media(max-width:600px){.hd.hd-assistant-wait{padding:16px}.hd-assistant-wait>.hd-card{padding:22px}.hd-assistant-wait input,.hd-assistant-wait select{font-size:16px}}

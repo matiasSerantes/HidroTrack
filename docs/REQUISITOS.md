@@ -206,3 +206,11 @@ Reinicio administrativo solicitado por el titular: vaciar catálogo e inventario
 Ingreso de bidones: preguntar explícitamente vacíos o llenos. Carga del camión: opción del jefe para rellenar vacíos que falten, usando primero llenos y registrando todo junto sin duplicar patrimonio. Confirmación única por reparto, conservada al reintentar. Implementado en base, web del jefe y demo; integración Auth/PostgREST y revisión visual pendientes.
 
 Catálogo único: Agregar dispenser arriba y Agregar producto debajo, inventario de ambos tipos con Editar/Eliminar y al final Retirar producto o dispenser. Eliminar una carga equivocada registra bajas del depósito y archiva, con confirmación y sin borrar historial. No eliminar asignaciones ni unidades de camiones/clientes.
+
+
+## 20/10/2026 - Equipo y cuenta independiente del asistente
+
+- Cuenta personal del asistente, reutilizable entre varios jefes; sin licencia propia. El jefe agrega una cuenta existente y puede quitar solo su vinculo. No borrar cuenta global, historial ni vinculos con otras empresas.
+- Agregar asistente o empleado desde el equipo del jefe. Sin recorrido asignado, unica pantalla En espera de recorrido, sin datos comerciales del jefe ni navegacion a sus modulos. Con recorrido, solo datos autorizados de ese recorrido y empresa. Al terminar o revocarse, volver a espera.
+- Licencia basica: 1 asistente; intermedia: 3; superior: ilimitados. Cupos independientes por empresa. Propuesta: contar vinculos habilitados, no solo quienes estan trabajando; bloquear bajas de plan por debajo del equipo actual y quitar asistentes con recorrido abierto hasta resolverlo.
+- Implementar registro verificado, vinculacion con consentimiento y revocacion auditada en servidor antes de activar datos reales. No exponer listado global de correos ni permitir acceso por pertenencia sin asignacion. Demo no crea cuentas Auth, no cobra licencias ni cambia planes reales.

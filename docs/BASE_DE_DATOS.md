@@ -54,3 +54,12 @@ La base principal para beta está preparada; esto no equivale a declarar todo el
 Ingreso de bidones: la web del jefe pregunta Vacíos/Llenos. `inventory_fill_and_load` usa primero llenos, rellena solamente el faltante retornable del depósito y carga el camión en la misma transacción. Conserva patrimonio y carga única; no permite rellenar dispenser ni consumibles. La preparación conserva ambos UUID para reintentos. Es una acción explícita del jefe; no supone que todo el inventario está lleno.
 
 Catálogo unificado: `catalog_create_item` recibe tipo explícito; `catalog_archive_item` corrige altas erróneas del depósito con movimientos de baja y archivo atómicos, usando un UUID estable. Rechaza unidades fuera del depósito. `inventory_writeoff_dispenser` distingue retiro de rotura para equipos identificados y conserva evento; un retiro exige propiedad del reparto y ubicación depósito. Catálogo reúne ambos tipos en el frontend; no se migraron ni duplicaron equipos existentes.
+
+
+## Pendiente: cuenta propia de asistente y planes del jefe (20/10)
+
+Nueva definicion representada en demo; NO aplicada como migracion. tenant_members ya tiene clave (tenant_id,user_id), por lo que una identidad puede vincularse con varias empresas. Falta alta personal verificada de Auth sin crear tenant/licencia, solicitud y consentimiento de vinculo, RPC del jefe para agregar/quitar con auditoria, cupo transaccional y revocacion conservando historial.
+
+Planes: basico 1, intermedio 3, superior ilimitados; actualmente licenses usa driver_limit entero no nulo. Representar ilimitado explicitamente al migrar y actualizar tambien validaciones administrativas; no usar un numero magico ni cambiar licencias existentes sin politica de conversion. El asistente usa licencia vigente de cada jefe, sin una propia. Definir precios, conversion de licencias antiguas y cobro aparte antes de activarlos.
+
+Acceso: sin recorrido asignado, solo estado de espera. Revisar RLS y RPC de TODOS los datos comerciales (catalogo, saldos, movimientos, equipo, avisos) y consultas de frontend: ocultar el menu no basta. Con recorrido, limitar a empresa y asignacion vigentes; cierre/reasignacion/revocacion quita acceso. Estado de rendicion pendiente mantiene solo lo necesario hasta resolverla (criterio provisional). Probar dos jefes, misma cuenta, revocacion y concurrencia de cupos por Auth/PostgREST antes de publicar esta funcion real.

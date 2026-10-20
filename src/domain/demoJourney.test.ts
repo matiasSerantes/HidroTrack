@@ -9,11 +9,11 @@ describe('recuperación local de reparto demo', () => {
     localStorage.setItem(JOURNEY_KEY, JSON.stringify({ actor: 'luz', page: 'company', tripId: 't1', dialog: { type: 'visit', id: 'c1', tripId: 't1' } }));
     expect(readJourney(s)).toMatchObject({ page: 'overview', dialog: null });
   });
-  it('no restaura perfiles desactivados ni un reparto ajeno', () => {
+  it('lleva a espera al quitar el vinculo y no restaura un reparto ajeno', () => {
     const s = seedProgram();
     localStorage.setItem(JOURNEY_KEY, JSON.stringify({ actor: 'nico', page: 'delivery', tripId: 't1', dialog: null }));
     expect(readJourney(s)).toMatchObject({ page: 'overview', tripId: 't2' });
     s.members.find(m => m.id === 'nico')!.active = false;
-    expect(readJourney(s)).toBeNull();
+    expect(readJourney(s)).toMatchObject({actor:'nico',page:'overview',tripId:'',dialog:null});
   });
 });

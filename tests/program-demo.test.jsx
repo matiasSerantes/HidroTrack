@@ -15,6 +15,44 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('registra cuenta personal y mantiene espera privada al recargar',()=>{
+    render(<DemoProgram onExit={()=>{}}/>);
+    fireEvent.click(screen.getByRole('button',{name:'Crear mi cuenta de asistente · demo'}));
+    fireEvent.change(screen.getByLabelText('Tu nombre de ejemplo'),{target:{value:'Cuenta de prueba'}});
+    fireEvent.change(screen.getByLabelText('Tu correo ficticio'),{target:{value:'prueba@example.com'}});
+    fireEvent.click(screen.getByRole('button',{name:'Crear cuenta de ejemplo'}));
+    expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
+    expect(screen.queryByRole('navigation')).toBeNull();expect(screen.queryByText('Agua Clara')).toBeNull();expect(screen.queryByText('Elena Duarte')).toBeNull();
+    cleanup();render(<DemoProgram onExit={()=>{}}/>);
+    expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
+  });
+  it('vincula una cuenta existente, espera y abre el recorrido recién asignado',()=>{
+    enter();fireEvent.click(screen.getByRole('button',{name:'Mi equipo',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'Agregar asistente o empleado'}));
+    fireEvent.change(screen.getByLabelText('Correo de la cuenta del asistente'),{target:{value:'sofia@example.com'}});
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'sofia'}});
+    expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
+    expect(screen.queryByRole('navigation')).toBeNull();expect(screen.queryByText('Agua Clara')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'owner'}});
+    fireEvent.click(screen.getByRole('button',{name:'Mi equipo',exact:true}));
+    const card=screen.getByRole('heading',{name:'Sofía Torres'}).closest('article');
+    fireEvent.click(within(card).getByRole('button',{name:'Asignar recorrido'}));
+    fireEvent.change(screen.getByLabelText('Nombre del reparto'),{target:{value:'Recorrido nuevo'}});
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox',{name:/Elena Duarte/}));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
+    const saved=JSON.parse(localStorage.getItem(DEMO_KEY));expect(saved.trips.find(t=>t.name==='Recorrido nuevo').driverId).toBe('sofia');
+    fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'sofia'}});
+    expect(screen.queryByRole('heading',{name:'En espera de recorrido'})).toBeNull();
+    expect(screen.getAllByText('Recorrido nuevo').length).toBeGreaterThan(0);
+  });
+  it('recorrido cerrado vuelve a espera incluso con ficha restaurada',()=>{
+    const s=seedProgram();s.trips[0].stage='approved';localStorage.setItem(DEMO_KEY,JSON.stringify(s));
+    localStorage.setItem('hidrotrack.demo-journey.v1',JSON.stringify({actor:'luz',page:'customers',tripId:'t1',dialog:{type:'detail',id:'c1',tripId:'t1'}}));
+    render(<DemoProgram onExit={()=>{}}/>);
+    expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText('Elena Duarte')).toBeNull();expect(screen.queryByRole('navigation')).toBeNull();
+  });
   it('catálogo reúne las altas de dispenser y producto y termina con retiro',()=>{
     enter();fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Catálogo',exact:true}));
     const actions=screen.getByRole('button',{name:'Agregar dispenser'}).parentElement;
