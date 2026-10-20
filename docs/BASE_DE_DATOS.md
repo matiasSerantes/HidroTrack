@@ -77,3 +77,10 @@ Mostrar solo al jefe vendido menos costo de llenado del reparto, separado de cob
 Frontend real de Nuevo/Editar cliente escribe latitude/longitude en customers y lee created_at; campos ya instalados en route_workflow/foundation. Selector en mapa y posicion actual son acciones explicitas, sin geocodificar ni sobrescribir direccion. No se agregaron migraciones ni datos de prueba. Probar guardar/recuperar coordenadas por Auth/PostgREST y permiso GPS real antes de uso operativo.
 
 Demo ampliada con pedido habitual, dias, alta y coordenadas, pedidos de visita adicionales separados de agenda semanal y cambios de dispenser. Pendiente real: alta/edicion transaccional de horarios y preferencias existentes, libro de visitas extraordinarias y asignacion por fecha, cambio atomico de equipos con idempotencia, historia de contrato y retorno separado del stock disponible. No concatenar devolver/asignar desde navegador para simular atomicidad. Mantener cuota/ancla al cambiar salvo regla comercial futura. Equipo del cliente no se retira como propio. Danado a revision; reparar/reingresar pendiente. Devolucion parcial de bidones no cambia regla de saldo; no forzar devolucion total.
+
+
+## Pendiente: recomendacion de carga y desglose de extras
+
+Demo usa cantidades habituales estructuradas, pedido extraordinario por parada y equipos expresamente previstos en el recorrido. No deduce cantidades de texto ni cuenta equipos del cliente como carga nueva. El jefe/chofer confirma cantidades previstas ajustables mas extra en una sola carga; guarda sugerencia y desglose historicos, sin crear inventario ni habilitar recargas.
+
+La RPC real actual admite cantidad inicial total por articulo y mantiene bloqueo de carga unica; falta integrar preferencias, necesidades de equipo por recorrido y snapshot previsto/extra transaccional. Stock insuficiente sigue bloqueado. Nuevos clientes requieren autorizacion existente; extra transportado no habilita por si solo acceso a carteras ajenas. No se aplico migracion para esta idea.

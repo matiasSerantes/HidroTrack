@@ -202,3 +202,12 @@ En ficha del jefe: Generar visita adicional, elegir fecha, producto y cantidad. 
 Devolucion parcial existente verificada: tenia 2, devuelve 1 sin recibir nuevos, queda 1 pendiente; si ademas recibe otro, quedan 2. Cambiar dispenser desde Atender cliente: elegir equipo del cliente, reemplazo disponible y estado del retirado. Conserva contrato/modalidad/cuota, no cobra nueva cuota automaticamente, descuenta reemplazo del camion y registra retirado separado. Al aprobar cierre, bueno vuelve al deposito y danado queda en revision. No hay reparacion/reingreso desde revision implementada por esta idea.
 
 Conectado real: selector mapa/GPS, guardado de coordenadas en clientes y lectura de fecha de alta en planilla, usando columnas existentes. Dias, pedido habitual, visitas extras y reemplazos corresponden a esta demo; sus pantallas y contratos remotos completos siguen pendientes. No se cargaron datos de prueba en Supabase. Validacion visual y permiso GPS en dispositivos reales pendientes.
+
+
+## 20/10/2026 - Carga del recorrido mas extras
+
+En Nuevo/Editar cliente, guardar cantidades habituales por producto; el texto descriptivo no se interpreta automaticamente. Los ejemplos iniciales incluyen cantidades; copias viejas sin ellas muestran aviso para completar la ficha o reiniciar demo.
+
+Crear reparto suma cantidades de los clientes seleccionados y permite indicar dispenser previstos para entregar/cambiar. La sugerencia se ve durante la seleccion y en el recorrido preparado. Dispenser ya instalados no se suman como equipos nuevos. Pedidos de visitas extraordinarias reemplazan el habitual para esa parada. Clientes en futura baja no suman entregas.
+
+Iniciar reparto: cada articulo separa Para el recorrido y Carga extra. Total es la suma; se puede ajustar la cantidad prevista, siempre sujeto a disponibilidad. Confirmar una sola vez guarda carga completa, sugerencia y desglose. El stock del camion muestra lo previsto y lo extra, que puede entregarse luego a nuevos clientes autorizados agregados al recorrido. No habilita segunda carga ni permite editar una carga confirmada. El costo opcional de llenado incluye solo lo que se rellena para el total real, tambien extras. Sin cambios remotos; sugerencias/desglose pendientes de integracion real.

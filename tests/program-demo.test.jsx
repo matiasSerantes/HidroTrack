@@ -15,6 +15,26 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('muestra carga sugerida mientras el jefe arma el recorrido',()=>{
+    enter();fireEvent.click(screen.getByRole('button',{name:'Crear reparto',exact:true}));
+    const dialog=screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('checkbox',{name:/Elena Duarte/}));fireEvent.click(within(dialog).getByRole('checkbox',{name:/Café La Esquina/}));
+    fireEvent.change(within(dialog).getByLabelText('Dispenser previstos · Dispenser frío / calor'),{target:{value:'1'}});
+    const suggestion=within(dialog).getByRole('region',{name:'Carga sugerida del recorrido'});
+    expect(within(suggestion).getByText('Bidón 20 litros: 5')).toBeTruthy();expect(within(suggestion).getByText('Dispenser frío / calor: 1')).toBeTruthy();
+  });
+  it('sugiere la carga del recorrido y confirma productos y dispenser extra juntos',()=>{
+    const s=seedProgram();s.trips[0].stage='planned';s.trips[0].load={};s.trips[0].stock={};s.trips[0].plannedEquipment={frio:1};localStorage.setItem(DEMO_KEY,JSON.stringify(s));enter(true);
+    fireEvent.click(screen.getByRole('button',{name:'Iniciar reparto'}));
+    const load=screen.getByRole('dialog');
+    expect(within(load).getByLabelText('Para el recorrido · Bidón 20 litros').value).toBe('5');
+    expect(within(load).getByLabelText('Para el recorrido · Dispenser frío / calor').value).toBe('1');
+    fireEvent.change(within(load).getByLabelText('Extra · Bidón 20 litros'),{target:{value:'5'}});
+    fireEvent.change(within(load).getByLabelText('Extra · Dispenser frío / calor'),{target:{value:'1'}});
+    fireEvent.click(within(load).getByRole('button',{name:'Registrar carga'}));
+    const trip=JSON.parse(localStorage.getItem(DEMO_KEY)).trips[0];expect(trip.load.b20).toBe(10);expect(trip.load.frio).toBe(2);
+    expect(trip.loadPlan.b20).toBe(5);expect(trip.loadExtras.b20).toBe(5);expect(trip.stage).toBe('active');
+  });
   it('guarda ubicación, alta y día habitual al crear cliente',()=>{
     enter();fireEvent.click(screen.getByRole('button',{name:'Nuevo cliente',exact:true}));
     fireEvent.change(screen.getByLabelText('Nombre del cliente'),{target:{value:'Cliente de prueba mapa'}});
@@ -67,7 +87,7 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(screen.getByRole('button',{name:'Carga y rendición',exact:true}));
     fireEvent.click(screen.getByRole('button',{name:'Cargar transporte'}));
     fireEvent.click(screen.getByLabelText('Rellenar los vacíos que falten para esta carga'));
-    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText(/Bidón 20 litros/),{target:{value:'5'}});
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText('Para el recorrido · Bidón 20 litros'),{target:{value:'5'}});
     expect(screen.getByText(/Costo de llenado de esta carga:/).textContent).toContain('300');
     fireEvent.click(screen.getByRole('button',{name:'Registrar carga'}));
     fireEvent.click(screen.getByRole('button',{name:'Carga y rendición',exact:true}));
@@ -243,7 +263,7 @@ describe('recorridos navegables de la demo', () => {
     enter(true);
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar reparto' }));
     const load = screen.getByRole('dialog');
-    fireEvent.change(within(load).getByLabelText(/Bidón 20 litros/), { target: { value: '10' } });
+    fireEvent.change(within(load).getByLabelText('Para el recorrido · Bidón 20 litros'), { target: { value: '10' } });
     fireEvent.click(within(load).getByText('Registrar carga'));
     await screen.findByText('Tu ubicación actual · DEMO');
     fireEvent.click(screen.getByRole('button', { name: 'Stock del camión' }));

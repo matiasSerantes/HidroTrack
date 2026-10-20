@@ -1,3 +1,4 @@
+import { routeLoadSuggestion } from './routeLoadDemo';
 import type { ExtraVisit, DispenserChange } from './customerVisitsDemo';
 import { fillingCostPreview, type FillingCostSnapshot } from './fillingCostDemo';
 import { currency, parseMoney } from './demo';
@@ -8,10 +9,10 @@ export const demoDay = '2026-10-19';
 export type Page = 'overview' | 'routes' | 'delivery' | 'fleet' | 'customers' | 'catalog' | 'inventory' | 'team' | 'approvals' | 'reports' | 'company';
 export type Product = { fillingCostEnabled?:boolean; fillingCost?:number; id: string; name: string; unit: string; price: number; kind: 'sale' | 'rental'; returnable: boolean; depot: number; active: boolean };
 export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' | 'customer_owned' };
-export type Client = { joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
+export type Client = { usualItems?:Record<string,number>; joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { id: string; name: string; role: 'owner' | 'driver'; active: boolean; email?: string };
 export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
-export type Trip = { date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
+export type Trip = { plannedEquipment?:Record<string,number>;loadRecommendation?:Record<string,number>;loadPlan?:Record<string,number>;loadExtras?:Record<string,number>; date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
@@ -84,12 +85,12 @@ export function seedProgram(): DemoProgramState {
     ],
     members: [{ id: 'owner', name: 'Santiago · jefe', role: 'owner', active: true }, { id: 'luz', name: 'Lucía Medina', role: 'driver', active: true }, { id: 'nico', name: 'Nicolás Ríos', role: 'driver', active: true }],
     clients: [
-      { joinedOn:'2026-09-07',visitDays:[1], id: 'c1', name: 'Elena Duarte', address: 'Alvear 1240', locality: 'Villa Ballester', block: 'alvear-1200', x: 28, y: 27, active: true, debt: 480000, held: { b20: 2, soda: 3 }, rentals: [], usual: '2 bidones de 20 L', note: 'Tocar timbre del local. Prefiere por la mañana.' },
-      { id: 'c2', name: 'Café La Esquina', address: 'Alvear 1278', locality: 'Villa Ballester', block: 'alvear-1200', x: 37, y: 30, active: true, debt: 0, held: { b20: 3 }, rentals: [{ id: 'rent1', productId: 'frio', serial: 'FC-DEMO-021', monthly: 1800000 }], usual: '3 bidones de 20 L', note: 'Entrada por el café. Equipo en alquiler.' },
-      { id: 'c3', name: 'Martín Acosta', address: 'Lacroze 840', locality: 'Villa Ballester', block: 'lacroze-800', x: 60, y: 46, active: true, debt: 0, held: { b12: 2 }, rentals: [], usual: '2 bidones de 12 L', note: 'Si no está, consultar si puede recibir después.' },
-      { id: 'c4', name: 'Almacén Los Tilos', address: 'Independencia 215', locality: 'San Andrés', block: 'independencia-200', x: 76, y: 68, active: true, debt: 220000, held: { cajon: 2 }, rentals: [], usual: '1 cajón de soda', note: 'Abierto hasta las 18 h.' },
-      { id: 'c5', name: 'Paula Ferrer', address: 'Alvear 1216', locality: 'Villa Ballester', block: 'alvear-1200', x: 23, y: 35, active: true, debt: 0, held: { b20: 1 }, rentals: [], usual: '1 bidón de 20 L', note: 'Puede recibir por la tarde.' },
-      { id: 'c6', name: 'Estudio Robles', address: 'San Martín 530', locality: 'San Andrés', block: 'sanmartin-500', x: 47, y: 76, active: true, debt: 0, held: { b20: 2 }, rentals: [{ id: 'customer-owned-demo', productId: 'bomba', serial: 'EQUIPO-DEL-CLIENTE', monthly: 0, mode: 'customer_owned' }], usual: '2 bidones de 20 L', note: 'Atención en recepción.' },
+      { joinedOn:'2026-09-07',visitDays:[1], id: 'c1', usualItems:{b20:2}, name: 'Elena Duarte', address: 'Alvear 1240', locality: 'Villa Ballester', block: 'alvear-1200', x: 28, y: 27, active: true, debt: 480000, held: { b20: 2, soda: 3 }, rentals: [], usual: '2 bidones de 20 L', note: 'Tocar timbre del local. Prefiere por la mañana.' },
+      { id: 'c2', usualItems:{b20:3}, name: 'Café La Esquina', address: 'Alvear 1278', locality: 'Villa Ballester', block: 'alvear-1200', x: 37, y: 30, active: true, debt: 0, held: { b20: 3 }, rentals: [{ id: 'rent1', productId: 'frio', serial: 'FC-DEMO-021', monthly: 1800000 }], usual: '3 bidones de 20 L', note: 'Entrada por el café. Equipo en alquiler.' },
+      { id: 'c3', usualItems:{b12:2}, name: 'Martín Acosta', address: 'Lacroze 840', locality: 'Villa Ballester', block: 'lacroze-800', x: 60, y: 46, active: true, debt: 0, held: { b12: 2 }, rentals: [], usual: '2 bidones de 12 L', note: 'Si no está, consultar si puede recibir después.' },
+      { id: 'c4', usualItems:{cajon:1}, name: 'Almacén Los Tilos', address: 'Independencia 215', locality: 'San Andrés', block: 'independencia-200', x: 76, y: 68, active: true, debt: 220000, held: { cajon: 2 }, rentals: [], usual: '1 cajón de soda', note: 'Abierto hasta las 18 h.' },
+      { id: 'c5', usualItems:{b20:1}, name: 'Paula Ferrer', address: 'Alvear 1216', locality: 'Villa Ballester', block: 'alvear-1200', x: 23, y: 35, active: true, debt: 0, held: { b20: 1 }, rentals: [], usual: '1 bidón de 20 L', note: 'Puede recibir por la tarde.' },
+      { id: 'c6', usualItems:{b20:2}, name: 'Estudio Robles', address: 'San Martín 530', locality: 'San Andrés', block: 'sanmartin-500', x: 47, y: 76, active: true, debt: 0, held: { b20: 2 }, rentals: [{ id: 'customer-owned-demo', productId: 'bomba', serial: 'EQUIPO-DEL-CLIENTE', monthly: 0, mode: 'customer_owned' }], usual: '2 bidones de 20 L', note: 'Atención en recepción.' },
       { id: 'c7', name: 'Cliente de ejemplo · baja', address: 'Mitre 420', locality: 'San Andrés', block: 'mitre-400', x: 80, y: 34, active: false, debt: 0, held: {}, rentals: [], usual: 'Sin visitas', note: 'Baja histórica de ejemplo; solo visible para el jefe.' },
     ],
     presence: { luz: { clientId: 'c1', time: '09:15', attending: false } },
@@ -165,15 +166,17 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   notify(s, `${member.name}: visita registrada en ${client.name}. ${unpaid && !approved ? `Solicita dejar ${currency(unpaid)} de deuda; pendiente de autorización del jefe.` : 'Venta y cobro actualizados.'}`);
   return s;
 }
-export function loadTrip(state: DemoProgramState, tripId: string, quantities: Record<string, number>,fillEmpties=false,actor='owner') {
+export function loadTrip(state: DemoProgramState, tripId: string, quantities: Record<string, number>,fillEmpties=false,actor='owner',breakdown?:{planned:Record<string,number>;extras:Record<string,number>}) {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId);
   if (!trip || trip.stage !== 'planned') throw new Error('Solo podés cargar un reparto que todavía no comenzó.');
   if (s.trips.some(t => t.id !== trip.id && t.driverId === trip.driverId && ['active', 'submitted'].includes(t.stage))) throw new Error('Cerrá y aprobá el reparto anterior de este repartidor antes de iniciar otro.');
   if (!Object.values(quantities).some(q => q > 0)) throw new Error('Ingresá al menos un artículo para salir.');
   if(fillEmpties&&!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede rellenar y cargar.');
+  const recommendation=routeLoadSuggestion(s,trip).quantities;
+  if(breakdown){for(const p of s.products){const planned=breakdown.planned[p.id]||0,extra=breakdown.extras[p.id]||0;integer(planned);integer(extra);if(planned+extra!==(quantities[p.id]||0))throw new Error('El total debe coincidir con recorrido y extras.');}}
   const fillingCost=fillingCostPreview(s,quantities,fillEmpties);
   for (const p of s.products) { const q = quantities[p.id] || 0; integer(q); const missing=Math.max(q-p.depot,0);if(fillEmpties&&missing>0&&p.returnable&&p.kind==='sale'){if(missing>(s.depotEmpties[p.id]||0))throw new Error(`No hay suficientes vacíos de ${p.name}.`);s.depotEmpties[p.id]-=missing;p.depot+=missing;}if (q > p.depot) throw new Error(`No alcanza el stock de depósito de ${p.name}.`); p.depot -= q; }
-  trip.fillingCost=fillingCost;
+  trip.fillingCost=fillingCost;trip.loadRecommendation={...recommendation};trip.loadPlan={...(breakdown?.planned||quantities)};trip.loadExtras={...(breakdown?.extras||{})};
   trip.load = { ...quantities }; trip.stock = { ...quantities }; trip.stage = 'active';
   notify(s, `Comenzó ${trip.name}. Carga del transporte registrada.`); return s;
 }
