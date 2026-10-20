@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Building2, ChevronRight, Droplets, LayoutDashboard, LogOut, Menu, Package, Route, Settings2, Truck, Users, X } from 'lucide-react';
+import { Building2, ChevronRight, Droplets, LayoutDashboard, LogOut, Menu, Package, Route, Truck, Users, X } from 'lucide-react';
 import './DemoProgram.css';
 import './DemoPalette.css';
 import './OwnerWorkspace.css';
@@ -8,9 +8,9 @@ export type OwnerView = 'overview' | 'customers' | 'stock' | 'catalog' | 'trips'
 const navigation = [
   ['overview', 'Mi jornada', LayoutDashboard], ['customers', 'Clientes', Users],
   ['catalog', 'Catálogo', Package], ['stock', 'Stock', Truck],
-  ['trips', 'Repartos y camión', Route], ['dispensers', 'Dispenser', Settings2],
+  ['trips', 'Repartos y camión', Route],
 ] as const;
-export const ownerViewTitle = (view: OwnerView) => navigation.find(([id]) => id === view)![1];
+export const ownerViewTitle = (view: OwnerView) => view==='dispensers'?'Catálogo':navigation.find(([id]) => id === view)![1];
 
 export function OwnerShell({ children, view, go, company, owner, locked, ready, signOut }: {
   children: ReactNode; view: OwnerView; go: (view: OwnerView) => void; company?: string; owner?: string;
@@ -36,7 +36,7 @@ export function OwnerShell({ children, view, go, company, owner, locked, ready, 
       <main className="hd-main connected-workspace">{children}<footer className="hd-footer"><span><Droplets size={14}/> HidroTrack · Tu reparto, en buenas manos.</span></footer></main>
     </div>
     <nav className="hd-touch-nav" aria-label="Navegación rápida móvil">{([
-      ['overview','Hoy','Ver mi jornada',LayoutDashboard], ['customers','Clientes','Ver clientes',Users], ['stock','Mi stock','Ver stock',Truck], ['trips','Repartos','Ver repartos',Route],
+      ['overview','Hoy','Ver mi jornada',LayoutDashboard], ['customers','Clientes','Ver clientes',Users], ['catalog','Catálogo','Ver catálogo',Package], ['trips','Repartos','Ver repartos',Route],
     ] as const).map(([id,label,accessible,Icon])=><button key={id} aria-label={accessible} disabled={!ready||locked} className={view===id?'active':''} aria-current={view===id?'page':undefined} onClick={()=>navigate(id)}><Icon size={21}/><span>{label}</span></button>)}</nav>
   </div>;
 }
@@ -46,6 +46,6 @@ export function OwnerOverview({ company, customers, go, addCustomer }: {company:
     <div className="hd-dashboard"><div><section className="hd-day-banner"><div><span className="hd-tag glass">TODO EN UN MISMO LUGAR</span><h2>Tu reparto.<br/>Bajo control.</h2><p>Controlá tus envases, ubicá los dispenser y prepará el camión para salir.</p><button className="hd-btn white" onClick={()=>go('stock')}>Abrir mi inventario <ChevronRight size={17}/></button></div><div className="hd-banner-art" aria-hidden="true"><span className="hd-art-ring r1"/><span className="hd-art-ring r2"/><Truck size={94} strokeWidth={1.2}/></div></section>
     <section className="hd-card owner-home-panel"><div className="hd-section"><div><h2>Tus clientes</h2><p>Últimos datos de tu empresa</p></div><button className="hd-btn small" onClick={()=>go('customers')}>Ver clientes <ChevronRight size={15}/></button></div>{customers.length?customers.slice(0,5).map(c=><div className="hd-list-row" key={c.id}><span className="hd-avatar teal">{c.name.slice(0,1).toUpperCase()}</span><div><strong>{c.name}</strong><small>{c.address}</small></div></div>):<p className="hd-help">Todavía no hay clientes. Agregá el primero para registrar los envases y equipos que tiene.</p>}<button className="hd-btn primary" onClick={addCustomer}>Nuevo cliente</button></section></div>
     <section className="hd-card owner-home-panel"><div className="hd-section"><h2>¿Por dónde empezamos?</h2></div><div className="hd-quick-grid">{([
-      ['catalog','Catálogo','Artículos y precios de tu reparto',Package],['stock','Inventario','Llenos, vacíos y envases en clientes',Truck],['dispensers','Dispenser','Propios, prestados y del cliente',Settings2],['trips','Repartos','Preparación, carga y regreso',Route],
+      ['catalog','Catálogo','Productos, dispenser e inventario',Package],['stock','Inventario','Llenos, vacíos y envases en clientes',Truck],['trips','Repartos','Preparación, carga y regreso',Route],
     ] as const).map(([id,label,description,Icon])=><button key={id} onClick={()=>go(id)}><span><Icon size={21}/></span><div><strong>{label}</strong><small>{description}</small></div><ChevronRight size={16}/></button>)}</div></section></div></>;
 }

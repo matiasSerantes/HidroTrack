@@ -12,13 +12,41 @@ function fixture(section,{legacy=false}={}) {
     dispensers:[{id:'asset',name:'Básico',serial:'B-1',ownership:'company',location:'customer',customer_id:'c1',mode:'loan',monthly:0},{id:'own',name:'Equipo de María',serial:'',ownership:'customer',location:'customer',customer_id:'c1',mode:'customer_owned',monthly:0}],
     inventory_customer_containers:[{customer_id:'c1',product_id:'b20',quantity:3}],inventory_trips:[{id:'t1',name:'Mañana',status:'planned'}],inventory_operations:[],tenant_members:[{user_id:'owner',role:'owner'}],inventory_truck_stock:[],
   };
-  const client={rpc:vi.fn(async()=>({data:'ok',error:null})),from:vi.fn(table=>{
+  const client={rpc:vi.fn(async(name,args)=>{if(name==='catalog_archive_item'){const p=records.products.find(p=>p.id===args.p_product);if(p)p.active=false;}if(name==='inventory_writeoff_dispenser'){const a=records.dispensers.find(a=>a.id===args.p_asset);if(a)a.retired=true;}return {data:'ok',error:null};}),from:vi.fn(table=>{
     let patch=null,target='',probe=false;const chain={select:(columns)=>{probe=columns==='occurred_on';return chain;},update:value=>{patch=value;return chain;},single:()=>chain,eq:(key,value)=>{filters.push([table,key,value]);if(key==='id')target=value;return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>{if(patch){const product=records.products.find(p=>p.id===target);Object.assign(product,patch);}return Promise.resolve({data:patch?{id:target}:records[table]||[],error:legacy&&probe?{code:'42703',message:'Missing column'}:null}).then(resolve,reject);}};return chain;
   })};
   const rendered=render(<OwnerStock section={section} client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
   return {client,filters,records,rendered};
 }
 describe('inventario conectado del jefe',()=>{
+  it('crea un dispenser con categoría explícita y muestra retiro al final',async()=>{
+    const {client}=fixture('catalog');await screen.findByRole('button',{name:'Agregar dispenser'});
+    const buttons=screen.getByRole('button',{name:'Agregar dispenser'}).parentElement;
+    expect(buttons.children[0].textContent).toBe('Agregar dispenser');expect(buttons.children[1].textContent).toBe('Agregar producto');
+    fireEvent.click(screen.getByRole('button',{name:'Agregar dispenser'}));
+    fireEvent.change(screen.getByLabelText('Nombre del artículo'),{target:{value:'Básico'}});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar artículo'}));
+    await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('catalog_create_item',expect.objectContaining({p_family:'dispenser',p_name:'Básico',p_returnable:false})));
+    const sections=document.querySelectorAll('.owner-stock>section');
+    expect(sections[sections.length-1].querySelector('h3').textContent).toBe('Retirar producto o dispenser');
+  });
+  it('elimina un alta equivocada cuando todas las unidades están en depósito',async()=>{
+    const {client,records}=fixture('catalog');records.inventory_owned_stock=[{product_id:'b20',total_owned:12,depot_ready:5,depot_empty:7,truck_ready:0,truck_empty:0,in_customers:0}];
+    await screen.findByRole('button',{name:'Eliminar Bidón 20'});vi.spyOn(window,'confirm').mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button',{name:'Eliminar Bidón 20'}));
+    await screen.findByText(/Artículo eliminado de activos/);
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('12 unidades'));
+    expect(client.rpc).toHaveBeenCalledWith('catalog_archive_item',expect.objectContaining({p_product:'b20',p_note:expect.stringContaining('Corrección de alta')}));
+    expect(records.products[0].active).toBe(false);
+  });
+  it('elimina un equipo identificado mal ingresado en depósito sin fingir rotura',async()=>{
+    const {client,records}=fixture('catalog');records.dispensers[0].location='depot';records.dispensers[0].customer_id=null;
+    await screen.findByRole('button',{name:'Eliminar dispenser identificado Básico'});vi.spyOn(window,'confirm').mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button',{name:'Eliminar dispenser identificado Básico'}));
+    await screen.findByText(/Dispenser eliminado de activos/);
+    expect(client.rpc).toHaveBeenCalledWith('inventory_writeoff_dispenser',expect.objectContaining({p_asset:'asset',p_kind:'remove'}));
+    expect(records.dispensers[0].retired).toBe(true);
+  });
   it('elige vacíos o llenos al ingresar sin perder la cantidad escrita',async()=>{
     const {client}=fixture();await screen.findByLabelText('Cantidad de Bidón 20');
     expect(screen.getByRole('radio',{name:'Vacíos'}).checked).toBe(true);
@@ -69,11 +97,11 @@ describe('inventario conectado del jefe',()=>{
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('No se eliminó Bidón 20'));
     expect(window.confirm).not.toHaveBeenCalled();expect(records.products[0].active).toBe(true);
   });
-  it('muestra modelos dispenser en su sección sin duplicar ni convertir cantidades',async()=>{
+  it('muestra productos y dispenser juntos sin duplicar ni convertir cantidades',async()=>{
     const {client,records,rendered}=fixture('catalog');
     records.products.push({id:'model',name:'Dispenser frío calor',unit:'5',price:2000,returnable:false,active:true});
-    await screen.findByText('Lo que vende tu reparto');
-    expect(screen.queryByRole('heading',{name:'Dispenser frío calor'})).toBeNull();
+    await screen.findByText('Inventario de productos y dispenser');
+    expect(screen.getByRole('heading',{name:'Dispenser frío calor'})).toBeTruthy();
     rendered.rerender(<OwnerStock section="dispensers" client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
     await screen.findByRole('heading',{name:'Dispenser frío calor'});
     expect(records.products).toHaveLength(2);expect(client.rpc).not.toHaveBeenCalled();
@@ -154,14 +182,14 @@ describe('inventario conectado del jefe',()=>{
     await screen.findByText(/Inventario registrado/);
     expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_kind:'receive_empty',p_items:[{product_id:'b20',quantity:600}]}));
   });
-  it('presenta artículos y precios en catálogo sin mezclar formularios de stock o reparto',async()=>{
-    fixture('catalog'); await screen.findByText('Lo que vende tu reparto');
+  it('ordena creación, inventario y retiro dentro del catálogo unificado',async()=>{
+    fixture('catalog'); await screen.findByText('Inventario de productos y dispenser');
     expect(screen.getByRole('heading',{name:'Bidón 20'})).toBeTruthy();
     expect(screen.getByText(/20/,{selector:'.stock-catalog-units'})).toBeTruthy();
-    expect((await screen.findByLabelText('Unidad de venta (no cantidad)')).value).toBe('unidad');
-    expect(screen.queryByLabelText('Movimiento')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Agregar producto'}));expect(screen.getByLabelText('Unidad de venta (no cantidad)').value).toBe('unidad');
+    expect(screen.getByLabelText('Movimiento')).toBeTruthy();
     expect(screen.queryByRole('heading',{name:'Camión y repartos'})).toBeNull();
-    expect(screen.getByRole('button',{name:'Agregar artículo al catálogo'}).className).toBe('primary');
+    expect(screen.getByRole('button',{name:'Agregar dispenser'}).className).toBe('primary');expect(screen.getByRole('heading',{name:'Retirar producto o dispenser'})).toBeTruthy();
   });
   it('prepara clientes del reparto y confirma su carga única usando las RPC',async()=>{
     const {client}=fixture('trips'); await screen.findByText('1. Preparar reparto');

@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -69,7 +69,7 @@ describe('migración y seguridad PostgreSQL', () => {
   });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
-    expect(rows).toHaveLength(30);
+    expect(rows).toHaveLength(31);
     expect(rows.every(row => row.relrowsecurity)).toBe(true);
   });
   it('ejecuta escenarios de aislamiento, roles, licencias y auditoría con rollback', async () => {
@@ -118,6 +118,35 @@ describe('stock transaccional PostgreSQL', () => {
   afterEach(async () => { await db.exec('rollback; reset role'); });
 
   const deliver = (id, paid=0, method=null, quantity=2) => db.query('select public.commerce_deliver($1,$2,$3,$4,$5::jsonb,$6,$7)',[tenant,id,trip,customer,JSON.stringify(items(quantity)),paid,method]);
+  it('crea dispenser por tipo explícito aunque el nombre no contenga dispenser',async()=>{
+    const id=op(); const create=()=>db.query("select public.catalog_create_item($1,$2,'Básico',0,'unidad',false,'dispenser')",[tenant,id]);
+    await create();await create();expect((await db.query('select family from public.products where id=$1',[id])).rows[0].family).toBe('dispenser');
+    await rejected(()=>db.query("select public.catalog_create_item($1,$2,'Básico',0,'unidad',false,'article')",[tenant,id]),'otro tipo');
+    await as(driver);await rejected(()=>create(),'Solo el jefe');
+  });
+  it('corrige alta de catálogo con llenos y vacíos en depósito sin borrar historial ni duplicar bajas',async()=>{
+    await post('receive',items(3));await db.query("select public.inventory_owner_stock($1,$2,'receive_empty',null,$3::jsonb,'Inicial')",[tenant,op(),JSON.stringify(items(7))]);
+    const id=op(),archive=()=>db.query("select public.catalog_archive_item($1,$2,$3,'2026-10-20','Alta equivocada')",[tenant,id,product]);
+    await archive();await archive();
+    expect((await db.query('select active from public.products where id=$1',[product])).rows[0].active).toBe(false);
+    expect(Number((await db.query('select total_owned from public.inventory_owned_stock where product_id=$1',[product])).rows[0].total_owned)).toBe(0);
+    expect((await db.query("select * from public.inventory_operations where kind='remove'")).rows).toHaveLength(2);
+    expect((await db.query('select * from public.catalog_archive_events')).rows).toHaveLength(1);
+    await as(stranger);expect((await db.query('select * from public.catalog_archive_events')).rows).toHaveLength(0);
+  });
+  it('no permite eliminar un alta cuando hay unidades en un cliente',async()=>{
+    await db.query("select public.inventory_owner_stock($1,$2,'opening_customer',$3,$4::jsonb,'Inicial')",[tenant,op(),customer,JSON.stringify(items(1))]);
+    await rejected(()=>db.query("select public.catalog_archive_item($1,$2,$3,'2026-10-20','Equivocado')",[tenant,op(),product]),'Primero recuperá');
+    expect((await db.query('select active from public.products where id=$1',[product])).rows[0].active).toBe(true);
+    expect((await db.query('select * from public.catalog_archive_events')).rows).toHaveLength(0);
+  });
+  it('retira equipo ingresado por error del depósito y lo distingue de rotura',async()=>{
+    const asset=op();await db.query("select public.inventory_save_dispenser($1,$2,$3,'Básico','X','company','depot',null,null,null,0)",[tenant,op(),asset]);
+    const id=op(),remove=()=>db.query("select public.inventory_writeoff_dispenser($1,$2,$3,'2026-10-20','owner',$4,'Alta equivocada','remove')",[tenant,id,asset,owner]);
+    await remove();await remove();
+    expect((await db.query('select retired from public.dispensers where id=$1',[asset])).rows[0].retired).toBe(true);
+    expect((await db.query('select incident from public.dispenser_events where id=$1',[id])).rows[0].incident.kind).toBe('remove');
+  });
   const fillLoad=(id,refill,quantity=7,tripId=trip)=>db.query("select public.inventory_fill_and_load($1,$2,$3,$4,$5::jsonb,'2026-10-20','Carga con recarga')",[tenant,id,refill,tripId,JSON.stringify(items(quantity))]);
   it('rellena solo el faltante y carga una vez sin aumentar patrimonio, incluso al reintentar',async()=>{
     await post('receive',items(2));

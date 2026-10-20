@@ -4,14 +4,14 @@ Fuente de continuidad para retomar desde otra PC. Supabase está conectado por M
 
 ## Instalado y verificado por MCP
 
-18 migraciones, 30 tablas públicas con RLS. Archivos locales renombrados a los identificadores asignados por Supabase para que un futuro despliegue no intente aplicar nuevamente la misma migración. Se aplicó únicamente lo que faltaba, sin insertar datos comerciales de prueba. Cuenta, licencia y cliente existentes conservados; inventario y ventas siguen vacíos para la carga inicial.
+19 migraciones, 31 tablas públicas con RLS. Archivos locales renombrados a los identificadores asignados por Supabase para que un futuro despliegue no intente aplicar nuevamente la misma migración. Se aplicó únicamente lo que faltaba, sin insertar datos comerciales de prueba. Cuenta, licencia y cliente existentes conservados; inventario y ventas siguen vacíos para la carga inicial.
 
 | Bloque | Tablas principales | Comportamiento de servidor |
 |---|---|---|
 | Identidad y licencias | tenants, tenant_members, platform_admins, licenses, license_events, user_profiles | Roles separados, licencia vigente, cupo de asistentes y auditoría |
 | Administración | admin_member_events | Pausar/reactivar choferes; historial exclusivo del administrador |
 | Clientes | customers, customer_schedules, customer_product_preferences | Datos, localidad, calle/altura, coordenadas opcionales, días y cantidades habituales |
-| Inventario | products, inventory_trips, inventory_trip_customers, inventory_operations, inventory_movements, inventory_load_preparations | Patrimonio, llenos/vacíos, carga única, entregas/devoluciones y regreso |
+| Inventario | products, inventory_trips, inventory_trip_customers, inventory_operations, inventory_movements, inventory_load_preparations, catalog_archive_events | Patrimonio, llenos/vacíos, carga única, entregas/devoluciones y regreso |
 | Dispenser | dispensers, dispenser_events, dispenser_assignments | Equipos propios/del cliente, modelos por cantidad, préstamo/alquiler, devolución y rotura |
 | Cuenta corriente | sales, sale_items, payments, credit_requests | Precio histórico, pagos parciales, apertura de deuda y aprobación separada del saldo |
 | Alquiler mensual | rental_charges | Una cuota por equipo/contrato/período, anclada a fecha de entrega |
@@ -52,3 +52,5 @@ La web real de stock, planilla y administración puede usar las actualizaciones 
 La base principal para beta está preparada; esto no equivale a declarar todo el programa terminado ni la integración de todas sus pantallas validada.
 
 Ingreso de bidones: la web del jefe pregunta Vacíos/Llenos. `inventory_fill_and_load` usa primero llenos, rellena solamente el faltante retornable del depósito y carga el camión en la misma transacción. Conserva patrimonio y carga única; no permite rellenar dispenser ni consumibles. La preparación conserva ambos UUID para reintentos. Es una acción explícita del jefe; no supone que todo el inventario está lleno.
+
+Catálogo unificado: `catalog_create_item` recibe tipo explícito; `catalog_archive_item` corrige altas erróneas del depósito con movimientos de baja y archivo atómicos, usando un UUID estable. Rechaza unidades fuera del depósito. `inventory_writeoff_dispenser` distingue retiro de rotura para equipos identificados y conserva evento; un retiro exige propiedad del reparto y ubicación depósito. Catálogo reúne ambos tipos en el frontend; no se migraron ni duplicaron equipos existentes.

@@ -15,6 +15,14 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('catálogo reúne las altas de dispenser y producto y termina con retiro',()=>{
+    enter();fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Catálogo',exact:true}));
+    const actions=screen.getByRole('button',{name:'Agregar dispenser'}).parentElement;
+    expect(actions.children[0].textContent).toBe('Agregar dispenser');expect(actions.children[1].textContent).toBe('Agregar producto');
+    expect(screen.getByRole('heading',{name:'Inventario de productos y dispenser'})).toBeTruthy();
+    const last=document.querySelector('.hd-main>.owner-stock');
+    expect(last.lastElementChild.querySelector('h3').textContent).toBe('Retirar producto o dispenser');
+  });
   it('futura baja muestra recuperación pendiente y deshabilita nuevas entregas',()=>{
     const initial=seedProgram(); initial.requests.push({id:'recover',kind:'deactivation',clientId:'c1',authorId:'luz',status:'pending',title:'Futura baja',reason:'Se muda',returns:[]});
     localStorage.setItem(DEMO_KEY,JSON.stringify(initial)); enter(true);
@@ -194,7 +202,7 @@ describe('recorridos navegables de la demo', () => {
   });
   it('todos los apartados del jefe son accesibles sin tocar la base real', () => {
     enter();
-    for (const name of ['Repartos y mapa', 'Clientes', 'Artículos y alquileres', 'Carga y rendición', 'Mi equipo', 'Aprobaciones', 'Ventas y cobros', 'Mi empresa']) {
+    for (const name of ['Repartos y mapa', 'Clientes', 'Catálogo', 'Carga y rendición', 'Mi equipo', 'Aprobaciones', 'Ventas y cobros', 'Mi empresa']) {
       fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: name === 'Aprobaciones' ? /Aprobaciones/ : name, exact: name !== 'Aprobaciones' }));
       expect(screen.getByRole('heading', { level: 1, name })).toBeTruthy();
     }

@@ -62,7 +62,7 @@ describe('panel conectado del titular', () => {
     await screen.findByText('Reintentar misma operación');
     expect(screen.getByRole('button',{name:'Volver a clientes'}).disabled).toBe(true);
     expect(screen.getByRole('button',{name:'Archivar cliente'}).disabled).toBe(true);
-    await waitFor(()=>expect(screen.getByRole('button',{name:'Ver stock'}).disabled).toBe(true));
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Ver catálogo'}).disabled).toBe(true));
     client.rpc.mockResolvedValue({data:'ok',error:null});
     fireEvent.click(screen.getByText('Reintentar misma operación'));
     await screen.findByText('Envases iniciales registrados en este cliente.');
@@ -76,6 +76,9 @@ describe('panel conectado del titular', () => {
     fireEvent.click(screen.getByRole('button',{name:'Abrir navegación'}));
     expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(within(menu).getByRole('button',{name:'Catálogo',exact:true}));
+    await screen.findByRole('button',{name:'Agregar producto'});
+    expect(within(menu).queryByRole('button',{name:'Dispenser',exact:true})).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Agregar producto'}));
     await screen.findByRole('button',{name:'Guardar artículo'});
     expect(screen.getByRole('heading',{name:'Catálogo'})).toBeTruthy();
     expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('false');

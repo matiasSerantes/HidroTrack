@@ -4,6 +4,13 @@ import { archiveDemoProduct, approveClose, closeTrip, decideRequest, demoOwnedSt
 const input = { tripId: 't1', clientId: 'c1', actorId: 'luz', items: [{ productId: 'b20', quantity: 3, returned: 2 }], paid: '10000', method: 'Efectivo' as const };
 function resolved(state: DemoProgramState) { const next = structuredClone(state); next.trips[0].stops.forEach(p => { p.status = 'tomorrow'; }); return next; }
 describe('demo completa: operaciones conectadas', () => {
+  it('corrige un producto mal ingresado solo en depósito y conserva el retiro',()=>{
+    const s=seedProgram();s.products.push({id:'wrong',name:'Alta equivocada',unit:'unidad',price:0,returnable:true,depot:5,active:true,kind:'sale'});s.depotEmpties.wrong=7;
+    const next=archiveDemoProduct(s,'wrong','owner');
+    expect(next.products.find(p=>p.id==='wrong')?.active).toBe(false);expect(demoOwnedStock(next,'wrong').total).toBe(0);
+    expect(next.stockEvents?.filter(e=>e.productId==='wrong').reduce((n,e)=>n+e.quantity,0)).toBe(12);
+    expect(s.products.find(p=>p.id==='wrong')?.active).toBe(true);
+  });
   it('ingresa vacíos o llenos y rellena únicamente el faltante al cargar',()=>{
     const s=seedProgram();const p=s.products.find(p=>p.id==='b20')!;p.depot=2;s.depotEmpties.b20=0;
     s.trips[0].stage='planned';s.trips[0].stock={};s.trips[0].load={};s.trips[0].empties={};

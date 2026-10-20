@@ -44,8 +44,11 @@ export function archiveDemoProduct(state:DemoProgramState,productId:string,actor
   const product=state.products.find(p=>p.id===productId&&p.active);
   if(!product)throw new Error('Artículo no habilitado.');
   const placed=state.clients.reduce((n,c)=>n+c.rentals.filter(r=>r.productId===productId&&r.mode!=='customer_owned').length,0);
-  if(demoOwnedStock(state,productId).total+placed>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
-  return {...state,products:state.products.map(p=>p.id===productId?{...p,active:false}:p)};
+  const b=demoOwnedStock(state,productId);
+  if(b.truck+b.truckEmpty+b.held+placed>0)throw new Error('El artículo tiene unidades activas. Registrá primero las devoluciones, bajas o roturas.');
+  const next=structuredClone(state),target=next.products.find(p=>p.id===productId)!;
+  for(const [source,quantity] of [['depot_ready',b.depot],['depot_empty',b.empty]] as const){if(quantity>0)next.stockEvents=[{id:uid(),productId,quantity,kind:'remove',source,date:demoDay,registeredAt:new Date().toISOString(),actorId:actor,involvedKind:'owner',involvedId:actor,note:'Corrección de alta: artículo ingresado por error.'},...(next.stockEvents||[])];}
+  target.depot=0;next.depotEmpties[productId]=0;target.active=false;return next;
 }
 export const DEMO_ORIGIN = { lat: -34.60905, lng: -58.3832 };
 export const DEMO_ADDRESSES: Record<string, { address: string; lat: number; lng: number }> = {

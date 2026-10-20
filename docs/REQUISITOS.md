@@ -204,3 +204,5 @@ Eliminar artículo/modelo desde Stock y tarjetas: acción visible en rojo suave 
 Reinicio administrativo solicitado por el titular: vaciar catálogo e inventario de su empresa conservando cuenta, usuarios, licencia y clientes; verificar empresa antes de ejecutar y rechazar mientras existan repartos activos o en rendición. Preparado y probado localmente, pendiente de ejecución por MCP autenticado.
 
 Ingreso de bidones: preguntar explícitamente vacíos o llenos. Carga del camión: opción del jefe para rellenar vacíos que falten, usando primero llenos y registrando todo junto sin duplicar patrimonio. Confirmación única por reparto, conservada al reintentar. Implementado en base, web del jefe y demo; integración Auth/PostgREST y revisión visual pendientes.
+
+Catálogo único: Agregar dispenser arriba y Agregar producto debajo, inventario de ambos tipos con Editar/Eliminar y al final Retirar producto o dispenser. Eliminar una carga equivocada registra bajas del depósito y archiva, con confirmación y sin borrar historial. No eliminar asignaciones ni unidades de camiones/clientes.
