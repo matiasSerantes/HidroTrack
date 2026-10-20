@@ -25,6 +25,7 @@ describe('demo completa: operaciones conectadas', () => {
     const original=seedProgram(),client=original.clients.find(c=>c.id==='c6');
     expect(client?.rentals[0].mode).toBe('customer_owned');
     original.requests.push({id:'own-leave',kind:'deactivation',clientId:'c6',authorId:'nico',status:'pending',title:'Baja',returns:[]});
+    if(client) client.held={};
     const after=decideRequest(original,'own-leave',true);
     expect(after.products.find(p=>p.id==='bomba')?.depot).toBe(original.products.find(p=>p.id==='bomba')?.depot);
     expect(after.clients.find(c=>c.id==='c6')?.rentals).toEqual(client?.rentals);
@@ -189,11 +190,20 @@ describe('demo completa: operaciones conectadas', () => {
     s.requests.push({ id: 'deact', kind: 'deactivation', authorId: 'luz', title: 'Baja', clientId: 'c2', reason: 'Mudanza', status: 'pending', returns: [{ rentalId: 'rent1', returned: false, good: false }] });
     expect(() => decideRequest(s, 'deact', true)).toThrow(/devolver los equipos/);
     s.requests[1].returns = [{ rentalId: 'rent1', returned: true, good: true }];
+    expect(() => decideRequest(s, 'deact', true)).toThrow(/recuperar bidones/);
+    s.clients.find(c=>c.id==='c2')!.held={};
     const approved = decideRequest(s, 'deact', true);
     expect(approved.clients.find(c => c.id === 'c2')?.active).toBe(false);
     expect(approved.clients.find(c => c.id === 'c2')).toMatchObject({ deactivatedOn: '2026-10-19', deactivationReason: 'Mudanza', deactivatedTripIds: ['t1'] });
     expect(approved.trips[0].stops.some(p => p.clientId === 'c2')).toBe(false);
     expect(approved.products.find(p => p.id === 'frio')?.depot).toBe(9);
     expect(approved.clients.find(c => c.id === 'c2')?.note).toContain('Mudanza');
+  });
+  it('una futura baja bloquea entregas nuevas y permite recuperar envases',()=>{
+    const s=seedProgram();s.requests.push({id:'recover',kind:'deactivation',clientId:'c1',authorId:'luz',status:'pending',title:'Futura baja',returns:[]});
+    expect(()=>recordVisit(s,input)).toThrow(/solo recuperar/);
+    const next=recordVisit(s,{...input,items:[{productId:'b20',quantity:0,returned:1}],paid:'0'});
+    expect(next.clients.find(c=>c.id==='c1')?.held.b20).toBe((s.clients.find(c=>c.id==='c1')?.held.b20||0)-1);
+    expect(next.clients.find(c=>c.id==='c1')?.active).toBe(true);
   });
 });

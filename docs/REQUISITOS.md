@@ -1,10 +1,12 @@
 # Requisitos funcionales de HidroTrack
 
+Estado actualizado de base y límites de integración: [BASE_DE_DATOS.md](BASE_DE_DATOS.md), 20/10/2026. Deuda rechazada sigue pendiente de cobro al cliente. Futura baja bloquea nuevas entregas y queda pendiente de recuperación hasta devolver los artículos y obtener aprobación. Cuota mensual de dispenser anclada a fecha de entrega; generación explícita del jefe, sin cargos automáticos.
+
 Actualizado: 2026-10-19. Fuente: pedidos transmitidos por el usuario. Este documento registra alcance solicitado; no afirma que las funciones estén implementadas. Ver estado en [notas](NOTAS.md) y `/plan.html`.
 
 ## Roles y empresa
 
-- Historial administrativo de accesos: mostrar los últimos 100 cambios de choferes con empresa, persona, acción, administrador y horario argentino; acceso exclusivo del administrador. Preparado y probado localmente; lectura real pendiente de migración `20261020020000_admin_access_history.sql`.
+- Historial administrativo de accesos: mostrar los últimos 100 cambios de choferes con empresa, persona, acción, administrador y horario argentino; acceso exclusivo del administrador. Preparado y probado localmente; lectura real pendiente de migración `20261020131010_admin_access_history.sql`.
 
 - Gestión individual de choferes desde administración (20/10/2026): pausar/reactivar membresía por empresa con confirmación y auditoría, conservando cuenta/historial. Titulares protegidos; reactivación con licencia vigente y cupo. Preparado y probado en web/demo y PostgreSQL local; requiere migración remota antes del uso real.
 

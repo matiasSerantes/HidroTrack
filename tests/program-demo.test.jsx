@@ -15,6 +15,16 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('futura baja muestra recuperación pendiente y deshabilita nuevas entregas',()=>{
+    const initial=seedProgram(); initial.requests.push({id:'recover',kind:'deactivation',clientId:'c1',authorId:'luz',status:'pending',title:'Futura baja',reason:'Se muda',returns:[]});
+    localStorage.setItem(DEMO_KEY,JSON.stringify(initial)); enter(true);
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));
+    fireEvent.click(screen.getByRole('button',{name:'Abrir ficha de Elena Duarte'}));
+    expect(within(screen.getByRole('dialog')).getByText('Futura baja · pendiente de recuperación')).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:/Atender cliente/}));
+    expect(within(screen.getByRole('dialog')).getByLabelText('Dejás Bidón 20 litros').disabled).toBe(true);
+    expect(within(screen.getByRole('dialog')).getByLabelText('Retirás Bidón 20 litros').disabled).toBe(false);
+  });
   it('registra la rotura de un bidón en un cliente con fecha y persona involucrada',()=>{
     enter();fireEvent.click(screen.getByRole('button',{name:'Carga y rendición',exact:true}));
     fireEvent.change(screen.getByLabelText('Artículo afectado'),{target:{value:'b20'}});
@@ -47,6 +57,7 @@ describe('recorridos navegables de la demo', () => {
   });
   it('una baja aprobada muestra el día en el reparto y deja de ser una parada para atender', () => {
     const initial = seedProgram();
+    initial.clients.find(c=>c.id==='c1').held={};
     initial.requests.push({ id: 'leave', kind: 'deactivation', clientId: 'c1', authorId: 'luz', status: 'pending', title: 'Baja · Elena', reason: 'Se mudó', returns: [] });
     localStorage.setItem(DEMO_KEY, JSON.stringify(initial));
     enter();

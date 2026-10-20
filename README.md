@@ -86,6 +86,8 @@ Archivar conserva la ficha y las entregas, y retira al cliente del recorrido. Re
 
 ## Supabase
 
+Estado vigente al 20/10/2026: [base instalada y contratos de integración](docs/BASE_DE_DATOS.md). Son 17 migraciones y 29 tablas con RLS; los nombres locales coinciden con el historial remoto. Las referencias históricas siguientes a cinco migraciones o funciones pendientes describen etapas anteriores. No repetir el reinicio ni las migraciones aplicadas. La base de recorridos/ventas/caja está instalada; su conexión completa a la web sigue pendiente.
+
 Copiar `.env.example` a `.env` y completar la URL y clave pública de un proyecto propio. Nunca usar `service_role` en Vite. Las migraciones de `supabase/migrations` coinciden con el historial remoto: foundation, admin_portal, inventory, owned_inventory y user_profiles. En un proyecto nuevo se aplican en orden; no volver a ejecutar foundation sobre HidroTrack. La base de stock se aplicó mediante MCP el 19/10/2026. Ver [modelo y funciones de stock](docs/STOCK.md). El acceso real del jefe incluye Stock y surtidores; requiere membresía owner y licencia. La demostración mantiene datos locales.
 
 Crear usuarios con Supabase Auth. El alta inicial de tenant, membresía owner, licencia y superadministrador se realiza desde un servidor o consola confiable, en una transacción. No hay autoasignación de roles. Elegir explícitamente el límite de choferes; no tiene valor por defecto. Los administradores pueden leer metadatos de titulares y administrar licencias, pero no acceden automáticamente a información comercial. Una licencia suspendida o vencida bloquea acceso comercial sin gracia implícita. La política definitiva de gracia sigue pendiente.

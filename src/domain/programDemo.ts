@@ -15,6 +15,7 @@ export type Sale = { id: string; clientId: string; tripId: string; actorId: stri
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
 export type DemoProgramState = { stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
+export const pendingDemoRecovery = (s: DemoProgramState, clientId: string) => s.requests.some(r => r.kind === 'deactivation' && r.clientId === clientId && r.status === 'pending');
 export function demoOwnedStock(s: DemoProgramState, productId: string) {
   const product=s.products.find(p=>p.id===productId);
   const trips=s.trips.filter(t=>['active','submitted'].includes(t.stage));
@@ -101,6 +102,7 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   const visit = trip.stops.find(p => p.clientId === client.id);
   if (!visit || !['pending', 'later'].includes(visit.status)) throw new Error('La parada ya fue resuelta o no pertenece al reparto.');
   const items: SaleItem[] = [], ids = new Set<string>(), newRentals: string[] = [];
+  if (pendingDemoRecovery(s, client.id) && input.items.some(i => i.quantity > 0)) throw new Error('Futura baja: solo recuperar artículos y cobrar pendientes.');
   for (const item of input.items) {
     integer(item.quantity); integer(item.returned);
     if (ids.has(item.productId)) throw new Error('El artículo está repetido.');
@@ -165,6 +167,8 @@ export function decideRequest(state: DemoProgramState, requestId: string, approv
       const c = s.clients.find(x => x.id === r.clientId);
       if (!c) throw new Error('No encontramos al cliente.');
       if (r.returns?.some(x => !x.returned || !x.good)) throw new Error('Esta demo exige devolver los equipos en buen estado antes de aprobar. Podés rechazar y revisar el caso.');
+      if (Object.values(c.held).some(n => n > 0)) throw new Error('Futura baja pendiente de recuperar bidones y envases.');
+      if (c.rentals.some(a => a.mode !== 'customer_owned' && !r.returns?.some(x => x.rentalId === a.id && x.returned && x.good))) throw new Error('Falta registrar la devolución de los equipos.');
       c.active = false; c.deactivatedOn = demoDay; c.deactivationReason = r.reason;
       c.deactivatedTripIds = s.trips.filter(t => ['planned','active'].includes(t.stage) && t.stops.some(p => p.clientId === c.id)).map(t => t.id);
       c.note = `Baja aprobada: ${r.reason}. ${c.note}`;

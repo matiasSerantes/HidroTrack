@@ -83,7 +83,7 @@ El primer jefe ya tiene Auth, perfil, empresa inicial y licencia activa sin asis
 
 ## Fechas y roturas — migración local pendiente
 
-`20261019180000_inventory_incidents.sql` está probada localmente, **sin aplicar aún al proyecto remoto** por falta de conexión MCP en esta sesión. Aplicar por MCP y verificar con sesión real antes de considerar disponible. No ejecutar inferencias de cantidades desde el campo Unidad.
+`20261020130955_inventory_incidents.sql` está probada localmente, **sin aplicar aún al proyecto remoto** por falta de conexión MCP en esta sesión. Aplicar por MCP y verificar con sesión real antes de considerar disponible. No ejecutar inferencias de cantidades desde el campo Unidad.
 
 Agrega familia de producto (artículo/dispenser), fecha de hecho y persona involucrada. `inventory_record_stock` envuelve las entradas y carga única con fecha; `inventory_remove` registra baja/rotura desde una ubicación concreta y descuenta del libro; `inventory_retire_dispenser` retira un equipo identificado conservando ubicación e historial. Autor autenticado y persona involucrada se conservan por separado. Se rechazan fechas futuras, cantidades insuficientes y personas de otra empresa. Reintentos con igual ID no repiten el descuento. No hay cargos automáticos.
 
@@ -95,7 +95,7 @@ Verificación posterior preparada en `supabase/tests/inventory_incidents_verify.
 
 ## Disponibilidad de dispenser por modelo — pendiente remoto
 
-Aplicar `20261019190000_dispenser_model_assignments.sql` después de la migración de incidentes. Agrega asignaciones por unidad con RLS y RPC `inventory_assign_dispenser_model` / `inventory_return_dispenser_model`. Consumir stock desde depósito o camión del reparto del cliente cambia la ubicación, no el patrimonio. Devolver suma al depósito. Una rotura/baja del libro en el cliente cierra las asignaciones correspondientes, conserva su operación y no permite devolver unidades ya retiradas. Las fechas de baja/devolución no pueden ser anteriores a la entrega.
+Aplicar `20261020130959_dispenser_model_assignments.sql` después de la migración de incidentes. Agrega asignaciones por unidad con RLS y RPC `inventory_assign_dispenser_model` / `inventory_return_dispenser_model`. Consumir stock desde depósito o camión del reparto del cliente cambia la ubicación, no el patrimonio. Devolver suma al depósito. Una rotura/baja del libro en el cliente cierra las asignaciones correspondientes, conserva su operación y no permite devolver unidades ya retiradas. Las fechas de baja/devolución no pueden ser anteriores a la entrega.
 
 La planilla combina modelos disponibles del libro y equipos individualizados previos. No materializa de nuevo todas las existencias ni exige serie para modelos contados por cantidad. Sin tabla nueva, avisa que requiere actualización; los equipos anteriores conservan su flujo. El verificador SQL ahora requiere ambas migraciones y también controla las asignaciones activas contra las unidades en clientes.
 
@@ -107,10 +107,14 @@ La planilla combina modelos disponibles del libro y equipos individualizados pre
 
 ## Eliminar modelos/artículos de activos
 
-Botón Eliminar en stock de bidones y tarjetas de catálogo/dispenser: vuelve a consultar saldos, rechaza existencias positivas y confirma active=false conservando filas e historial. Opera con los permisos de actualización ya existentes. `20261019200000_product_archive_guard.sql` agrega la protección atómica del servidor usando el mismo bloqueo de empresa que las RPC de inventario. Pendiente de aplicar remotamente después de las migraciones 180000 y 190000. Hasta entonces la comprobación de interfaz no cubre una modificación concurrente desde otro dispositivo.
+Botón Eliminar en stock de bidones y tarjetas de catálogo/dispenser: vuelve a consultar saldos, rechaza existencias positivas y confirma active=false conservando filas e historial. Opera con los permisos de actualización ya existentes. `20261020131002_product_archive_guard.sql` agrega la protección atómica del servidor usando el mismo bloqueo de empresa que las RPC de inventario. Pendiente de aplicar remotamente después de las migraciones 180000 y 190000. Hasta entonces la comprobación de interfaz no cubre una modificación concurrente desde otro dispositivo.
 
 El verificador de solo lectura requiere las tres migraciones y comprueba también este trigger. 107 pruebas locales aprobadas, 22 PostgreSQL. Nuevo OAuth exitoso; cliente MCP de esta conversación aún responde Auth required, sin cambios remotos.
 
 Actualización 19/10: MCP conectado y proyecto verificado. Limpieza remota sin ejecutar porque existe un reparto pendiente de rendición; resolverlo antes del reinicio. Migraciones adicionales pendientes.
 
 Resultado remoto 19/10: reinicio ejecutado por MCP en una sola empresa y transacción. Eliminado el reparto de prueba autorizado. Verificados cero artículos, equipos, movimientos y repartos; conservados cliente, cuenta Auth, miembros y licencia mediante comparación dentro de la transacción. Las tres migraciones adicionales siguen pendientes; esta limpieza no las aplica.
+
+## Base principal instalada el 20/10/2026
+
+17 migraciones y 29 tablas con RLS verificadas por MCP. Inventario/roturas/asignaciones y administración actualizados; ventas, cobros, deuda, alquiler mensual, recorridos, futura baja y rendición preparados en servidor. 177 pruebas de dominio, PostgreSQL e interfaz, build y verificadores remotos correctos. Sin datos comerciales ficticios en remoto. Detalle y límites: [BASE_DE_DATOS.md](BASE_DE_DATOS.md). Concurrencia multiconexión, prueba Auth/PostgREST de nuevos flujos y revisión visual móvil/PC pendientes.

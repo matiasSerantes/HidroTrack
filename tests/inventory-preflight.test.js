@@ -11,7 +11,7 @@ it('diagnostica componentes ausentes o parciales dentro de una transacción de s
   expect(absent.rows.map(row => row.component_status)).toEqual(['absent', 'absent', 'absent']);
   await db.exec('rollback; create table public.dispenser_assignments(id uuid); begin read only');
   const partial = await db.query(sql);
-  expect(partial.rows[1]).toMatchObject({ version: '20261019190000', component_status: 'partial', missing_components: ['inventory_assign_dispenser_model', 'inventory_return_dispenser_model'] });
+  expect(partial.rows[1]).toMatchObject({ version: '20261020130959', component_status: 'partial', missing_components: ['inventory_assign_dispenser_model', 'inventory_return_dispenser_model'] });
   await db.exec('rollback');
  } finally { await db.close(); }
-});
+}, 30000); // Includes PostgreSQL WASM startup while other test workers initialize.

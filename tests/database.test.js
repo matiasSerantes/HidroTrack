@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261019180000_inventory_incidents','20261019190000_dispenser_model_assignments','20261019200000_product_archive_guard','20261020010000_admin_member_access','20261020020000_admin_access_history']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -34,6 +34,9 @@ describe('migración y seguridad PostgreSQL', () => {
   it('ejecuta la verificación posterior de incidentes sin modificar datos',async()=>{
     await db.exec(await readFile(new URL('../supabase/tests/inventory_incidents_verify.sql',import.meta.url),'utf8'));
     expect((await db.query('select count(*)::int as count from public.inventory_operations')).rows[0].count).toBe(0);
+  });
+  it('verifica permisos y consistencia de ventas, recorridos y cierres sin modificar datos',async()=>{
+    await db.exec(await readFile(new URL('../supabase/tests/beta_database_verify.sql',import.meta.url),'utf8'));
   });
   it('protege el directorio y limita el alta de choferes desde el servidor', async () => {
     await db.exec(`begin;
@@ -66,7 +69,7 @@ describe('migración y seguridad PostgreSQL', () => {
   });
   it('activa RLS en todas las tablas comerciales y administrativas', async () => {
     const { rows } = await db.query(`select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r'`);
-    expect(rows).toHaveLength(18);
+    expect(rows).toHaveLength(29);
     expect(rows.every(row => row.relrowsecurity)).toBe(true);
   });
   it('ejecuta escenarios de aislamiento, roles, licencias y auditoría con rollback', async () => {
@@ -113,6 +116,218 @@ describe('stock transaccional PostgreSQL', () => {
     await as(owner);
   });
   afterEach(async () => { await db.exec('rollback; reset role'); });
+
+  const deliver = (id, paid=0, method=null, quantity=2) => db.query('select public.commerce_deliver($1,$2,$3,$4,$5::jsonb,$6,$7)',[tenant,id,trip,customer,JSON.stringify(items(quantity)),paid,method]);
+  async function readyCommerce() {
+    await post('receive',items(10)); await createTrip(); await post('load',items(10)); await as(driver);
+  }
+  const pay = (sale, amount, id=op(), method='cash') => db.query("select public.commerce_record_payment($1,$2,$3,$4,$5,'2026-10-20',$6)",[tenant,id,sale,amount,method,trip]);
+  it('registra entrega y cobro parcial atómicos con precio de servidor y deuda separada',async()=>{
+    await readyCommerce(); const id=op(); await deliver(id,2000,'cash');
+    const sale=(await db.query('select * from public.customer_sale_balances where id=$1',[id])).rows[0];
+    expect(Number(sale.total)).toBe(7000); expect(Number(sale.paid)).toBe(2000); expect(Number(sale.balance)).toBe(5000); expect(sale.credit_status).toBe('pending');
+    await as(owner); await db.query('update public.products set price=9000 where id=$1',[product]);
+    expect(Number((await db.query('select unit_price from public.sale_items where sale_id=$1',[id])).rows[0].unit_price)).toBe(3500);
+    expect((await db.query('select * from public.owner_notifications')).rows).toHaveLength(2);
+    await as(stranger); expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+    await db.exec('reset role'); await db.exec(`insert into public.platform_admins values('${stranger}')`); await as(stranger);
+    expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+  });
+  it('rechazar crédito conserva saldo del cliente y no vuelve a descontar stock',async()=>{
+    await readyCommerce(); const id=op(); await deliver(id,2000,'transfer');
+    await rejected(()=>db.query('select public.commerce_review_credit($1,$2,false)',[tenant,id]),'Solo el jefe');
+    await as(owner); await db.query("select public.commerce_review_credit($1,$2,false,'Cobrar próxima visita')",[tenant,id]);
+    await db.query("select public.commerce_review_credit($1,$2,false,'Cobrar próxima visita')",[tenant,id]);
+    const sale=(await db.query('select * from public.customer_sale_balances where id=$1',[id])).rows[0];
+    expect(Number(sale.balance)).toBe(5000); expect(sale.credit_status).toBe('rejected');
+    await pay(id,5000);
+    expect(Number((await db.query('select balance from public.customer_sale_balances where id=$1',[id])).rows[0].balance)).toBe(0);
+    expect(Number((await db.query('select ready from public.inventory_truck_stock')).rows[0].ready)).toBe(8);
+  });
+  it('reintentos no duplican entrega ni pago y rechazan cambios de importe o artículos',async()=>{
+    await readyCommerce(); const id=op(); await deliver(id,1000,'cash'); await deliver(id,1000,'cash');
+    await rejected(()=>deliver(id,2000,'cash'),'otro cobro');
+    await rejected(()=>deliver(id,1000,'cash',3),'otros datos');
+    expect((await db.query('select * from public.sales')).rows).toHaveLength(1);
+    expect((await db.query('select * from public.payments')).rows).toHaveLength(1);
+    const payment=op(); await pay(id,1000,payment); await pay(id,1000,payment);
+    await rejected(()=>pay(id,2000,payment),'otros datos');
+    expect((await db.query('select * from public.payments')).rows).toHaveLength(2);
+  });
+  it('una entrega sin cobro no cambia a cobrada al reintentar el mismo ID',async()=>{
+    await readyCommerce(); const zero=op(); await deliver(zero);
+    await rejected(()=>deliver(zero,100,'cash'),'otro cobro');
+  });
+  it('un sobrepago revierte también entrega, envases, notificaciones y venta',async()=>{
+    await readyCommerce(); await rejected(()=>deliver(op(),8000,'cash'),'supera el saldo');
+    expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+    expect(Number((await db.query('select ready from public.inventory_truck_stock')).rows[0].ready)).toBe(10);
+    await as(owner); expect((await db.query('select * from public.owner_notifications')).rows).toHaveLength(0);
+  });
+  it('la RPC anterior también genera venta y no permite omitir contabilidad',async()=>{
+    await readyCommerce(); const id=op(); await post('delivery',items(1),id);
+    expect(Number((await db.query('select total from public.sales')).rows[0].total)).toBe(3500);
+    await rejected(()=>db.query("select private.inventory_post_core($1,$2,'delivery',$3,$4,$5::jsonb,'')",[tenant,op(),trip,customer,JSON.stringify(items(1))]),/permission denied/);
+    await rejected(()=>db.exec('delete from public.sales'),/permission denied/);
+    await as(stranger); await rejected(()=>pay(id,100),'Acceso denegado');
+  });
+  it('pago completo liquida solicitud pendiente y evita cobrar más que el saldo',async()=>{
+    await readyCommerce(); const id=op(); await deliver(id,7000,'cash');
+    expect((await db.query('select status from public.credit_requests')).rows[0].status).toBe('settled');
+    await rejected(()=>pay(id,1),'supera el saldo');
+    await as(owner); await rejected(()=>db.query('select public.commerce_review_credit($1,$2,true)',[tenant,id]),'ya fue resuelta');
+  });
+  it('un chofer sin reparto activo no accede a cuenta corriente ni registra cobros',async()=>{
+    await readyCommerce(); const id=op(); await deliver(id); await db.query('select public.inventory_submit_trip($1,$2)',[tenant,trip]);
+    await rejected(()=>pay(id,100),'Reparto de cobro no válido');
+    await as(owner); await post('close',items(8)); await as(driver);
+    expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+    await rejected(()=>pay(id,100),'Venta no accesible');
+  });
+  it('solo el destinatario jefe puede leer y marcar sus notificaciones',async()=>{
+    await readyCommerce(); await deliver(op());
+    expect((await db.query('select * from public.owner_notifications')).rows).toHaveLength(0);
+    await as(owner); const n=(await db.query('select * from public.owner_notifications')).rows[0];
+    await db.query('select public.commerce_read_notification($1,$2)',[tenant,n.id]);
+    const first=(await db.query('select read_at from public.owner_notifications where id=$1',[n.id])).rows[0].read_at;
+    await db.query('select public.commerce_read_notification($1,$2)',[tenant,n.id]);
+    expect((await db.query('select read_at from public.owner_notifications where id=$1',[n.id])).rows[0].read_at).toEqual(first);
+  });
+  it('registra ausencia y regreso con versión, sin cobrar ni mover stock',async()=>{
+    await readyCommerce(); const id=op();
+    const visit=()=>db.query("select public.route_record_visit($1,$2,$3,$4,'absent',1,'later_today','2026-10-19','Timbre sin respuesta')",[tenant,id,trip,customer]);
+    await visit(); await visit();
+    let stop=(await db.query('select * from public.route_stops')).rows[0];
+    expect(stop.outcome).toBe('absent'); expect(stop.version).toBe(2);
+    await rejected(()=>db.query("select public.route_record_visit($1,$2,$3,$4,'present',1)",[tenant,op(),trip,customer]),'La parada cambió');
+    await db.query("select public.route_record_visit($1,$2,$3,$4,'present',2)",[tenant,op(),trip,customer]);
+    expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+    expect(Number((await db.query('select ready from public.inventory_truck_stock')).rows[0].ready)).toBe(10);
+    await deliver(op()); stop=(await db.query('select * from public.route_stops')).rows[0]; expect(stop.outcome).toBe('delivered');
+    await rejected(()=>deliver(op()),'visita ya resuelta');
+    expect((await db.query('select * from public.sales')).rows).toHaveLength(1);
+  });
+  it('el jefe retira paradas sin borrar historial y el asistente no las modifica',async()=>{
+    await readyCommerce(); await rejected(()=>db.query('select public.route_edit_stop($1,$2,$3,$4,2,false,1)',[tenant,op(),trip,customer]),'Solo el jefe');
+    await as(owner); const id=op();
+    await db.query('select public.route_edit_stop($1,$2,$3,$4,2,false,1)',[tenant,id,trip,customer]);
+    await db.query('select public.route_edit_stop($1,$2,$3,$4,2,false,1)',[tenant,id,trip,customer]);
+    await as(driver); await rejected(()=>deliver(op()),'Parada retirada');
+    expect((await db.query('select * from public.inventory_trip_customers')).rows).toHaveLength(1);
+    await as(owner); await db.query('select public.route_edit_stop($1,$2,$3,$4,1,true,2)',[tenant,op(),trip,customer]); await as(driver); await deliver(op());
+    await as(owner); await rejected(()=>db.query('select public.route_edit_stop($1,$2,$3,$4,1,false,4)',[tenant,op(),trip,customer]),'conserva su historial');
+  });
+  it('el manifiesto entrega deuda completa y envases solo del reparto autorizado',async()=>{
+    await readyCommerce(); await deliver(op(),2000,'cash');
+    const manifest=(await db.query('select public.route_manifest($1,$2) data',[tenant,trip])).rows[0].data;
+    expect(Number(manifest[0].balance)).toBe(5000); expect(Number(manifest[0].containers[0].quantity)).toBe(2);
+    await as(stranger); await rejected(()=>db.query('select public.route_manifest($1,$2)',[tenant,trip]),'Reparto no asignado');
+  });
+  it('ubicación con hora de servidor: solo propio reparto, dueño ve y se puede detener',async()=>{
+    await readyCommerce(); await db.query('select public.route_publish_position($1,$2,-34.6,-58.4,12)',[tenant,trip]);
+    await as(stranger); expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(0);
+    await as(owner); expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(1);
+    await rejected(()=>db.query('select public.route_publish_position($1,$2,-34.6,-58.4,12)',[tenant,trip]),'Solo el repartidor');
+    await as(driver); await db.query('select public.route_stop_position($1)',[tenant]);
+    expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(0);
+    await rejected(()=>db.query('select public.route_publish_position($1,$2,100,-58.4,12)',[tenant,trip]),/check constraint/);
+  });
+  it('futura baja bloquea entregas pero permite recuperar, conserva deuda y exige aprobación',async()=>{
+    await db.query("select public.inventory_owner_stock($1,$2,'opening_customer',$3,$4::jsonb,'Inicial')",[tenant,op(),customer,JSON.stringify(items(2))]);
+    await readyCommerce(); const request=op();
+    const ask=()=>db.query("select public.customer_request_deactivation($1,$2,$3,'Deja el servicio')",[tenant,request,customer]);
+    await ask(); await ask();
+    expect((await db.query('select public.route_manifest($1,$2) data',[tenant,trip])).rows[0].data[0].pending_recovery).toBe(true);
+    await rejected(()=>deliver(op()),'futura baja');
+    await as(owner);
+    await rejected(()=>db.query('select public.customer_review_deactivation($1,$2,true)',[tenant,request]),'pendiente de recuperación');
+    await rejected(()=>db.query('update public.customers set active=false where id=$1',[customer]),'Resolver la futura baja');
+    await as(driver); await post('delivery',items(0,2));
+    await rejected(()=>db.query('select public.customer_review_deactivation($1,$2,true)',[tenant,request]),'Solo el jefe');
+    await as(owner); await db.query('select public.customer_review_deactivation($1,$2,true)',[tenant,request]);
+    await db.query('select public.customer_review_deactivation($1,$2,true)',[tenant,request]);
+    const c=(await db.query('select * from public.customers')).rows[0]; expect(c.active).toBe(false); expect(c.pending_recovery).toBe(false);
+    expect((await db.query('select * from public.customer_deactivations')).rows[0].status).toBe('approved');
+    await as(driver); expect((await db.query('select public.route_manifest($1,$2) data',[tenant,trip])).rows[0].data).toHaveLength(0);
+  });
+  it('rechazar futura baja rehabilita entregas y no duplica avisos al jefe',async()=>{
+    await readyCommerce(); const request=op();
+    await db.query("select public.customer_request_deactivation($1,$2,$3,'Propuesta')",[tenant,request,customer]);
+    await as(owner); expect((await db.query("select * from public.owner_notifications where kind='recovery_pending'")).rows).toHaveLength(1);
+    await db.query("select public.customer_review_deactivation($1,$2,false,'Continúa')",[tenant,request]);
+    expect((await db.query('select * from public.customers')).rows[0].pending_recovery).toBe(false);
+    await as(driver); await deliver(op());
+  });
+  it('el archivo antiguo también exige recuperar envases aunque no haya solicitud',async()=>{
+    await db.query("select public.inventory_owner_stock($1,$2,'opening_customer',$3,$4::jsonb,'Inicial')",[tenant,op(),customer,JSON.stringify(items(1))]);
+    await rejected(()=>db.query('update public.customers set active=false where id=$1',[customer]),'primero recuperar');
+  });
+  const submitClose = (id,cash=1000,ready=8,note='') => db.query('select public.trip_submit_close($1,$2,$3,$4,0,$5::jsonb,$6)',[tenant,id,trip,cash,JSON.stringify([{product_id:product,ready,empties:0}]),note]);
+  it('cuotas mensuales conservan ancla de entrega, precio pactado y unicidad por período',async()=>{
+    await db.query("update public.products set family='dispenser' where id=$1",[product2]);
+    await post('receive',[{product_id:product2,quantity:1}]); const assignment=op();
+    await db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'rental',2500,'2026-01-31')",[tenant,assignment,product2,customer]);
+    const first=op(),second=op();
+    const bill=(id,period,date)=>db.query('select public.commerce_charge_rental($1,$2,$3,null,$4,$5)',[tenant,id,assignment,period,date]);
+    await bill(first,1,'2026-02-28'); await bill(first,1,'2026-02-28');
+    await bill(second,2,'2026-03-31');
+    const charges=(await db.query('select monthly,period_start::text from public.rental_charges order by period')).rows;
+    expect(charges.map(r=>r.period_start)).toEqual(['2026-02-28','2026-03-31']);
+    expect(charges.every(r=>Number(r.monthly)===2500)).toBe(true);
+    await rejected(()=>bill(op(),1,'2026-02-28'),'ya fue generada');
+    await rejected(()=>bill(op(),3,'2026-03-31'),'períodos futuros');
+    await db.query("select public.inventory_return_dispenser_model($1,$2,$3,'2026-10-20')",[tenant,op(),assignment]);
+    await bill(first,1,'2026-02-28'); await rejected(()=>bill(op(),4,'2026-06-01'),'no activo');
+    expect(Number((await db.query('select sum(balance) amount from public.customer_sale_balances')).rows[0].amount)).toBe(5000);
+  });
+  it('apertura de deuda no mueve stock, no se repite y se cobra como saldo anterior',async()=>{
+    const id=op(); const opening=()=>db.query("select public.commerce_open_customer_balance($1,$2,$3,4000,'2026-10-01','Saldo anterior al sistema')",[tenant,id,customer]);
+    await opening(); await opening();
+    await rejected(()=>db.query("select public.commerce_open_customer_balance($1,$2,$3,4000,'2026-10-01','Otra apertura')",[tenant,op(),customer]),'no repetir apertura');
+    expect((await db.query('select * from public.inventory_movements')).rows).toHaveLength(0);
+    await readyCommerce(); await pay(id,1000); expect(Number((await db.query('select balance from public.customer_sale_balances where id=$1',[id])).rows[0].balance)).toBe(3000);
+    await rejected(()=>post('delivery',items(1),id),'reservado por un cargo');
+    await rejected(()=>db.query("select public.commerce_open_customer_balance($1,$2,$3,1,'2026-10-01','No autorizado')",[tenant,op(),customer]),'Solo el jefe');
+  });
+  it('un dispenser no se entrega ni se devuelve como si fuera un bidón',async()=>{
+    await db.query("update public.products set family='dispenser' where id=$1",[product2]);
+    await post('receive',[{product_id:product2,quantity:1}]); const assignment=op();
+    await db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'loan',0,'2026-10-19')",[tenant,assignment,product2,customer]);
+    await readyCommerce();
+    await rejected(()=>post('delivery',[{product_id:product2,quantity:0,returned:1}]),'asignación o devolución');
+    await as(owner); expect((await db.query('select status from public.dispenser_assignments')).rows[0].status).toBe('active');
+    await db.query("select public.inventory_return_dispenser_model($1,$2,$3,'2026-10-20')",[tenant,op(),assignment]);
+    expect((await db.query('select status from public.dispenser_assignments')).rows[0].status).toBe('returned');
+  });
+  it('rendición calcula caja de servidor y exige jefe antes de cerrar con pagos',async()=>{
+    await readyCommerce(); await deliver(op(),1000,'cash');
+    await db.query('select public.inventory_submit_trip($1,$2)',[tenant,trip]);
+    await as(owner); await rejected(()=>post('close',items(8)),'rendición de caja');
+    await as(driver); const id=op(); await submitClose(id); await submitClose(id);
+    await rejected(()=>db.query('select public.trip_review_close($1,$2,true)',[tenant,id]),'Solo el jefe');
+    await as(owner); await db.query('select public.trip_review_close($1,$2,true)',[tenant,id]); await db.query('select public.trip_review_close($1,$2,true)',[tenant,id]);
+    const c=(await db.query('select * from public.trip_closures')).rows[0]; expect(c.status).toBe('approved'); expect(Number(c.expected_cash)).toBe(1000);
+    expect((await db.query('select status from public.inventory_trips')).rows[0].status).toBe('closed');
+    expect(Number((await db.query('select depot_ready from public.inventory_owned_stock')).rows[0].depot_ready)).toBe(8);
+    expect((await db.query("select * from public.inventory_operations where kind='close'")).rows).toHaveLength(1);
+  });
+  it('diferencias de caja requieren observación y pueden volver al chofer sin borrar la declaración',async()=>{
+    await readyCommerce(); await deliver(op(),1000,'cash');
+    await rejected(()=>submitClose(op(),900),'requieren observación');
+    const id=op(); await submitClose(id,900,8,'Faltan cien');
+    await as(owner); await rejected(()=>db.query('select public.trip_review_close($1,$2,true)',[tenant,id]),'Justificá las diferencias');
+    await db.query("select public.trip_review_close($1,$2,false,'Revisar efectivo')",[tenant,id]);
+    expect((await db.query('select status from public.inventory_trips')).rows[0].status).toBe('active');
+    await as(driver); const next=op(); await submitClose(next); await as(owner); await db.query('select public.trip_review_close($1,$2,true)',[tenant,next]);
+    expect((await db.query('select * from public.trip_closures')).rows).toHaveLength(2);
+  });
+  it('faltante declarado conserva esperado y exige conciliar inventario antes de aprobar',async()=>{
+    await readyCommerce(); await deliver(op(),1000,'cash'); const id=op(); await submitClose(id,1000,7,'Se rompió uno');
+    await as(owner); await rejected(()=>db.query("select public.trip_review_close($1,$2,true,'Rotura a verificar')",[tenant,id]),'Conciliá roturas');
+    await db.query("select public.inventory_remove($1,$2,'damage',$3,1,'truck_ready',$4,null,'2026-10-20','driver',$5,'Rotura verificada')",[tenant,op(),product,trip,driver]);
+    await db.query("select public.trip_review_close($1,$2,true,'Rotura verificada')",[tenant,id]);
+    const c=(await db.query('select * from public.trip_closures')).rows[0]; expect(Number(c.expected_stock[0].ready)).toBe(8); expect(Number(c.declared_stock[0].ready)).toBe(7); expect(c.status).toBe('approved');
+  });
 
   it('crea perfiles sin credenciales ni autoasignación de roles y aísla otros repartos', async()=>{
     expect((await db.query('select * from public.user_profiles')).rows).toHaveLength(2);

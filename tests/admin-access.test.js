@@ -6,7 +6,7 @@ const admin='00000000-0000-0000-0000-000000000001', owner='00000000-0000-0000-00
 const tenant='10000000-0000-0000-0000-000000000001', other='10000000-0000-0000-0000-000000000002';
 beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth; create table auth.users(id uuid primary key,email text); create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth,public to authenticated,anon;`);
- for(const version of ['20261017193404_foundation','20261017222129_admin_portal','20261020010000_admin_member_access','20261020020000_admin_access_history']) await db.exec(await readFile(new URL(`../supabase/migrations/${version}.sql`,import.meta.url),'utf8'));
+ for(const version of ['20261017193404_foundation','20261017222129_admin_portal','20261020131006_admin_member_access','20261020131010_admin_access_history']) await db.exec(await readFile(new URL(`../supabase/migrations/${version}.sql`,import.meta.url),'utf8'));
 },30000);
 afterAll(async()=>{await db.close();});
 beforeEach(async()=>{
