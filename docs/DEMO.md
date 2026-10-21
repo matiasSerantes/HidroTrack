@@ -241,3 +241,10 @@ En `/?demo=1`, entrar como jefe y abrir **Promociones** desde el menú (en celul
 Al aceptar pasa a Clientes con sus envases y equipos, sin segunda salida de stock; se puede indicar cuota mensual por modelo de equipo (0 = préstamo gratuito). No se registra cobro ni deuda automática. Al rechazar queda pendiente de recuperación, permite devoluciones parciales y roturas; solo cierra cuando recuperó todo. Historial conservado y stock en promociones visible en catálogo; dañados en revisión.
 
 Simulación local: la entrega del asistente descuenta su camión activo; la del jefe descuenta depósito. Seguimiento posterior en el mapa, detalle específico de promociones en PDF, facturación y Supabase pendientes. Fechas de operaciones siguen el día ficticio de la demo. Configurar hábitos y visitas después de convertir.
+## Abrir el recorrido en una app del celular (21/10)
+
+En `/?demo=1`, abrir Mi reparto o el mapa de un reparto. Seleccionar una parada y tocar **Abrir navegacion**: elegir Google Maps o Waze para esa persona. **Ver recorrido pendiente en app** muestra enlace a todas las pendientes en Google Maps, manteniendo el orden; recorridos largos se dividen en tramos numerados de hasta cuatro paradas. Al terminar un tramo, volver a HidroTrack y abrir el siguiente. Registrar visitas en HidroTrack; ninguna app confirma entregas automaticamente.
+
+Los destinos de la demo son ficticios. La app parte desde la ubicacion real del telefono, nunca desde el marcador simulado. Sin coordenadas, Maps usa la direccion escrita y Waze abre su busqueda. Revisar la direccion elegida antes de iniciar. Si falta toda ubicacion, se explica el error sin omitir esa parada. En PC o si no abre una app instalada, el enlace puede mostrar la web del servicio.
+
+La planilla real del jefe tambien ofrece **Abrir navegacion** hacia ese cliente. No se agregaron mapas reales de recorridos del asistente ni se modifico Supabase. Apertura en Android/iPhone y revision visual manual pendientes.

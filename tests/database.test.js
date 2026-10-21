@@ -247,7 +247,7 @@ describe('stock transaccional PostgreSQL', () => {
   async function readyCommerce() {
     await post('receive',items(10)); await createTrip(); await post('load',items(10)); await as(driver);
   }
-  const pay = (sale, amount, id=op(), method='cash') => db.query("select public.commerce_record_payment($1,$2,$3,$4,$5,'2026-10-20',$6)",[tenant,id,sale,amount,method,trip]);
+  const pay = (sale, amount, id=op(), method='cash') => db.query("select public.commerce_record_payment($1,$2,$3,$4,$5,(now() at time zone 'America/Argentina/Buenos_Aires')::date,$6)",[tenant,id,sale,amount,method,trip]);
   it('registra entrega y cobro parcial atómicos con precio de servidor y deuda separada',async()=>{
     await readyCommerce(); const id=op(); await deliver(id,2000,'cash');
     const sale=(await db.query('select * from public.customer_sale_balances where id=$1',[id])).rows[0];
