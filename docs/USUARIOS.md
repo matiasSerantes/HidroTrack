@@ -39,3 +39,7 @@ Verificación local: 70 pruebas y compilación correctas. Falta revisión visual
 ## 21/10 - Cuentas aisladas de prueba
 
 Creadas por pedido explicito tres cuentas reales de Auth con correos ficticios: un jefe y dos asistentes, todos vinculados a empresa de pruebas nueva. Cupo dos, promociones deshabilitadas, sin privilegios de plataforma ni datos comerciales. Login y consultas REST de roles/aislamiento comprobados; no se guardan correos ni contrasenas en el repositorio. Los correos ficticios no sirven para recibir recuperacion por email. El acceso del chofer a recorridos reales aun esta pendiente; estas cuentas permiten preparar/verificar ese desarrollo sin mezclar datos del titular real.
+
+## 21/10 - Identidad personal y acceso por asignacion
+
+Regla confirmada: asistente independiente de cualquier jefe; ID propio para vincularlo una vez a la lista y reutilizarlo al asignar nuevas jornadas. Sin asignacion no hay acceso a clientes, recorridos, stock, dinero ni comprobantes anteriores, solo perfil basico/ID y nombres de jefes opcionales. Desvincular no borra su cuenta. Demo actualizada con nombre, foto local y clave solo simulada; interfaz real de perfil, ID publico y vinculacion autenticada pendientes. No se cambiaron las contrasenas ni se quitaron los vinculos reales de las cuentas de prueba por este ajuste.

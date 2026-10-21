@@ -90,7 +90,7 @@ La RPC real actual admite cantidad inicial total por articulo y mantiene bloqueo
 
 Demo agrega agregacion por fecha de reparto/venta y gastos historicos de llenado. Servidor aun necesita categorias de gastos reales y contrato de rentabilidad; no inferir ganancia total si faltan costos. Consultas del jefe aisladas por tenant; no permitir al asistente agregados de otros repartos. Clientes nuevos se definen provisionalmente como alta el dia del reparto incluida en sus paradas.
 
-Snapshot PDF local al aprobar cierre; variante del jefe con ventas/cobros y variante del asistente con efectivo propio a rendir y stock. Integracion real debe leer snapshot de trip_closures/ledger, generar idempotentemente, conservar versiones y autorizar solo jefe o asistente de ese reparto, aun si luego queda en espera. No deducir dinero recibido por generar el comprobante. Notificacion, almacenamiento/descarga autenticada y Realtime entre dispositivos quedan pendientes; no se aplico migracion ni se enviaron documentos a terceros.
+Snapshot PDF local al aprobar cierre; variante del jefe con ventas/cobros y variante del asistente con efectivo propio a rendir y stock. Integracion real debe leer snapshot de trip_closures/ledger, generar idempotentemente, conservar versiones y autorizar segun la asignacion vigente; actualizacion 21/10: sin reparto asignado el asistente solo ve perfil basico y no PDFs. Conservar snapshots historicos sin exponerlos en espera. No deducir dinero recibido por generar el comprobante. Notificacion, almacenamiento/descarga autenticada y Realtime entre dispositivos quedan pendientes; no se aplico migracion ni se enviaron documentos a terceros.
 
 
 ## 20/10 - Diagnostico de selector de dispenser vacio

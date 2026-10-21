@@ -34,7 +34,7 @@ it('guarda la licencia solo para la empresa seleccionada y vuelve a consultar el
  expect(client.from).toHaveBeenCalledWith('licenses');
  expect(chain.eq).toHaveBeenCalledWith('tenant_id','tenant-a');
  expect(chain.update).toHaveBeenCalledWith({kind:'permanent',status:'suspended',expires_at:null,driver_limit:2});
- expect(client.rpc.mock.calls.filter(([name])=>name==='admin_directory').length).toBe(2);
+ await waitFor(()=>expect(client.rpc.mock.calls.filter(([name])=>name==='admin_directory').length).toBe(2));
 });
 
 it('impide mostrar el panel si falla la verificación del rol', async () => {

@@ -15,7 +15,7 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
-  it('finaliza el jefe y deja el PDF disponible también en espera del asistente',()=>{
+  it('finaliza el jefe y la espera del asistente conserva solo informacion personal',()=>{
     const s=seedProgram();s.trips[0].stops.forEach(p=>{p.status='visited';});localStorage.setItem(DEMO_KEY,JSON.stringify(s));enter();
     expect(screen.getByRole('heading',{name:'Ganancia y gastos del mes'})).toBeTruthy();
     expect(screen.getByRole('heading',{name:'Repartos activos'})).toBeTruthy();
@@ -25,7 +25,7 @@ describe('recorridos navegables de la demo', () => {
     expect(screen.getByRole('button',{name:'Descargar PDF del jefe'})).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'luz'}});
     expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
-    expect(screen.getByRole('button',{name:'Descargar PDF del asistente'})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'Descargar PDF del asistente'})).toBeNull();
     expect(screen.queryByRole('button',{name:'Descargar PDF del jefe'})).toBeNull();
   });
   it('muestra carga sugerida mientras el jefe arma el recorrido',()=>{
@@ -122,11 +122,11 @@ describe('recorridos navegables de la demo', () => {
   it('vincula una cuenta existente, espera y abre el recorrido recién asignado',()=>{
     enter();fireEvent.click(screen.getByRole('button',{name:'Mi equipo',exact:true}));
     fireEvent.click(screen.getByRole('button',{name:'Agregar asistente o empleado'}));
-    fireEvent.change(screen.getByLabelText('Correo de la cuenta del asistente'),{target:{value:'sofia@example.com'}});
+    fireEvent.change(screen.getByLabelText('ID o correo de la cuenta del asistente'),{target:{value:'HT-SOFIA'}});
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'sofia'}});
     expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
-    expect(screen.queryByRole('navigation')).toBeNull();expect(screen.queryByText('Agua Clara')).toBeNull();
+    expect(screen.queryByRole('navigation')).toBeNull();expect(screen.getByText('Agua Clara')).toBeTruthy();expect(screen.queryByText('Elena Duarte')).toBeNull();
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'owner'}});
     fireEvent.click(screen.getByRole('button',{name:'Mi equipo',exact:true}));
     const card=screen.getByRole('heading',{name:'Sofía Torres'}).closest('article');

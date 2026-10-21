@@ -219,7 +219,7 @@ Mi jornada del jefe: graficos de ganancia estimada y gastos del mes, semana por 
 
 Debajo del banner aparecen tarjetas de repartos por salir, en recorrido y rendidos, con entregados/total, nuevas altas de ese dia entre sus paradas y paradas resueltas. Devolver envases, cobrar deuda o reprogramar ausencia no se cuenta como entrega. Numeracion estable segun recorrido. Actualiza al confirmar operaciones y al sincronizar otra pestana del mismo navegador; no es Realtime entre dispositivos reales.
 
-Finalizar reparto del jefe abre conteo; exige paradas resueltas y cantidades conciliadas. Genera snapshot inmutable del cierre. El asistente sigue pudiendo enviar rendicion y esperar aprobacion. Tras aprobar, Comprobantes de cierre ofrece PDF del jefe o del asistente segun rol. Excepcion a pantalla de espera: asistente sin nuevo recorrido puede descargar UNICAMENTE sus propios comprobantes cerrados; no ve modulos ni totales generales del jefe.
+Finalizar reparto del jefe abre conteo; exige paradas resueltas y cantidades conciliadas. Genera snapshot inmutable del cierre. El asistente sigue pudiendo enviar rendicion y esperar aprobacion. Tras aprobar, Comprobantes de cierre ofrece PDF del jefe o del asistente segun rol. Actualizacion 21/10: sin reparto asignado solo perfil personal, ID y nombres de jefes; se retiran tambien los comprobantes de esa pantalla por indicacion del usuario. Los snapshots se conservan, pero no se muestran en espera.
 
 Ambos PDF incluyen carga inicial/final, efectivo a rendir y dispenser nuevos/cambiados/retirados con estado. Jefe agrega ventas, efectivo y transferencia. Efectivo incluye cobro de deuda anterior; no descuenta gastos pagados por asistente ni confirma recepcion fisica de dinero. No se envian correos/mensajes. Nombres, precios y cantidades del cierre no cambian por editar luego el catalogo. Copias antiguas sin snapshot no se reconstruyen como historia confirmada.
 
@@ -248,3 +248,9 @@ En `/?demo=1`, abrir Mi reparto o el mapa de un reparto. Seleccionar una parada 
 Los destinos de la demo son ficticios. La app parte desde la ubicacion real del telefono, nunca desde el marcador simulado. Sin coordenadas, Maps usa la direccion escrita y Waze abre su busqueda. Revisar la direccion elegida antes de iniciar. Si falta toda ubicacion, se explica el error sin omitir esa parada. En PC o si no abre una app instalada, el enlace puede mostrar la web del servicio.
 
 La planilla real del jefe tambien ofrece **Abrir navegacion** hacia ese cliente. No se agregaron mapas reales de recorridos del asistente ni se modifico Supabase. Apertura en Android/iPhone y revision visual manual pendientes.
+
+## 21/10 - ID y perfil independiente
+
+Entrar como asistente sin reparto (por ejemplo Sofia) para ver Mi perfil: ID personal copiable, nombre editable, foto local PNG/JPG/WebP hasta 250 KB y opcion de contrasena simulada, sin guardar claves ni modificar Auth. Jefes vinculados solo muestra nombres. Sin cartera, recorridos ni PDFs mientras espera. Con reparto, Mi perfil y opciones sigue disponible.
+
+Como jefe, Mi equipo > Agregar asistente o empleado acepta el ID mostrado por el asistente (tambien correo por compatibilidad). Lo conserva en lista para asignar futuras jornadas; desvincular conserva identidad, ID, perfil e historial. Los IDs HT de esta demo son ejemplos, no credenciales reales. Pantalla y vinculacion por ID reales pendientes; no se cambiaron las cuentas de prueba ya creadas.

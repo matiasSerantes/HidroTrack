@@ -14,9 +14,20 @@ export function changeAssistantPlan(s:DemoProgramState,plan:keyof typeof assista
   if(s.members.filter(m=>m.role==='driver'&&m.active).length>assistantPlans[plan].limit)throw new Error('Quitá asistentes antes de elegir un plan con menos lugares.');
   return {...s,assistantPlan:plan};
 }
+export const assistantShareId=(account:{id:string})=>`HT-${account.id.toUpperCase()}`;
+export function updateAssistantProfile(s:DemoProgramState,actor:string,name:string,photo?:string){
+  const accounts=assistantAccounts(s);if(!accounts.some(a=>a.id===actor))throw new Error('Cuenta personal no disponible.');
+  name=name.trim();if(!name||name.length>100)throw new Error('Ingresá un nombre de hasta 100 caracteres.');
+  if(photo&&(!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(photo)||photo.length>350000))throw new Error('Elegí una foto PNG, JPG o WebP de hasta 250 KB.');
+  return {...s,assistantAccounts:accounts.map(a=>a.id===actor?{...a,name,photo}:a),members:s.members.map(m=>m.id===actor?{...m,name}:m)};
+}
+export function validateDemoPassword(password:string,confirmation:string){
+  if(password.length<12||password.length>128)throw new Error('Usá una contraseña de 12 a 128 caracteres.');
+  if(password!==confirmation)throw new Error('Las contraseñas no coinciden.');
+}
 export function linkAssistant(s:DemoProgramState,email:string,actor:string){
-  owner(s,actor);const account=assistantAccounts(s).find(a=>a.email===email.trim().toLowerCase());
-  if(!account)throw new Error('No existe esa cuenta en la demo. El asistente debe crear primero su cuenta.');
+  owner(s,actor);const value=email.trim().toLowerCase();const account=assistantAccounts(s).find(a=>a.email===value||assistantShareId(a).toLowerCase()===value);
+  if(!account)throw new Error('No existe ese ID o correo en la demo. El asistente debe crear primero su cuenta.');
   if(s.members.some(m=>m.id===account.id&&m.active))throw new Error('Este asistente ya está en tu equipo.');
   if(s.members.filter(m=>m.role==='driver'&&m.active).length>=assistantPlans[assistantPlan(s)].limit)throw new Error('Tu licencia no tiene lugares disponibles para otro asistente.');
   const next=structuredClone(s);next.assistantAccounts=assistantAccounts(s);next.otherEmployerLinks=otherEmployerLinks(s);
