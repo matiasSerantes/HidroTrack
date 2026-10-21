@@ -8,3 +8,4 @@ tmp/pdfs/
 !.env.example
 *.tsbuildinfo
 HidroTrack-fuentes.zip
+/CREDENCIALES_PRUEBA.local.md

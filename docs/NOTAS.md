@@ -433,3 +433,8 @@ Resultado: demo con ID personal estable copiable, vinculacion por ID (correo con
 Pruebas revisadas para nombres de jefes permitidos tras vinculo y ausencia de toda empresa para cuenta independiente sin vinculos. Ajustada prueba administrativa asincrona para esperar recarga del directorio antes de contar llamadas; no cambio de comportamiento productivo. Compilacion correcta; revision visual movil/PC y conexion real de ID/perfil/Storage/Auth pendientes.
 
 Validacion final: 264 pruebas aprobadas en 32 archivos y build correcto. Casos nuevos: ID estable tras editar y desvincular/revincular, perfil propio sin vinculo, privacidad de espera, no persistir contrasenas y rechazo de fotos no admitidas. Sin cambios remotos.
+## 2026-10-21 - Credenciales de prueba solo locales
+
+Pedido explicito: guardar las credenciales entregadas en un archivo local dentro del proyecto, excluido de Git. Agregar regla de ignore antes de escribirlo y comprobar exclusion. No copiar contenido sensible a documentacion versionada, commits ni despliegues.
+
+Verificado: archivo ignorado por .gitignore y ausente de git ls-files. Solo se versionan regla de exclusion y esta nota, sin credenciales.
