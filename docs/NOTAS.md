@@ -438,3 +438,10 @@ Validacion final: 264 pruebas aprobadas en 32 archivos y build correcto. Casos n
 Pedido explicito: guardar las credenciales entregadas en un archivo local dentro del proyecto, excluido de Git. Agregar regla de ignore antes de escribirlo y comprobar exclusion. No copiar contenido sensible a documentacion versionada, commits ni despliegues.
 
 Verificado: archivo ignorado por .gitignore y ausente de git ls-files. Solo se versionan regla de exclusion y esta nota, sin credenciales.
+## 2026-10-21 - Aceptacion del reparto por el asistente
+
+Confirmado: antes de habilitar datos, mostrar invitacion del jefe para un reparto y preguntar si acepta. Sin aceptar sigue en espera; rechazo no da acceso. Mostrar solo remitente/nombre del reparto, sin cartera, ruta detallada ni datos comerciales. Reflejar en demo; servidor real pendiente de contrato de invitaciones con auditoria y autorizacion por aceptacion.
+
+Resultado: nuevos repartos demo para asistentes generan invitacion pendiente con remitente/nombre y Aceptar/Rechazar. Se presenta tanto en espera como con otro recorrido aceptado. Respuesta notifica al jefe, conserva registro y no confirma carga ni visita. Pendiente/rechazado excluido de navegacion, restauracion de viaje/dialogos y entrega/promocion del asistente. Ejemplos historicos considerados previamente aceptados. Sin migracion ni cambios reales.
+
+Validacion: 265 pruebas aprobadas en 32 archivos y build correcto. Probado destinatario exclusivo, rechazo, aceptacion y no responder dos veces, mas flujo navegable al aceptar. Servidor real/RLS de invitaciones y revision visual movil/PC pendientes; no se tocaron cuentas ni credenciales locales.

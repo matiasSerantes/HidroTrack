@@ -11,17 +11,17 @@ export function readJourney(state: DemoProgramState): Journey | null {
     if (!saved || !(state.members.some(m => m.id === saved.actor && m.active) || assistantAccounts(state).some(a=>a.id===saved.actor))) return null;
     const owner = saved.actor === 'owner';
     if(!owner&&!assignedAssistantTrips(state,saved.actor).length)return {actor:saved.actor,page:'overview',tripId:'',dialog:null};
-    const trip = state.trips.find(t => t.id === saved.tripId && (owner || t.driverId === saved.actor));
+    const trip = state.trips.find(t => t.id === saved.tripId && (owner || (t.driverId === saved.actor&&t.acceptance!=='pending'&&t.acceptance!=='rejected')));
     let page: Page = pages.includes(saved.page) ? saved.page : 'overview';
     if ((!owner && (['team', 'company', 'fleet'].includes(page)||(page==='promotions'&&!canOfferPromotion(state,saved.actor)))) || (page === 'delivery' && !trip)) page = 'overview';
     let dialog: Journey['dialog'] = null;
     const d = saved.dialog;
     if (d && ['visit', 'detail', 'map'].includes(d.type)) {
-      const target = state.trips.find(t => t.id === d.tripId && (owner || t.driverId === saved.actor));
-      const client = state.clients.find(c => c.id === d.id && (owner || c.active && state.trips.some(t => t.driverId === saved.actor && t.stops.some(p => p.clientId === c.id))));
+      const target = state.trips.find(t => t.id === d.tripId && (owner || (t.driverId === saved.actor&&t.acceptance!=='pending'&&t.acceptance!=='rejected')));
+      const client = state.clients.find(c => c.id === d.id && (owner || c.active && state.trips.some(t => (t.driverId === saved.actor&&t.acceptance!=='pending'&&t.acceptance!=='rejected') && t.stops.some(p => p.clientId === c.id))));
       if (d.type === 'map' && target || d.type === 'detail' && client || d.type === 'visit' && client && target?.stage === 'active' && target.stops.some(p => p.clientId === client.id && ['pending', 'later'].includes(p.status))) dialog = { type: d.type, id: client?.id, tripId: target?.id };
     }
-    return { actor: saved.actor, page, tripId: trip?.id || state.trips.find(t => owner || t.driverId === saved.actor)?.id || '', dialog };
+    return { actor: saved.actor, page, tripId: trip?.id || state.trips.find(t => owner || (t.driverId === saved.actor&&t.acceptance!=='pending'&&t.acceptance!=='rejected'))?.id || '', dialog };
   } catch { return null; }
 }
 export const draftKey = (actor: string, tripId: string, clientId: string) => `hidrotrack.demo-draft.${actor}.${tripId}.${clientId}`;

@@ -136,6 +136,7 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
     const saved=JSON.parse(localStorage.getItem(DEMO_KEY));expect(saved.trips.find(t=>t.name==='Recorrido nuevo').driverId).toBe('sofia');
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'sofia'}});
+    fireEvent.click(screen.getByRole('button',{name:'Aceptar reparto'}));
     expect(screen.queryByRole('heading',{name:'En espera de recorrido'})).toBeNull();
     expect(screen.getAllByText('Recorrido nuevo').length).toBeGreaterThan(0);
   });

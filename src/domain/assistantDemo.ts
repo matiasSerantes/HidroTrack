@@ -7,7 +7,14 @@ export const assistantAccounts = (s:DemoProgramState) => s.assistantAccounts || 
   {id:'sofia',name:'Sofía Torres',email:'sofia@example.com'},
 ];
 export const otherEmployerLinks = (s:DemoProgramState) => s.otherEmployerLinks || [{accountId:'luz',company:'Agua del Sur · demo'}];
-export const assignedAssistantTrips = (s:DemoProgramState,id:string) => s.members.some(m=>m.id===id&&m.role==='driver'&&m.active)?s.trips.filter(t=>t.driverId===id&&t.stage!=='approved'):[];
+export const assignedAssistantTrips = (s:DemoProgramState,id:string) => s.members.some(m=>m.id===id&&m.role==='driver'&&m.active)?s.trips.filter(t=>t.driverId===id&&t.stage!=='approved'&&t.acceptance!=='pending'&&t.acceptance!=='rejected'):[];
+export function answerTripInvitation(state:DemoProgramState,actor:string,tripId:string,accept:boolean){
+  const s=structuredClone(state),trip=s.trips.find(t=>t.id===tripId&&t.driverId===actor&&t.acceptance==='pending');
+  if(!trip||!s.members.some(m=>m.id===actor&&m.role==='driver'&&m.active))throw new Error('Invitación no disponible para tu cuenta.');
+  trip.acceptance=accept?'accepted':'rejected';
+  s.notices.unshift({id:uid(),recipientId:'owner',read:false,text:`${s.members.find(m=>m.id===actor)!.name} ${accept?'aceptó':'rechazó'} el reparto ${trip.name}.`});
+  return s;
+}
 function owner(s:DemoProgramState,actor:string){if(!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede administrar su equipo.');}
 export function changeAssistantPlan(s:DemoProgramState,plan:keyof typeof assistantPlans,actor:string){
   owner(s,actor);

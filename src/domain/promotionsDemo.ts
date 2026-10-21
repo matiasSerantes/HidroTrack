@@ -21,7 +21,7 @@ export function setPromotionPermission(state:DemoProgramState,actor:string,membe
 export function createPromotion(state:DemoProgramState,actor:string,input:{name:string;address:string;phone:string;terms:string;followUp:string;items:Record<string,number>;tripId?:string}) {
   if(!canOfferPromotion(state,actor))throw new Error('El jefe debe habilitarte para ofrecer promociones.');
   const isOwner=state.members.some(m=>m.id===actor&&m.active&&m.role==='owner');
-  const trip=isOwner?undefined:state.trips.find(t=>t.id===input.tripId&&t.driverId===actor&&t.stage==='active');
+  const trip=isOwner?undefined:state.trips.find(t=>t.id===input.tripId&&t.driverId===actor&&t.stage==='active'&&t.acceptance!=='pending'&&t.acceptance!=='rejected');
   if(!isOwner&&!trip)throw new Error('Necesitás tu recorrido activo para entregar una promoción.');
   if(!input.name.trim()||!input.address.trim()||!input.terms.trim())throw new Error('Completá nombre, dirección y condiciones de la promoción.');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(input.followUp)||!Number.isFinite(Date.parse(input.followUp))||new Date(input.followUp).toISOString().slice(0,10)!==input.followUp||input.followUp<demoDay)throw new Error('Elegí una fecha de seguimiento desde el día de la demo.');

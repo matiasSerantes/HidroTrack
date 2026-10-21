@@ -4,8 +4,17 @@ import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DemoAssistantProfile } from '../src/features/DemoAssistantProfile';
 import { seedProgram } from '../src/domain/programDemo';
-import { assistantAccounts, assistantShareId, linkAssistant, registerDemoAssistant, unlinkAssistant, updateAssistantProfile } from '../src/domain/assistantDemo';
+import { answerTripInvitation, assignedAssistantTrips, assistantAccounts, assistantShareId, linkAssistant, registerDemoAssistant, unlinkAssistant, updateAssistantProfile } from '../src/domain/assistantDemo';
 afterEach(cleanup);
+it('invitacion pendiente o rechazada no habilita datos; solo el destinatario puede aceptar',()=>{
+  let s=seedProgram();s.trips[0].acceptance='pending';
+  expect(assignedAssistantTrips(s,'luz')).toHaveLength(0);
+  expect(()=>answerTripInvitation(s,'nico','t1',true)).toThrow(/no disponible/);
+  const rejected=answerTripInvitation(s,'luz','t1',false);expect(assignedAssistantTrips(rejected,'luz')).toHaveLength(0);
+  expect(rejected.notices[0].recipientId).toBe('owner');
+  s=answerTripInvitation(s,'luz','t1',true);expect(assignedAssistantTrips(s,'luz')).toHaveLength(1);
+  expect(s.notices[0].text).toContain('aceptó');expect(()=>answerTripInvitation(s,'luz','t1',true)).toThrow();
+});
 it('ID sobrevive a cambios de perfil y quitar/agregar al equipo no recrea la identidad',()=>{
   let s=registerDemoAssistant(seedProgram(),'Persona demo','independiente@example.test').state;
   const account=assistantAccounts(s).find(a=>a.email==='independiente@example.test'),id=assistantShareId(account);
