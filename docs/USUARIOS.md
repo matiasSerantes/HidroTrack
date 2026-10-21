@@ -35,3 +35,7 @@ Verificación local: 70 pruebas y compilación correctas. Falta revisión visual
 ## Base principal instalada el 20/10/2026
 
 17 migraciones y 29 tablas con RLS verificadas por MCP. Inventario/roturas/asignaciones y administración actualizados; ventas, cobros, deuda, alquiler mensual, recorridos, futura baja y rendición preparados en servidor. 177 pruebas de dominio, PostgreSQL e interfaz, build y verificadores remotos correctos. Sin datos comerciales ficticios en remoto. Detalle y límites: [BASE_DE_DATOS.md](BASE_DE_DATOS.md). Concurrencia multiconexión, prueba Auth/PostgREST de nuevos flujos y revisión visual móvil/PC pendientes.
+
+## 21/10 - Cuentas aisladas de prueba
+
+Creadas por pedido explicito tres cuentas reales de Auth con correos ficticios: un jefe y dos asistentes, todos vinculados a empresa de pruebas nueva. Cupo dos, promociones deshabilitadas, sin privilegios de plataforma ni datos comerciales. Login y consultas REST de roles/aislamiento comprobados; no se guardan correos ni contrasenas en el repositorio. Los correos ficticios no sirven para recibir recuperacion por email. El acceso del chofer a recorridos reales aun esta pendiente; estas cuentas permiten preparar/verificar ese desarrollo sin mezclar datos del titular real.
