@@ -17,6 +17,8 @@ Cierre: dos jefes pueden vincular la misma cuenta sin mezclar informacion; altas
 
 ## 2. Invitacion y permisos del reparto
 
+Avance 22/10: invitacion/respuesta/revocacion y resumen de lectura limitada instalados; las operaciones del chofer siguen bloqueadas hasta etapas 3/4. Ver [detalle de etapa 2](ETAPA_2_INVITACIONES.md). Validacion completa y publicacion pendientes.
+
 - Jefe asigna; asistente ve remitente y nombre del reparto, acepta o rechaza.
 - Solo la aceptacion vigente habilita clientes, carga, cobros y ubicacion de ese reparto.
 - Revisar todas las politicas y funciones relacionadas; revocar o cerrar debe retirar acceso operativo.

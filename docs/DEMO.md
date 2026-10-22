@@ -260,3 +260,6 @@ Crear un reparto para un asistente desde Mi equipo/Repartos. Al cambiar a su cue
 ## Perfil real y perfil simulado (21/10)
 
 Ingresar con cuenta real de asistente muestra ahora pantalla personal con nombre editable, ID copiable y cambio de contrasena real mediante Auth. No muestra datos comerciales; la vinculacion por ID, fotos privadas e invitaciones reales aun estan pendientes. Las cuentas Auth sin jefe activo tambien conservan su perfil basico. La demo mantiene foto local y cambio de clave simulado; no confundir su formulario con la cuenta real. No se modificaron las credenciales de prueba durante el desarrollo de esta pantalla.
+## Actualizacion 22/10: invitaciones reales
+
+Invitacion/respuesta/revocacion y resumen limitado del recorrido aceptado conectados a Supabase. La demo mantiene sus datos locales y circuito simulado. No confundir el resumen real con entregas/cobros/mapa operativo terminados. Detalle: [etapa 2](ETAPA_2_INVITACIONES.md).

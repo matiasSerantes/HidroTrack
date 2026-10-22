@@ -6,6 +6,14 @@ const owner='00000000-0000-0000-0000-000000000001',otherOwner='00000000-0000-000
 const tenant='10000000-0000-0000-0000-000000000001',other='10000000-0000-0000-0000-000000000002';
 async function actor(id){await db.exec(`reset role; select set_config('request.jwt.claim.sub','${id}',true); set local role authenticated;`);}
 async function link(t,u,active=true,request=crypto.randomUUID()){return db.query('select public.owner_set_assistant_link($1,$2,$3,$4) as id',[t,`HT-${u}`,active,request]);}
+async function assigned(){
+ await actor(owner);await link(tenant,driver);
+ const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ const trip=crypto.randomUUID();await db.query('select public.inventory_create_trip($1,$2,$3,$4,current_date,$5)',[tenant,trip,driver,'Ruta de prueba',[customer]]);return trip;
+}
+async function answer(trip,accept=true,request=crypto.randomUUID()){return db.query('select public.assistant_answer_trip_invitation($1,$2,$3,$4) as state',[tenant,trip,accept,request]);}
+async function preview(trip){return db.query('select public.assistant_open_trip($1,$2) as result',[tenant,trip]);}
+async function denied(action,pattern){await db.exec('savepoint denied');await expect(action()).rejects.toThrow(pattern);await db.exec('rollback to savepoint denied; release savepoint denied');}
 beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
  create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
@@ -63,4 +71,48 @@ it('bloquea acceso por asignacion antigua y conserva nombres de jefes',async()=>
  expect((await db.query('select * from public.inventory_trips')).rows).toHaveLength(0);
  expect((await db.query('select * from public.customers')).rows).toHaveLength(0);
  expect((await db.query('select public.assistant_my_chiefs() as chiefs')).rows[0].chiefs).toHaveLength(1);
+});
+it('la invitacion pendiente solo expone remitente y nombre, no la cartera',async()=>{
+ const trip=await assigned();await actor(driver);
+ const invites=(await db.query('select public.assistant_trip_invitations() as items')).rows[0].items;
+ expect(invites).toHaveLength(1);expect(invites[0].state).toBe('pending');expect(invites[0]).not.toHaveProperty('stops');expect(JSON.stringify(invites)).not.toContain('Direccion A');
+ await denied(()=>preview(trip),/Reparto no aceptado/);
+});
+it('solo el destinatario puede responder y otro jefe no puede retirar',async()=>{
+ const trip=await assigned();await actor(second);await denied(()=>answer(trip),/Invitacion no disponible/);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,trip,crypto.randomUUID()]),/Acceso denegado/);
+});
+it('aceptar habilita solo resumen asignado y no reabre operaciones antiguas',async()=>{
+ const trip=await assigned();await actor(driver);const request=crypto.randomUUID();await answer(trip,true,request);await answer(trip,true,request);
+ const result=(await preview(trip)).rows[0].result;expect(result.stops).toHaveLength(1);expect(result.stops[0].name).toBe('Cliente A');expect(JSON.stringify(result)).not.toContain('Cliente B');
+ expect((await db.query('select * from public.customers')).rows).toHaveLength(0);
+ await denied(()=>db.query('select public.route_manifest($1,$2)',[tenant,trip]),/Reparto no asignado/);
+ await denied(()=>db.query('select public.route_publish_position($1,$2,0,0,1)',[tenant,trip]),/Solo el repartidor/);
+ await actor(second);await denied(()=>preview(trip),/Reparto no aceptado/);
+ await actor(owner);expect((await db.query("select * from public.trip_invitation_events where action='accepted'")).rows).toHaveLength(1);
+});
+it('rechazar no habilita clientes y permite quitar vinculo sin carga pendiente',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip,false);await denied(()=>preview(trip),/Reparto no aceptado/);
+ await actor(owner);await link(tenant,driver,false);
+});
+it('revocar retira acceso e impide restaurarlo con el reintento de aceptar',async()=>{
+ const trip=await assigned();await actor(driver);const request=crypto.randomUUID();await answer(trip,true,request);
+ await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,trip,crypto.randomUUID()]);
+ await actor(driver);await denied(()=>preview(trip),/Reparto no aceptado/);expect((await answer(trip,true,request)).rows[0].state).toBe('revoked');
+ await denied(()=>answer(trip,true),/respondida o revocada/);
+});
+it('cerrar reparto o suspender licencia retira acceso al resumen',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip);
+ await db.exec(`reset role; update public.licenses set status='suspended' where tenant_id='${tenant}'`);await actor(driver);await denied(()=>preview(trip),/Reparto no aceptado/);
+ await db.exec(`reset role; update public.licenses set status='active' where tenant_id='${tenant}'; update public.inventory_trips set status='closed',started_at=now(),submitted_at=now(),closed_at=now() where id='${trip}'`);
+ await actor(driver);await denied(()=>preview(trip),/Reparto no aceptado/);expect((await db.query('select public.assistant_trip_invitations() as items')).rows[0].items).toHaveLength(0);
+});
+it('el jefe no puede cargar un camion pendiente de aceptacion',async()=>{
+ const trip=await assigned();await actor(owner);const product=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Agua',100,'unidad',true)",[tenant,product]);
+ const items=JSON.stringify([{product_id:product,quantity:2}]);
+ await db.query("select public.inventory_post($1,$2,'receive',null,null,$3,'')",[tenant,crypto.randomUUID(),items]);
+ await denied(()=>db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,items]),/debe aceptar/);
+ await actor(driver);await answer(trip);await actor(owner);
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,items]);
 });

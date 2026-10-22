@@ -6,7 +6,7 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras etapa 1 parcial: 23 migraciones instaladas, 35 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin recorridos abiertos al comprobar. Ver [etapa 1 y bloqueo de permisos](ETAPA_1_USUARIOS.md).
+Supabase MCP, actualizado tras avance de etapa 2: 24 migraciones instaladas, 37 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin invitaciones reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
@@ -24,7 +24,7 @@ Supabase MCP, actualizado tras etapa 1 parcial: 23 migraciones instaladas, 35 ta
 
 1. Registro propio y recuperacion conectados sin empresa/licencia/rol administrativo; falta SMTP y prueba real de entrega de correos.
 2. Lista por ID, agregar/quitar y cupos atomicos instalados, separados por empresa. Identidad multiempresa preservada. Falta validacion publica completa.
-3. Invitacion de reparto con remitente y nombre, Aceptar/Rechazar por su destinatario. Solo aceptar habilita datos. No responder/rechazar mantiene perfil basico. Revocar/cerrar quita acceso. Contrato de invitaciones aun no instalado.
+3. Invitacion de reparto instalada: destinatario acepta/rechaza, jefe revoca, resumen de clientes solo al aceptar. Sin aceptar o al revocar/cerrar no hay resumen. Operaciones del chofer aun no habilitadas.
 4. Revisar RLS/RPC de inventario, cartera, cobros, ubicacion y promociones para exigir aceptacion vigente, no solo asignacion. El helper actual inventory_trip_access aun no exige aceptacion: no habilitar rutas reales hasta corregir todos los caminos. Bloqueo temporal de rama driver aplicado tras autorizacion explicita: asistentes conservan acceso basico hasta completar etapa 2.
 5. Foto con almacenamiento privado y permisos; recuperacion de cuenta y autenticador real. Cambio de clave personal ya tiene formulario Auth, con confirmacion y manejo de reautenticacion, pero no se probaron claves reales para no alterarlas.
 6. Planes basico/intermedio/superior instalados con cupos 1/3/ilimitado y edicion administrativa. Licencias existentes conservadas como custom; altas administrativas conservan cupo personalizado hasta editar plan. Gestion comercial/cobro de licencias pendiente.
@@ -33,7 +33,7 @@ El ID mostrado en cuenta real usa HT seguido de la identidad UUID estable. No es
 
 ## Que falta de base de datos adicional
 
-- Vinculos auditados e idempotentes instalados; faltan invitaciones y revision completa de permisos.
+- Vinculos e invitaciones auditados/idempotentes instalados; resumen limitado autorizado. Falta revision/conexion de permisos para cada operacion del chofer en etapa 4.
 - Preferencias/cantidades habituales y dias tienen tablas base, pero falta guardar/editar desde la web con contrato validado. Extender para pedidos de visita extraordinaria, asignacion por fecha y cambios atomicos de dispenser.
 - Snapshot de carga recomendada y extras, costo historico SOLO de unidades rellenadas al cargar, y consultas de resultado mensual sin inventar ganancia cuando faltan costos.
 - Reparacion/baja de unidades danadas pendientes y contrato completo de sustitucion de equipos, sin devolver uno y asignar otro como dos operaciones independientes del navegador.

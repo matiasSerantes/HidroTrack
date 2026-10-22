@@ -6,7 +6,7 @@ import { AssistantWorkspace } from '../src/features/AssistantWorkspace';
 afterEach(()=>{cleanup();vi.restoreAllMocks();localStorage.clear();});
 function fixture({passwordError=null,profileError=null,identity='self'}={}){
   const calls=[];let profile={user_id:'self',full_name:'Mi nombre'};
-  const client={auth:{getUser:vi.fn(async()=>({data:{user:{id:identity,email:'personal@example.test'}},error:null})),updateUser:vi.fn(async()=>({data:{user:{id:'self'}},error:passwordError})),signOut:vi.fn(async()=>({error:null}))},from:vi.fn(table=>{const call={table,filters:[],patch:null};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},update:patch=>{call.patch=patch;return chain;},single:async()=>{if(call.patch)profile={...profile,...call.patch};return {data:profile,error:profileError};}};return chain;})};
+  const client={rpc:vi.fn(async()=>({data:[],error:null})),auth:{getUser:vi.fn(async()=>({data:{user:{id:identity,email:'personal@example.test'}},error:null})),updateUser:vi.fn(async()=>({data:{user:{id:'self'}},error:passwordError})),signOut:vi.fn(async()=>({error:null}))},from:vi.fn(table=>{const call={table,filters:[],patch:null};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},update:patch=>{call.patch=patch;return chain;},single:async()=>{if(call.patch)profile={...profile,...call.patch};return {data:profile,error:profileError};}};return chain;})};
   render(<AssistantWorkspace client={client} userId="self"/>);return {client,calls};
 }
 it('carga solo su perfil y su ID, sin consultar informacion comercial o de jefes',async()=>{
