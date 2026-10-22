@@ -35,3 +35,5 @@ No se crearon repartos, respuestas ni invitaciones reales para verificar. Los co
 - SMTP en preparacion por el usuario; envio y recuperacion por correo aun sin validar.
 
 Siguiente: etapa 3, completar clientes/inventario/preparacion y despues conectar las operaciones del recorrido. La demo conserva su simulacion independiente.
+
+Actualizacion SMTP 22/10: el usuario configuro Gmail. Consulta de lectura confirma host/puerto, remitente/usuario esperados y URLs correctas. Configuracion verificada; autenticacion/envio, recepcion y recuperacion completa aun pendientes. Las menciones previas a SMTP sin configurar son historicas. Sin secretos en Git.

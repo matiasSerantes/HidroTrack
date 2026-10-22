@@ -53,3 +53,5 @@ Varias tablas/funciones base ya existen; estos puntos son extensiones e integrac
 Optimizacion de orden de ruta/tiempo/distancia pospuesta por el usuario. Abrir otra app ya existe en demo y para un destino de planilla real; no equivale a recorrido optimizado ni a mapa operativo real del chofer.
 
 En la revision inicial no se aplicaron migraciones. En el avance posterior se instalo assistant_links y se corrigieron destinos Auth. No se alteraron cantidades, contrasenas ni vinculos de usuarios para comprobarlo. Ver ETAPA_1_USUARIOS.md para el bloqueo temporal autorizado e instalado.
+
+Actualizacion SMTP 22/10: el usuario configuro Gmail. Consulta de lectura confirma host/puerto, remitente/usuario esperados y URLs correctas. Configuracion verificada; autenticacion/envio, recepcion y recuperacion completa aun pendientes. Las menciones previas a SMTP sin configurar son historicas. Sin secretos en Git.

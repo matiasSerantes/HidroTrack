@@ -37,3 +37,5 @@ Etapa 2 debe reemplazar esta restriccion temporal por permisos sobre reparto ace
 Compilacion correcta. Comprobaciones dirigidas: 26 pruebas aprobadas de acceso/perfil/espacio y contratos; 7 pruebas de contratos aprobadas en la entrega anterior. Tras incorporar la migracion instalada, 7 comprobaciones dirigidas aprobadas otra vez. Verificacion remota de solo lectura: jefe conserva acceso, identidad driver comprobada, acceso operativo driver denegado, perfil propio y lista basica disponibles. Suite completa, concurrencia real, entrega de correos y circuito extremo a extremo pospuestos; no se presentan como verificados.
 
 Pendientes para cerrar etapa 1: configurar envio Auth y validar publicacion. Luego continuar etapa 2: invitaciones, aceptacion y permisos por recorrido. Foto/terminacion visual se mantienen para la etapa 7 segun el plan.
+
+Actualizacion SMTP 22/10: el usuario configuro Gmail. Consulta de lectura confirma host/puerto, remitente/usuario esperados y URLs correctas. Configuracion verificada; autenticacion/envio, recepcion y recuperacion completa aun pendientes. Las menciones previas a SMTP sin configurar son historicas. Sin secretos en Git.
