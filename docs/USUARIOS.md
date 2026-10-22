@@ -43,3 +43,10 @@ Creadas por pedido explicito tres cuentas reales de Auth con correos ficticios: 
 ## 21/10 - Identidad personal y acceso por asignacion
 
 Regla confirmada: asistente independiente de cualquier jefe; ID propio para vincularlo una vez a la lista y reutilizarlo al asignar nuevas jornadas. Sin asignacion no hay acceso a clientes, recorridos, stock, dinero ni comprobantes anteriores, solo perfil basico/ID y nombres de jefes opcionales. Desvincular no borra su cuenta. Demo actualizada con nombre, foto local y clave solo simulada; interfaz real de perfil, ID publico y vinculacion autenticada pendientes. No se cambiaron las contrasenas ni se quitaron los vinculos reales de las cuentas de prueba por este ajuste.
+## 21/10 - Perfil real del asistente conectado
+
+Cuenta sin membresia de jefe activa entra ahora en pantalla personal propia, sin menu del titular ni consultas comerciales. Verifica identidad mediante Auth getUser y carga solo user_profiles propio. Permite editar nombre por UPDATE con filtro user_id y politicas existentes. ID estable copiable: HT seguido del UUID de la propia identidad, sin otorgar permisos ni ser una contrasena; la vinculacion real por ID todavia no esta activada.
+
+Cambio de clave real solo por formulario del usuario: confirmacion doble, 12 a 128 caracteres, Auth updateUser; no tablas de claves ni persistencia en localStorage. Si Auth exige reautenticacion, se informa sin evadirla; respuestas inciertas no se presentan como exito y los campos se limpian. No se cambiaron contrasenas existentes para probar. Foto privada, vinculacion, invitaciones y recorrido real siguen pendientes.
+
+IMPORTANTE: lectura de servidor actual aun habilita repartos por asignacion sin aceptacion; no mostrar esos recorridos hasta preparar migracion de RLS/RPC que verifique aceptacion y cierre/revocacion en todos los caminos. La pantalla personal no sustituye esa proteccion. En remoto no hay recorridos al revisar este avance; no se crean para validar UI.

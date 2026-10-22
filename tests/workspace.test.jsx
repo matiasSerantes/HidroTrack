@@ -10,7 +10,7 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   const records = [{ id: 'customer-a', name: 'María', address: 'Calle 123', phone: '' }];
   const client = {
     rpc: vi.fn(async()=>({data:null,error:{message:'Sin respuesta de la conexión'}})),
-    auth: { signOut: vi.fn(async () => ({ error: null })) },
+    auth: { getUser:vi.fn(async()=>({data:{user:{id:'user-a',email:'self@example.test'}},error:null})),signOut: vi.fn(async () => ({ error: null })) },
     from: vi.fn(table => {
       const call = { table, filters: [], operation: 'read' }; calls.push(call);
       const chain = {
@@ -20,10 +20,10 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
         limit: () => chain,
         insert: value => { call.operation = 'insert'; call.value = value; return chain; },
         update: value => { call.operation = 'update'; call.value = value; return chain; },
-        single: () => chain,
+        single: () => {call.single=true;return chain;},
         maybeSingle: () => {call.single=true;return chain;},
         then: (resolve, reject) => {
-          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { ...records[0], ...call.value } : table==='customers' ? [...records] : [];
+          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {user_id:'user-a',full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { ...records[0], ...call.value } : table==='customers' ? [...records] : [];
           return Promise.resolve({ data, error: null }).then(resolve, reject);
         },
       };
@@ -132,13 +132,15 @@ describe('panel conectado del titular', () => {
   it('no consulta información comercial para un chofer', async () => {
     const { client, calls } = clientFixture({ role: 'driver' });
     render(<OwnerWorkspace client={client} userId="user-a"/>);
-    await screen.findByText(/Tu cuenta es de chofer/);
-    expect(calls.map(call => call.table)).toEqual(['tenant_members']);
+    await screen.findByRole('heading',{name:'Tu espacio de asistente'});
+    await screen.findByText('Correo: self@example.test');
+    expect(calls.map(call => call.table)).toEqual(['tenant_members','user_profiles']);
+    expect(calls.find(c=>c.table==='user_profiles').filters).toEqual([['user_id','user-a']]);
   });
   it('muestra el alta pendiente sin autoconceder un rol', async () => {
     const { client, calls } = clientFixture({ members: false });
     render(<OwnerWorkspace client={client} userId="user-a"/>);
-    await screen.findByText(/todavía no está asignada/);
+    await screen.findByRole('heading',{name:'Tu espacio de asistente'});
     expect(calls.every(call => call.operation === 'read')).toBe(true);
   });
   it.each([

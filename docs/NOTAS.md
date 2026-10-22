@@ -445,3 +445,16 @@ Confirmado: antes de habilitar datos, mostrar invitacion del jefe para un repart
 Resultado: nuevos repartos demo para asistentes generan invitacion pendiente con remitente/nombre y Aceptar/Rechazar. Se presenta tanto en espera como con otro recorrido aceptado. Respuesta notifica al jefe, conserva registro y no confirma carga ni visita. Pendiente/rechazado excluido de navegacion, restauracion de viaje/dialogos y entrega/promocion del asistente. Ejemplos historicos considerados previamente aceptados. Sin migracion ni cambios reales.
 
 Validacion: 265 pruebas aprobadas en 32 archivos y build correcto. Probado destinatario exclusivo, rechazo, aceptacion y no responder dos veces, mas flujo navegable al aceptar. Servidor real/RLS de invitaciones y revision visual movil/PC pendientes; no se tocaron cuentas ni credenciales locales.
+## 2026-10-21 - Retomar asistente real, posponer optimizacion vial
+
+Usuario indica continuar pendientes y dejar optimizacion de mapa para despues. Prioridad: cuenta independiente real, perfil/ID, vinculo persistente y aceptacion de reparto antes de exponer cartera. Revisar servidor actual y preparar cambios con pruebas; no interpretar autorizaciones previas de promociones como aprobacion general de nuevas migraciones. Optimizacion de orden/tiempo/distancia queda propuesta pendiente, sin API contratada.
+
+Avance real: nueva pantalla AssistantWorkspace para cuentas sin jefe activo, solo perfil propio/Auth, sin shell comercial. Nombre editable con RLS existente, ID de identidad copiable y formulario de cambio de contrasena real por Auth (solo accion del usuario, doble confirmacion, no guardar secretos). Foto y vinculacion pendientes, informadas en pantalla. No se invocaron cambios de clave/perfil en cuentas existentes para probar, ni se modifico esquema remoto.
+
+Revision de permisos: inventory_trip_access actual no exige aceptacion, por lo que no conectar aun lectura de recorridos reales. Requiere futuro contrato de invitacion y revisar tambien comercio, posiciones y promociones antes de habilitar. Consulta remota agregada confirma cero recorridos actuales; no se generaron asignaciones reales. Optimizacion de mapa pospuesta.
+
+## 2026-10-22 - Estado para pasar de demo a real
+
+Usuario solicita continuar e informar faltantes de base y usuarios. Revisado por MCP: 21 migraciones, 34 tablas publicas con RLS y sin recorridos reales. Contrato assistant_answer_invitation inexistente; revisar semantica de acceso antes de habilitar rutas. Creado docs/ESTADO_REAL.md con matriz de base/pantalla, pendientes y orden de beta. Perfil personal real terminado como avance conectado; foto, registro propio, vinculo por ID y aceptacion de servidor pendientes. No se aplicaron migraciones nuevas.
+
+Validacion: suite completa de 270 pruebas aprobadas; tras controles finales de identidad y limpieza de rama inalcanzable, 16 pruebas dirigidas aprobadas y build final correcto. Sin superficie de navegador conectada para revision visual movil/PC; despliegue publico y prueba Auth de extremo a extremo pendientes. Credenciales locales ignoradas por Git, sin cambios de claves ni datos reales. Siguiente paso: contrato de vinculo e invitacion y permisos de servidor antes del recorrido real del asistente.

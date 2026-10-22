@@ -257,3 +257,6 @@ Como jefe, Mi equipo > Agregar asistente o empleado acepta el ID mostrado por el
 ## Aceptar un reparto (21/10)
 
 Crear un reparto para un asistente desde Mi equipo/Repartos. Al cambiar a su cuenta, se ve invitacion del jefe con Aceptar reparto o Rechazar reparto, sin los clientes ni la ruta. Aceptar habilita ese reparto; rechazar/no responder mantiene privacidad. El jefe recibe respuesta en notificaciones. Invitaciones nuevas tambien aparecen si ya tiene otro reparto aceptado. Los repartos iniciales de ejemplo representan asignaciones previamente aceptadas. Esta aceptacion todavia no esta conectada al servidor real.
+## Perfil real y perfil simulado (21/10)
+
+Ingresar con cuenta real de asistente muestra ahora pantalla personal con nombre editable, ID copiable y cambio de contrasena real mediante Auth. No muestra datos comerciales; la vinculacion por ID, fotos privadas e invitaciones reales aun estan pendientes. Las cuentas Auth sin jefe activo tambien conservan su perfil basico. La demo mantiene foto local y cambio de clave simulado; no confundir su formulario con la cuenta real. No se modificaron las credenciales de prueba durante el desarrollo de esta pantalla.
