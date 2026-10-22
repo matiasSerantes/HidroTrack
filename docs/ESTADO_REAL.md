@@ -2,6 +2,8 @@
 
 Referencia para continuar desde otra PC. Codigo conectado no equivale a despliegue publico comprobado ni prueba completa con datos reales. No contiene credenciales.
 
+Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENTACION.md).
+
 ## Comprobado
 
 Supabase MCP: 21 migraciones instaladas, 34 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Base actual sin recorridos reales; no se generaron operaciones para esta revision.
