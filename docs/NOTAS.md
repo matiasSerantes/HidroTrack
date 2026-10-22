@@ -489,3 +489,7 @@ Cierre de avance etapa 2: compilacion final correcta; documentacion y plan actua
 ## 2026-10-22 - SMTP Gmail configurado por el usuario
 
 Verificacion de solo lectura: smtp.gmail.com, puerto 587, nombre HidroTrack; remitente y usuario coinciden con lo indicado, confirmacion de correo activa y URLs de recuperacion correctas. No se imprimieron ni guardaron claves/tokens. Configuracion presente no prueba autenticacion SMTP ni recepcion: falta solicitar recuperacion desde la web y completar el enlace. No se enviaron correos ni cambiaron claves en esta comprobacion.
+
+## 2026-10-22 - Recepcion de recuperacion confirmada
+
+Usuario aporta captura del correo de recuperacion recibido en Recibidos, con remitente HidroTrack. Envio y recepcion SMTP confirmados por evidencia del usuario; asunto y plantilla aun en ingles. Falta verificar apertura del enlace, cambio y nuevo ingreso. No se modificaron claves ni se copio el enlace/token de recuperacion a Git.

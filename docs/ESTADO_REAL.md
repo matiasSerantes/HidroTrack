@@ -55,3 +55,5 @@ Optimizacion de orden de ruta/tiempo/distancia pospuesta por el usuario. Abrir o
 En la revision inicial no se aplicaron migraciones. En el avance posterior se instalo assistant_links y se corrigieron destinos Auth. No se alteraron cantidades, contrasenas ni vinculos de usuarios para comprobarlo. Ver ETAPA_1_USUARIOS.md para el bloqueo temporal autorizado e instalado.
 
 Actualizacion SMTP 22/10: el usuario configuro Gmail. Consulta de lectura confirma host/puerto, remitente/usuario esperados y URLs correctas. Configuracion verificada; autenticacion/envio, recepcion y recuperacion completa aun pendientes. Las menciones previas a SMTP sin configurar son historicas. Sin secretos en Git.
+
+Evidencia posterior del usuario (22/10): correo de recuperacion recibido en Recibidos desde HidroTrack. Envio/recepcion confirmados; enlace, cambio de clave y nuevo ingreso pendientes. Plantilla actual en ingles.
