@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import './DemoProgram.css';
 import './DemoPalette.css';
 import './AssistantWorkspace.css';
+import { AssistantChiefs } from './AssistantChiefs';
 
 export function AssistantWorkspace({client,userId}:{client:SupabaseClient;userId:string}){
   const [name,setName]=useState(''),[email,setEmail]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[retry,setRetry]=useState(0);
@@ -43,9 +44,10 @@ export function AssistantWorkspace({client,userId}:{client:SupabaseClient;userId
     {error&&<p className="assistant-real-error" role="alert">{error}</p>}{notice&&<p className="assistant-real-notice" role="status">{notice}</p>}
     <button className="hd-btn primary" disabled={busy||loading} onClick={()=>setRetry(v=>v+1)}>Actualizar mi perfil</button>
     {loading?<p role="status">Cargando tu perfil…</p>:<section className="assistant-profile-card"><h2>Mi perfil</h2><p>Correo: {email||'No disponible'}</p><form onSubmit={saveName}><label>Mi nombre<input value={name} onChange={e=>setName(e.target.value)} required maxLength={100} disabled={busy||!verified}/></label><button className="hd-btn primary" disabled={busy||!verified}>Guardar mi nombre</button></form>
-      <section className="assistant-profile-pending"><label>Mi ID para compartir<input readOnly value={`HT-${userId.toUpperCase()}`} onFocus={e=>e.currentTarget.select()}/></label><button className="hd-btn primary" disabled={busy||!verified} onClick={()=>{const id=`HT-${userId.toUpperCase()}`;if(!navigator.clipboard){setNotice('Seleccioná y copiá tu ID manualmente.');return;}void navigator.clipboard.writeText(id).then(()=>setNotice('ID personal copiado.'),()=>setNotice('Seleccioná y copiá tu ID manualmente.'));}}>Copiar mi ID</button><p>Tu ID identifica tu cuenta; no es una contraseña. La opción del jefe para vincularte por ID todavía está pendiente de activar. Tu identidad se conserva al cambiar de jefe.</p><h3>Foto de perfil</h3><p>Pendiente de conectar el almacenamiento privado de fotos.</p></section>
+      <section className="assistant-profile-pending"><label>Mi ID para compartir<input readOnly value={`HT-${userId.toUpperCase()}`} onFocus={e=>e.currentTarget.select()}/></label><button className="hd-btn primary" disabled={busy||!verified} onClick={()=>{const id=`HT-${userId.toUpperCase()}`;if(!navigator.clipboard){setNotice('Seleccioná y copiá tu ID manualmente.');return;}void navigator.clipboard.writeText(id).then(()=>setNotice('ID personal copiado.'),()=>setNotice('Seleccioná y copiá tu ID manualmente.'));}}>Copiar mi ID</button><p>Tu ID identifica tu cuenta; no es una contraseña. Compartilo para que el jefe te agregue a su lista de asistentes. Tu identidad se conserva al cambiar de jefe.</p><h3>Foto de perfil</h3><p>Pendiente de conectar el almacenamiento privado de fotos.</p></section>
       <button className="hd-btn primary" disabled={busy||!verified} aria-expanded={showPassword} onClick={()=>{setShowPassword(!showPassword);setError('');setNotice('');}}>Cambiar mi contraseña</button>
       {showPassword&&<form key={userId} onSubmit={changePassword}><p>Este cambio es real y afecta solo tu cuenta. No uses las claves de otro usuario.</p><label>Nueva contraseña<input type="password" name="password" minLength={12} maxLength={128} autoComplete="new-password" required disabled={busy}/></label><label>Repetir nueva contraseña<input type="password" name="confirmation" minLength={12} maxLength={128} autoComplete="new-password" required disabled={busy}/></label><button className="hd-btn primary" disabled={busy}>Confirmar cambio de contraseña</button><button className="hd-btn" type="button" disabled={busy} onClick={()=>setShowPassword(false)}>Cancelar</button></form>}
     </section>}
+    {verified&&<AssistantChiefs key={userId} client={client}/>}
   </main></div>;
 }

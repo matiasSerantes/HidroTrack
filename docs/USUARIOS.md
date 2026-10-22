@@ -50,3 +50,6 @@ Cuenta sin membresia de jefe activa entra ahora en pantalla personal propia, sin
 Cambio de clave real solo por formulario del usuario: confirmacion doble, 12 a 128 caracteres, Auth updateUser; no tablas de claves ni persistencia en localStorage. Si Auth exige reautenticacion, se informa sin evadirla; respuestas inciertas no se presentan como exito y los campos se limpian. No se cambiaron contrasenas existentes para probar. Foto privada, vinculacion, invitaciones y recorrido real siguen pendientes.
 
 IMPORTANTE: lectura de servidor actual aun habilita repartos por asignacion sin aceptacion; no mostrar esos recorridos hasta preparar migracion de RLS/RPC que verifique aceptacion y cierre/revocacion en todos los caminos. La pantalla personal no sustituye esa proteccion. En remoto no hay recorridos al revisar este avance; no se crean para validar UI.
+# Avance 22/10/2026: etapa 1
+
+Registro y recuperacion Auth, lista de asistentes del jefe por ID y nombres de jefes del asistente conectados. Migracion de vinculos/cupos aplicada, sin modificar limites existentes. Etapa incompleta: SMTP, permiso de espera de servidor y validacion publica pendientes. Ver [detalle vigente](ETAPA_1_USUARIOS.md), que actualiza los pendientes historicos de este archivo. No confundir pantalla basica con aislamiento de contratos antiguos por asignacion.

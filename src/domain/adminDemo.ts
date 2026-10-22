@@ -1,4 +1,4 @@
-export type AdminLicense = { kind: string; status: string; expires_at: string | null; driver_limit: number };
+export type AdminLicense = { kind: string; status: string; expires_at: string | null; driver_limit: number; driver_plan?: string };
 export type AdminTenant = { id: string; name: string; license: AdminLicense | null; members: { user_id: string; email: string; role: string; active: boolean }[] };
 const storageKey = 'hidrotrack.admin-demo.v1';
 export function initialAdminDemo(): AdminTenant[] {
@@ -27,7 +27,7 @@ export function setDemoDriverAccess(tenants: AdminTenant[], tenantId: string, us
  if (active) {
   const license = tenant.license;
   if (!license || license.status !== 'active' || (license.kind === 'monthly' && (!license.expires_at || !Number.isFinite(Date.parse(license.expires_at)) || Date.parse(license.expires_at) <= Date.now()))) throw new Error('La empresa debe tener una licencia vigente.');
-  if (tenant.members.filter(m => m.role === 'driver' && m.active).length >= license.driver_limit) throw new Error('Se alcanzó el límite de choferes.');
+  if (license.driver_plan!=='unlimited' && tenant.members.filter(m => m.role === 'driver' && m.active).length >= license.driver_limit) throw new Error('Se alcanzó el límite de choferes.');
  }
  return tenants.map(t => t.id === tenantId ? { ...t, members: t.members.map(m => m.user_id === userId ? { ...m, active } : m) } : t);
 }
@@ -42,6 +42,6 @@ export function addDemoUser(tenants: AdminTenant[], body: { role: string; email:
  }
  const tenant = tenants.find(t => t.id === body.tenant_id);
  if (!tenant?.license || tenant.license.status !== 'active' || (tenant.license.kind === 'monthly' && (!tenant.license.expires_at || Date.parse(tenant.license.expires_at) <= Date.now()))) throw new Error('La sodería debe tener una licencia vigente.');
- if (tenant.members.filter(m => m.role === 'driver' && m.active).length >= tenant.license.driver_limit) throw new Error('Se alcanzó el límite de choferes de esta sodería.');
+ if (tenant.license.driver_plan!=='unlimited' && tenant.members.filter(m => m.role === 'driver' && m.active).length >= tenant.license.driver_limit) throw new Error('Se alcanzó el límite de choferes de esta sodería.');
  return tenants.map(t => t.id === tenant.id ? { ...t, members: [...t.members, user] } : t);
 }

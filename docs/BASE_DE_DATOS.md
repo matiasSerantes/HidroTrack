@@ -120,3 +120,6 @@ Entrega atomica: deposito del jefe o camion activo del asistente; bienes pasan a
 ## Estado consolidado al 22/10
 
 Ver docs/ESTADO_REAL.md para matriz actual de base, usuarios y pantallas. MCP confirma 21 migraciones y 34 tablas con RLS; no equivale a beta operativa. Perfil personal real ya conectado con politicas existentes; vinculo por ID e invitacion aceptada siguen sin contrato de servidor. No habilitar lecturas de recorrido del asistente hasta revisar inventory_trip_access y caminos de comercio/posicion/promociones. Optimizacion de mapa pospuesta por usuario.
+# Avance 22/10/2026: vinculos de asistentes
+
+Aplicada `20261022123826_assistant_links.sql`: auditoria de vinculos, RPC de jefe, nombres minimos para asistente, planes y cupos atomicos. 22 migraciones instaladas, 35 tablas con RLS. `supabase/pending/assistant_waiting_access.sql` NO instalada: rechazo de revision automatica por impacto global de permisos; no sincronizar ese directorio como migraciones. Ver [impacto y estado](ETAPA_1_USUARIOS.md).

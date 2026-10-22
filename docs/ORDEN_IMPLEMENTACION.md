@@ -6,6 +6,8 @@ Referencia del punto de partida: [Estado real](ESTADO_REAL.md). La base ya tiene
 
 ## 1. Identidad del asistente y lista de choferes
 
+Avance 22/10: codigo y contratos principales instalados; etapa aun abierta por permisos, SMTP y validacion. Ver [detalle y bloqueo concreto](ETAPA_1_USUARIOS.md).
+
 - Registro propio verificado y recuperacion de cuenta. Mantener nombre, ID estable y cambio de clave ya conectados.
 - Vincular/desvincular por ID desde el jefe, sin recrear cuentas; un asistente puede trabajar con varios jefes.
 - Aplicar cupos en servidor: basico 1, intermedio 3, superior ilimitado. Definir representacion y transiciones sin alterar licencias existentes arbitrariamente.

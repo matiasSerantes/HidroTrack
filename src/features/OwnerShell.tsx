@@ -4,11 +4,11 @@ import './DemoProgram.css';
 import './DemoPalette.css';
 import './OwnerWorkspace.css';
 
-export type OwnerView = 'promotions' | 'overview' | 'customers' | 'stock' | 'catalog' | 'trips' | 'dispensers';
+export type OwnerView = 'assistants' | 'promotions' | 'overview' | 'customers' | 'stock' | 'catalog' | 'trips' | 'dispensers';
 const navigation = [
   ['overview', 'Mi jornada', LayoutDashboard], ['customers', 'Clientes', Users],
   ['catalog', 'Catálogo', Package], ['stock', 'Stock', Truck],
-  ['trips', 'Repartos y camión', Route], ['promotions','Promociones',Sparkles],
+  ['trips', 'Repartos y camión', Route], ['assistants','Mis asistentes',Users], ['promotions','Promociones',Sparkles],
 ] as const;
 export const ownerViewTitle = (view: OwnerView) => view==='dispensers'?'Catálogo':navigation.find(([id]) => id === view)![1];
 
