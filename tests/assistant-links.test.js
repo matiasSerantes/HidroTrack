@@ -56,9 +56,7 @@ it('no permite quitar mientras tiene reparto sin cerrar',async()=>{
  await db.exec(`insert into public.inventory_trips(tenant_id,driver_id,name,service_date) values('${tenant}','${driver}','Reparto de prueba',current_date)`);
  await actor(owner);await expect(link(tenant,driver,false)).rejects.toThrow(/Cerra los repartos/);
 });
-it('propuesta pendiente bloquea acceso por asignacion antigua y conserva nombres de jefes',async()=>{
- const pending=await readFile(new URL('../supabase/pending/assistant_waiting_access.sql',import.meta.url),'utf8');
- await db.exec(pending.replace(/^begin;\s*/,'').replace(/commit;\s*$/,''));
+it('bloquea acceso por asignacion antigua y conserva nombres de jefes',async()=>{
  await actor(owner);await link(tenant,driver);await db.exec('reset role');
  await db.exec(`insert into public.inventory_trips(tenant_id,driver_id,name,service_date) values('${tenant}','${driver}','Asignacion antigua',current_date)`);
  await actor(driver);

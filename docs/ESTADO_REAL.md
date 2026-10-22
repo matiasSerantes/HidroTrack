@@ -6,7 +6,7 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras etapa 1 parcial: 22 migraciones instaladas, 35 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin recorridos abiertos al comprobar. Ver [etapa 1 y bloqueo de permisos](ETAPA_1_USUARIOS.md).
+Supabase MCP, actualizado tras etapa 1 parcial: 23 migraciones instaladas, 35 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin recorridos abiertos al comprobar. Ver [etapa 1 y bloqueo de permisos](ETAPA_1_USUARIOS.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ Supabase MCP, actualizado tras etapa 1 parcial: 22 migraciones instaladas, 35 ta
 1. Registro propio y recuperacion conectados sin empresa/licencia/rol administrativo; falta SMTP y prueba real de entrega de correos.
 2. Lista por ID, agregar/quitar y cupos atomicos instalados, separados por empresa. Identidad multiempresa preservada. Falta validacion publica completa.
 3. Invitacion de reparto con remitente y nombre, Aceptar/Rechazar por su destinatario. Solo aceptar habilita datos. No responder/rechazar mantiene perfil basico. Revocar/cerrar quita acceso. Contrato de invitaciones aun no instalado.
-4. Revisar RLS/RPC de inventario, cartera, cobros, ubicacion y promociones para exigir aceptacion vigente, no solo asignacion. El helper actual inventory_trip_access aun no exige aceptacion: no habilitar rutas reales hasta corregir todos los caminos. Bloqueo temporal de rama driver propuesto pero rechazado por revision automatica; requiere autorizacion y permanece sin aplicar en supabase/pending.
+4. Revisar RLS/RPC de inventario, cartera, cobros, ubicacion y promociones para exigir aceptacion vigente, no solo asignacion. El helper actual inventory_trip_access aun no exige aceptacion: no habilitar rutas reales hasta corregir todos los caminos. Bloqueo temporal de rama driver aplicado tras autorizacion explicita: asistentes conservan acceso basico hasta completar etapa 2.
 5. Foto con almacenamiento privado y permisos; recuperacion de cuenta y autenticador real. Cambio de clave personal ya tiene formulario Auth, con confirmacion y manejo de reautenticacion, pero no se probaron claves reales para no alterarlas.
 6. Planes basico/intermedio/superior instalados con cupos 1/3/ilimitado y edicion administrativa. Licencias existentes conservadas como custom; altas administrativas conservan cupo personalizado hasta editar plan. Gestion comercial/cobro de licencias pendiente.
 
@@ -52,4 +52,4 @@ Varias tablas/funciones base ya existen; estos puntos son extensiones e integrac
 
 Optimizacion de orden de ruta/tiempo/distancia pospuesta por el usuario. Abrir otra app ya existe en demo y para un destino de planilla real; no equivale a recorrido optimizado ni a mapa operativo real del chofer.
 
-En la revision inicial no se aplicaron migraciones. En el avance posterior se instalo assistant_links y se corrigieron destinos Auth. No se alteraron cantidades, contrasenas ni vinculos de usuarios para comprobarlo. Ver ETAPA_1_USUARIOS.md para la propuesta de permisos rechazada y no aplicada.
+En la revision inicial no se aplicaron migraciones. En el avance posterior se instalo assistant_links y se corrigieron destinos Auth. No se alteraron cantidades, contrasenas ni vinculos de usuarios para comprobarlo. Ver ETAPA_1_USUARIOS.md para el bloqueo temporal autorizado e instalado.

@@ -6,7 +6,7 @@ Referencia del punto de partida: [Estado real](ESTADO_REAL.md). La base ya tiene
 
 ## 1. Identidad del asistente y lista de choferes
 
-Avance 22/10: codigo y contratos principales instalados; etapa aun abierta por permisos, SMTP y validacion. Ver [detalle y bloqueo concreto](ETAPA_1_USUARIOS.md).
+Avance 22/10: codigo y contratos principales instalados; bloqueo temporal autorizado e instalado; etapa aun abierta por SMTP y validacion. Ver [detalle y bloqueo concreto](ETAPA_1_USUARIOS.md).
 
 - Registro propio verificado y recuperacion de cuenta. Mantener nombre, ID estable y cambio de clave ya conectados.
 - Vincular/desvincular por ID desde el jefe, sin recrear cuentas; un asistente puede trabajar con varios jefes.
@@ -88,3 +88,5 @@ Optimizacion automatica de ruta corta/tiempos/distancias. Mantener apertura en a
 ## Regla para continuar desde otra PC
 
 Empezar por la primera etapa pendiente. Antes de cada cambio, registrar la idea; al terminar, actualizar estado, verificar, hacer commit y push. Antes de una migracion real, detallar que cambia, su impacto y la autorizacion aplicable. Este plan no modifica Supabase ni autoriza por si solo operaciones remotas.
+
+Actualizacion 22/10: bloqueo temporal autorizado explicitamente e instalado como 20261022130128_assistant_waiting_access.sql; 23 migraciones, 35 tablas con RLS. Referencias anteriores al SQL pendiente son historicas. SMTP a cargo del usuario, aun sin validar.

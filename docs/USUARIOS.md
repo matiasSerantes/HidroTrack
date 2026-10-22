@@ -53,3 +53,5 @@ IMPORTANTE: lectura de servidor actual aun habilita repartos por asignacion sin 
 # Avance 22/10/2026: etapa 1
 
 Registro y recuperacion Auth, lista de asistentes del jefe por ID y nombres de jefes del asistente conectados. Migracion de vinculos/cupos aplicada, sin modificar limites existentes. Etapa incompleta: SMTP, permiso de espera de servidor y validacion publica pendientes. Ver [detalle vigente](ETAPA_1_USUARIOS.md), que actualiza los pendientes historicos de este archivo. No confundir pantalla basica con aislamiento de contratos antiguos por asignacion.
+
+Actualizacion 22/10: bloqueo temporal autorizado explicitamente e instalado como 20261022130128_assistant_waiting_access.sql; 23 migraciones, 35 tablas con RLS. Referencias anteriores al SQL pendiente son historicas. SMTP a cargo del usuario, aun sin validar.
