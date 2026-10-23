@@ -493,3 +493,8 @@ Verificacion de solo lectura: smtp.gmail.com, puerto 587, nombre HidroTrack; rem
 ## 2026-10-22 - Recepcion de recuperacion confirmada
 
 Usuario aporta captura del correo de recuperacion recibido en Recibidos, con remitente HidroTrack. Envio y recepcion SMTP confirmados por evidencia del usuario; asunto y plantilla aun en ingles. Falta verificar apertura del enlace, cambio y nuevo ingreso. No se modificaron claves ni se copio el enlace/token de recuperacion a Git.
+## 2026-10-22 - Recuperacion con marca y entrada automatica
+
+Usuario confirma guardar nueva clave pero pantalla queda sin transicion clara; solicita logo y entrar automaticamente a su cuenta al confirmar guardado. Mejorar pantalla real con marca existente de gotas, celestes y tarjeta responsive. Solo navegar tras updateUser exitoso e identidad coincidente; errores mantienen formulario. No cambiar claves para probar. Prueba general sigue pospuesta; comprobar este flujo dirigido.
+
+Resultado recuperacion: marca/celestes y entrada automatica implementadas. Cinco comprobaciones de acceso aprobadas, incluyendo espera de confirmacion y error sin navegacion; build correcto. No se cambiaron claves reales. Sin navegador conectado para QA visual; publicacion/manual movil-PC pendientes. Usuario pide agilizar: continuar siguientes circuitos con controles minimos y mantener suite general al final.

@@ -56,3 +56,7 @@ Registro y recuperacion Auth, lista de asistentes del jefe por ID y nombres de j
 
 Actualizacion 22/10: bloqueo temporal autorizado explicitamente e instalado como 20261022130128_assistant_waiting_access.sql; 23 migraciones, 35 tablas con RLS. Referencias anteriores al SQL pendiente son historicas. SMTP a cargo del usuario, aun sin validar.
 Actualizacion etapa 2 (22/10): invitaciones reales aceptables/rechazables solo por destinatario, revocacion del jefe y resumen limitado instalado. Driver operativo sigue bloqueado; no cambiar globalmente has_role al continuar. Ver [contrato y limites](ETAPA_2_INVITACIONES.md).
+
+## 2026-10-22 - Recuperacion de acceso
+
+Pantalla real con marca de gotas de HidroTrack, tarjeta celeste responsive y boton Guardar y entrar a mi cuenta. Solo tras confirmacion Auth e identidad coincidente entra automaticamente al panel y limpia auth=recovery de la URL; sin paso manual adicional. Si falla, permanece en recuperacion y permite reintentar. Sin cambios de claves reales para probar. Plantilla del correo aun en ingles: esta mejora corresponde a la pagina web.

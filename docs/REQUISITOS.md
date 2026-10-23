@@ -278,3 +278,7 @@ Demo: nuevos repartos para asistentes crean invitacion pendiente; ejemplos histo
 ## 21/10 - Avance de perfil real, mapa optimizado pospuesto
 
 Optimizacion de calles/orden queda para despues por indicacion del usuario. Cuenta real de asistente: pantalla de datos propios, ID copiable basado en identidad estable, nombre conectado a user_profiles y contrasena mediante Auth; sin consultas de cartera/ruta/stock. Sin vinculo conserva acceso personal, no se autoconcede rol o licencia. Foto y alta/vinculo por ID reales pendientes. Invitaciones de demo no autorizan todavia datos de servidor: antes de conectarlas, cambiar permisos de lectura/accion para exigir aceptacion vigente y revocar tras cierre.
+
+## 2026-10-22 - Recuperacion de acceso
+
+Pantalla real con marca de gotas de HidroTrack, tarjeta celeste responsive y boton Guardar y entrar a mi cuenta. Solo tras confirmacion Auth e identidad coincidente entra automaticamente al panel y limpia auth=recovery de la URL; sin paso manual adicional. Si falla, permanece en recuperacion y permite reintentar. Sin cambios de claves reales para probar. Plantilla del correo aun en ingles: esta mejora corresponde a la pagina web.

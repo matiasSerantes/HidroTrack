@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import { Droplets, ArrowRight, ShieldCheck } from 'lucide-react';
+import './AccountRecovery.css';
 
 export function AccountAccess({client,onSession}:{client:SupabaseClient|null;onSession:(session:Session|null)=>void}){
  const [mode,setMode]=useState<'login'|'signup'|'reset'>('login'),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
@@ -49,9 +51,9 @@ export function AccountRecovery({client,onDone}:{client:SupabaseClient;onDone:()
   try{
    const identity=await client.auth.getUser();if(identity.error||!identity.data.user)throw new Error();
    const r=await client.auth.updateUser({password});if(r.error||r.data.user?.id!==identity.data.user.id)throw new Error();
-   form.reset();setMessage('Contraseña actualizada. Ya podés continuar a tu cuenta.');
+   form.reset();onDone();
   }catch{form.reset();setMessage('No pudimos confirmar el cambio. Si el enlace venció, solicitá otro desde el ingreso.');}
   finally{setBusy(false);}
  }
- return <div className="login"><section className="login-form"><h1>Elegí tu nueva contraseña</h1><form onSubmit={submit}><label>Nueva contraseña<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" disabled={busy}/></label><label>Repetir contraseña<input name="confirmation" type="password" required minLength={12} maxLength={128} autoComplete="new-password" disabled={busy}/></label><button className="primary wide" disabled={busy}>Guardar nueva contraseña</button></form>{message&&<p role="status">{message}</p>}<button className="secondary wide" disabled={busy} onClick={onDone}>Continuar a mi cuenta</button></section></div>;
+ return <div className="account-recovery"><main className="recovery-card"><div className="recovery-brand"><span aria-hidden="true"><Droplets size={30}/></span><div>HidroTrack<small>Tu reparto, en buenas manos.</small></div></div><div className="recovery-kicker"><ShieldCheck size={16} aria-hidden="true"/> Recuperá tu acceso</div><h1>Elegí tu nueva contraseña</h1><p className="recovery-intro">Guardala y te llevamos directamente a tu cuenta.</p><form onSubmit={submit} aria-busy={busy}><label>Nueva contraseña<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" aria-describedby="recovery-password-help" disabled={busy}/></label><small id="recovery-password-help">Usá entre 12 y 128 caracteres.</small><label>Repetir contraseña<input name="confirmation" type="password" required minLength={12} maxLength={128} autoComplete="new-password" disabled={busy}/></label>{message&&<p role="alert" className="recovery-error">{message}</p>}<button className="recovery-submit" disabled={busy}>{busy?'Guardando tu contraseña…':'Guardar y entrar a mi cuenta'}<ArrowRight size={18} aria-hidden="true"/></button>{busy&&<p role="status" className="recovery-help">Confirmando el cambio…</p>}</form></main></div>;
 }
