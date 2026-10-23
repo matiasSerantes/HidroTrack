@@ -27,6 +27,8 @@ Cierre: pruebas de aceptar, rechazar, no responder, revocar y cerrar; otra cuent
 
 ## 3. Clientes, inventario y preparacion
 
+Avance 22/10 parcial: dias de visita y cantidades habituales conectados en planilla, fecha de alta visible. Compilacion comprobada; guardado manual/real y demas puntos de etapa pendientes.
+
 - Completar dias de visita, cantidades habituales, ubicacion y solicitud de visita extraordinaria.
 - Verificar stock real disponible, llenos/vacios, equipos con clientes y roturas con fecha/responsable.
 - Completar reparacion/retiro y cambio atomico de dispenser, conservando el historial y las condiciones del alquiler.

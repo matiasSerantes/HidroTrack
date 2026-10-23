@@ -12,7 +12,7 @@ Supabase MCP, actualizado tras avance de etapa 2: 24 migraciones instaladas, 37 
 | --- | --- | --- |
 | Ingreso, perfiles y roles | Auth/perfiles/membresias instalados | Login conectado; administrador y jefe conectados |
 | Perfil personal del asistente | Reutiliza perfil propio y Auth existentes | Nombre, ID copiable y cambio de clave conectados en este avance; validacion con mocks, sin cambiar claves reales |
-| Clientes y ubicacion | Instalada | Alta/edicion/planilla y punto de mapa conectados; dias/habitos y pedidos extraordinarios pendientes |
+| Clientes y ubicacion | Instalada | Alta/edicion/planilla y punto de mapa conectados; dias/habitos conectados; pedidos extraordinarios pendientes |
 | Catalogo, stock y dispenser | Instalada, con libro auditado | Alta con stock, movimientos, asignaciones y devoluciones conectados; cambio atomico de equipos/reparacion completo pendiente |
 | Promociones | Instalada, incluye permiso y aviso al jefe | Jefe conectado; oferta del asistente pendiente de su circuito real |
 | Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe parcial; pantalla completa del chofer pendiente |
@@ -59,3 +59,5 @@ Actualizacion SMTP 22/10: el usuario configuro Gmail. Consulta de lectura confir
 Evidencia posterior del usuario (22/10): correo de recuperacion recibido en Recibidos desde HidroTrack. Envio/recepcion confirmados; enlace, cambio de clave y nuevo ingreso pendientes. Plantilla actual en ingles.
 
 Recuperacion 22/10: usuario confirma guardado de nueva clave y entrada manual posterior. Se mejora pantalla real con marca/celestes y entrada automatica solo al confirmar Auth. Prueba final del nuevo diseno publicado pendiente.
+
+Etapa 3 parcial (22/10): planilla con dias y cantidades habituales conectadas a tablas existentes y fecha de alta visible. Sin cambio de stock ni nuevas migraciones. Carga recomendada, visitas extraordinarias y comprobacion real/manual pendientes.

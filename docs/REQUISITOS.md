@@ -282,3 +282,7 @@ Optimizacion de calles/orden queda para despues por indicacion del usuario. Cuen
 ## 2026-10-22 - Recuperacion de acceso
 
 Pantalla real con marca de gotas de HidroTrack, tarjeta celeste responsive y boton Guardar y entrar a mi cuenta. Solo tras confirmacion Auth e identidad coincidente entra automaticamente al panel y limpia auth=recovery de la URL; sin paso manual adicional. Si falla, permanece en recuperacion y permite reintentar. Sin cambios de claves reales para probar. Plantilla del correo aun en ingles: esta mejora corresponde a la pagina web.
+
+## Etapa 3 parcial - 22/10
+
+Planilla real: fecha de alta de solo lectura, dias habituales por seleccion inmediata y cantidad habitual por producto guardada individualmente. Cero elimina esa preferencia; no altera envases, stock ni ventas. Datos de preparacion, no pedido o entrega confirmado. Guardado manual real pendiente de validar.
