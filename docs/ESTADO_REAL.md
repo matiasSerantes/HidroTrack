@@ -6,7 +6,7 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras avance de etapa 3: 27 migraciones instaladas, 42 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
+Supabase MCP, actualizado tras avance de etapa 3: 28 migraciones instaladas, 42 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Supabase MCP, actualizado tras avance de etapa 3: 27 migraciones instaladas, 42 
 | Clientes y ubicacion | Instalada | Alta/edicion/planilla y punto de mapa conectados; dias/habitos conectados; pedidos extraordinarios conectados |
 | Catalogo, stock y dispenser | Instalada, con libro auditado | Alta con stock, movimientos, asignaciones y devoluciones conectados; cambio atomico por modelo conectado; equipos por serie y reparacion pendientes |
 | Promociones | Instalada, incluye permiso y aviso al jefe | Jefe conectado; oferta del asistente pendiente de su circuito real |
-| Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe parcial; pantalla completa del chofer pendiente |
+| Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe conectada; chofer abre mapa/paradas/stock aceptados; entregas y cobros pendientes |
 | Entregas, cobros y deuda | Operaciones y reglas instaladas | Flujo operativo y aprobaciones del jefe pendientes de conectar |
 | Alquileres y futura baja | Contratos instalados | Facturacion/cobro operativo, recuperacion y aprobacion completas pendientes |
 | Rendicion y PDF | Cierre/conciliacion instalados | Circuito real y PDF autenticado pendientes |
@@ -83,3 +83,13 @@ En Catalogo, Configuracion del costo de llenado permite activar el control y sel
 Repartos muestra las ultimas diez cargas con detalle historico. Cambiar nombre, preferencias o costos despues no altera ese registro. Las cargas anteriores o hechas mediante contratos antiguos no se reconstruyen: pueden existir sin este detalle. Costo desactivado o producto sin costo no significa ganancia conocida; el total solo incluye llenado configurado y excluye otros gastos. Graficos y resultado real del reparto siguen pendientes del circuito de ventas/cobros.
 
 Verificacion: 30 contratos/permisos, 2 controles de configuracion/historial y 4 de sugerencia/preview aprobados (36 en total); compilacion correcta. Suite general y QA visual/publicacion movil-PC pendientes. Siguiente paso: circuito operativo real del asistente con permisos por reparto aceptado, entrega/devolucion y cobro; conservar pendientes de equipos por serie y reparacion.
+
+## Apertura real del recorrido del asistente - 24/10/2026
+
+Migracion `20261024184611_assistant_trip_stock.sql` aplicada por MCP. Estado: 28 migraciones y 42 tablas publicas con RLS. Extiende solo assistant_open_trip: lectura de clientes activos, posiciones, estados de parada y stock agregado del camion del reparto aceptado vigente. No devuelve deposito, otros camiones, precios/costos ni cartera general. No se habilita helper global driver ni escrituras operativas. Revocar, cerrar o suspender licencia impide consultar; lectura anonima bloqueada. Sin cambios de datos comerciales, cuentas o posiciones reales para comprobar.
+
+Pantalla real del asistente: Abrir reparto, stock del camion, contador de entregas y selector de parada; mapa de pines y navegacion externa por destino o recorrido pendiente. GPS real solo por boton, con precision y manejo de error, sin compartirlo con el jefe en este avance. No hay deteccion automatica de llegada ni optimizacion de rutas. El mapa se carga al abrirlo.
+
+Retoma reparto/parada guardando solo IDs por cuenta en navegador. No guarda nombres, direcciones, existencias ni coordenadas; al abrir consulta y verifica servidor. Error de lectura oculta la informacion, revocacion elimina el puntero al comprobar invitaciones. Los datos en pantalla se actualizan cada 30 segundos con pagina visible y al recuperar foco; no es una suscripcion en tiempo real ni modo offline.
+
+Verificacion: 31 controles de contratos/permisos y 6 de invitaciones/pantalla aprobados (37), compilacion correcta. Prueba visual movil-PC pendiente: Chrome fue detectado, pero Computer Use se detuvo por no poder verificar su URL con suficiente confianza para aplicar la politica. Se retiro el archivo temporal de revision. No se verifico despliegue publico. Siguiente: entrega/devolucion parcial, cobro y deuda mediante operaciones atomicas autorizadas por reparto; carga inicial del asistente y GPS compartido siguen pendientes.

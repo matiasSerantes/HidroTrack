@@ -254,3 +254,20 @@ it('costos y snapshots solo jefe de la empresa sin escritura directa',async()=>{
  await actor(owner);await denied(()=>db.query('update public.inventory_load_snapshots set filling_total=0'),/permission denied/);
  await denied(()=>db.query('select public.owner_set_filling_costs($1,true,$2)',[tenant,JSON.stringify([{product_id:v.product,unit_cost:-1}])]),/Costo o producto/);
 });
+
+it('apertura del asistente incluye solo stock de su camion aceptado sin deposito ni precios',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);
+ const product=crypto.randomUUID(),otherTrip=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Agua camion',100,'unidad',true)",[tenant,product]);
+ const line=q=>JSON.stringify([{product_id:product,quantity:q}]);
+ await db.query("select public.inventory_post($1,$2,'receive',null,null,$3,'')",[tenant,crypto.randomUUID(),line(10)]);
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,line(3)]);
+ const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query("select public.inventory_create_trip($1,$2,$3,'Otro camion',current_date,$4)",[tenant,otherTrip,owner,[customer]]);
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),otherTrip,line(2)]);
+ await actor(driver);const result=(await preview(trip)).rows[0].result;
+ expect(result.stock).toHaveLength(1);expect(result.stock[0]).toMatchObject({product_id:product,loaded:3,ready:3,empties:0});
+ expect(result.stock[0]).not.toHaveProperty('depot_ready');expect(result.stock[0]).not.toHaveProperty('unit_price');
+ expect((await db.query('select * from public.inventory_movements')).rows).toHaveLength(0);
+ await denied(()=>preview(otherTrip),/Reparto no aceptado/);
+});
