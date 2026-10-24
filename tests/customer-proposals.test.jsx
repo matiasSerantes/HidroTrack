@@ -1,0 +1,14 @@
+// @vitest-environment jsdom
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {afterEach,expect,it,vi} from 'vitest';
+import {CustomerProposals} from '../src/features/CustomerProposals';
+afterEach(cleanup);
+it('asistente envia ubicacion con solicitud y reintenta mismo ID sin crear cliente directo',async()=>{
+ let attempts=0;const client={rpc:vi.fn(async(name,args)=>{if(name==='customer_proposal_inbox')return {data:{count:0,items:[]},error:null};return ++attempts===1?{data:null,error:{message:'Respuesta perdida'}}:{data:args.p_id,error:null};})};const onChanged=vi.fn();
+ render(<CustomerProposals client={client} tenantId="a" tripId="t" disabled={false} onLock={()=>{}} onChanged={onChanged}/>);await waitFor(()=>expect(screen.getByRole('button',{name:'Proponer nuevo cliente'}).disabled).toBe(false));fireEvent.click(screen.getByRole('button',{name:'Proponer nuevo cliente'}));fireEvent.change(screen.getByLabelText('Nombre del nuevo cliente'),{target:{value:'Cliente ficticio'}});fireEvent.change(screen.getByLabelText('Dirección del nuevo cliente'),{target:{value:'Calle ficticia 10'}});fireEvent.change(screen.getByLabelText('Latitud'),{target:{value:'-34.6'}});fireEvent.change(screen.getByLabelText('Longitud'),{target:{value:'-58.4'}});fireEvent.click(screen.getByRole('button',{name:'Enviar alta al jefe'}));await screen.findByText('Respuesta perdida');fireEvent.click(screen.getByRole('button',{name:'Reintentar misma solicitud'}));await screen.findByText(/Solicitud enviada al jefe/);
+ const commands=client.rpc.mock.calls.filter(([n])=>n==='assistant_propose_customer').map(([,a])=>a);expect(commands).toHaveLength(2);expect(commands[0]).toEqual(commands[1]);expect(commands[0]).toMatchObject({p_latitude:-34.6,p_longitude:-58.4,p_trip:'t'});expect(onChanged).toHaveBeenCalledTimes(1);
+});
+it('jefe rechaza con motivo sin crear cliente ni exigir reparto destino',async()=>{
+ let pending=true;const client={rpc:vi.fn(async(name,args)=>{if(name==='customer_proposal_inbox')return {data:{count:pending?1:0,items:pending?[{id:'proposal',trip_id:'old',name:'Cliente ficticio',address:'Calle 10',phone:'',locality:'',latitude:null,longitude:null,trip:'Ruta cerrada',status:'pending'}]:[]},error:null};pending=false;return {data:args.p_proposal,error:null};})};
+ render(<CustomerProposals client={client} tenantId="a" owner trips={[]} disabled={false} onLock={()=>{}} onChanged={()=>{}}/>);fireEvent.click(await screen.findByRole('button',{name:'Rechazar alta'}));await screen.findByText('Escribí el motivo del rechazo.');fireEvent.change(screen.getByLabelText('Nota o motivo del rechazo'),{target:{value:'Ya existe'}});fireEvent.click(screen.getByRole('button',{name:'Rechazar alta'}));await screen.findByText(/Solicitud rechazada con motivo/);expect(client.rpc.mock.calls.find(([n])=>n==='owner_review_customer_proposal')[1]).toMatchObject({p_approve:false,p_trip:null,p_note:'Ya existe'});
+});

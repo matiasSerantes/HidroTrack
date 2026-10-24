@@ -403,3 +403,30 @@ it('destino temprano o ya resuelto revierte traslado y mantiene origen pendiente
 it('solo jefe de la empresa lee y resuelve pendientes',async()=>{
  const v=await pendingOwnerFixture();await actor(driver);await denied(()=>db.query('select public.owner_followup_inbox($1)',[tenant]),/Solo el jefe/);await denied(()=>manageFollowup(v),/Solo el jefe/);await actor(otherOwner);await denied(()=>manageFollowup(v),/Solo el jefe/);expect((await db.query('select * from public.followup_resolutions')).rows).toHaveLength(0);
 });
+
+async function customerProposalFixture(){const v=await deliveryFixture();const request=crypto.randomUUID();await db.query("select public.assistant_propose_customer($1,$2,$3,'Nuevo cliente','Direccion nueva','111','Localidad',-34.6,-58.4)",[tenant,request,v.trip]);return {...v,request,decision:crypto.randomUUID(),event:crypto.randomUUID()};}
+async function reviewCustomer(v,{approve=true,trip=v.trip,note='',event=v.event}={}){return db.query('select public.owner_review_customer_proposal($1,$2,$3,$4,$5,$6,$7)',[tenant,v.decision,v.request,event,approve,trip,note]);}
+it('solicitud no crea cliente ni stock hasta aprobar y reintentos no duplican',async()=>{
+ const v=await customerProposalFixture();await db.query("select public.assistant_propose_customer($1,$2,$3,'Nuevo cliente','Direccion nueva','111','Localidad',-34.6,-58.4)",[tenant,v.request,v.trip]);
+ expect((await db.query('select public.customer_proposal_inbox($1,$2) as inbox',[tenant,v.trip])).rows[0].inbox.count).toBe(1);await actor(owner);
+ expect((await db.query('select * from public.customers where id=$1',[v.request])).rows).toHaveLength(0);const before=(await db.query('select count(*) n from public.inventory_operations')).rows[0].n;
+ await reviewCustomer(v);await reviewCustomer(v);
+ expect((await db.query('select * from public.customers where id=$1',[v.request])).rows).toHaveLength(1);expect((await db.query('select * from public.route_stops where customer_id=$1',[v.request])).rows).toHaveLength(1);expect((await db.query('select count(*) n from public.inventory_operations')).rows[0].n).toBe(before);
+ await actor(driver);expect((await preview(v.trip)).rows[0].result.stops.some(s=>s.id===v.request)).toBe(true);await actor(owner);await denied(()=>reviewCustomer(v,{event:crypto.randomUUID()}),/ya resuelta/);
+});
+it('rechazo requiere motivo y no crea cliente ni parada',async()=>{
+ const v=await customerProposalFixture();await actor(owner);await denied(()=>reviewCustomer(v,{approve:false,trip:null}),/motivo invalido/);await reviewCustomer(v,{approve:false,trip:null,note:'Ya es cliente'});await reviewCustomer(v,{approve:false,trip:null,note:'Ya es cliente'});
+ expect((await db.query('select * from public.customers where id=$1',[v.request])).rows).toHaveLength(0);await actor(driver);expect((await db.query('select public.customer_proposal_inbox($1,$2) as inbox',[tenant,v.trip])).rows[0].inbox.items[0]).toMatchObject({status:'rejected',decision_note:'Ya es cliente'});
+});
+it('destino cerrado o cliente duplicado rechaza aprobacion sin alta parcial',async()=>{
+ const v=await customerProposalFixture();await db.exec(`reset role; update public.inventory_trips set status='closed',submitted_at=now(),closed_at=now() where id='${v.trip}'`);await actor(owner);await denied(()=>reviewCustomer(v),/reparto preparado/);expect((await db.query('select * from public.customers where id=$1',[v.request])).rows).toHaveLength(0);
+ const otherTrip=crypto.randomUUID();await db.query("select public.inventory_create_trip($1,$2,$3,'Otro reparto',current_date,$4)",[tenant,otherTrip,owner,[v.customer]]);await db.query("insert into public.customers(tenant_id,name,address) values($1,'Nuevo cliente','Direccion nueva')",[tenant]);await denied(()=>reviewCustomer(v,{trip:otherTrip}),/Ya existe un cliente/);
+ expect((await db.query('select status from public.customer_proposals where id=$1',[v.request])).rows[0].status).toBe('pending');
+});
+it('sin recorrido aceptado ni jefe propio no se puede crear leer o aprobar solicitudes',async()=>{
+ const v=await customerProposalFixture();await actor(second);await denied(()=>db.query('select public.customer_proposal_inbox($1,$2)',[tenant,v.trip]),/no accesibles/);await actor(otherOwner);await denied(()=>reviewCustomer(v),/Solo el jefe/);await actor(driver);await denied(()=>reviewCustomer(v),/Solo el jefe/);
+ await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,v.trip,crypto.randomUUID()]);await actor(driver);await denied(()=>db.query("select public.assistant_propose_customer($1,$2,$3,'X','Y','','')",[tenant,crypto.randomUUID(),v.trip]),/Reparto no aceptado/);
+});
+it('coordenadas incompletas y solicitud pendiente repetida se rechazan',async()=>{
+ const v=await customerProposalFixture();await denied(()=>db.query("select public.assistant_propose_customer($1,$2,$3,'Otro','Otro','','',1,null)",[tenant,crypto.randomUUID(),v.trip]),/Coordenadas invalidas/);await denied(()=>db.query("select public.assistant_propose_customer($1,$2,$3,'Nuevo cliente','Direccion nueva','','')",[tenant,crypto.randomUUID(),v.trip]),/Ya enviaste/);
+});
