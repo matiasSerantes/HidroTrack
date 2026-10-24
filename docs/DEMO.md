@@ -263,3 +263,7 @@ Ingresar con cuenta real de asistente muestra ahora pantalla personal con nombre
 ## Actualizacion 22/10: invitaciones reales
 
 Invitacion/respuesta/revocacion y resumen limitado del recorrido aceptado conectados a Supabase. La demo mantiene sus datos locales y circuito simulado. No confundir el resumen real con entregas/cobros/mapa operativo terminados. Detalle: [etapa 2](ETAPA_2_INVITACIONES.md).
+
+## 24/10 - Carga sugerida conectada
+
+La seccion real Repartos y camion calcula referencia desde cantidades habituales y permite extras/faltantes. La demo mantiene su propia simulacion y no sirve de comprobacion de stock real. Sin snapshot historico separado de sugerencia/extras aun.

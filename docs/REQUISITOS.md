@@ -286,3 +286,7 @@ Pantalla real con marca de gotas de HidroTrack, tarjeta celeste responsive y bot
 ## Etapa 3 parcial - 22/10
 
 Planilla real: fecha de alta de solo lectura, dias habituales por seleccion inmediata y cantidad habitual por producto guardada individualmente. Cero elimina esa preferencia; no altera envases, stock ni ventas. Datos de preparacion, no pedido o entrega confirmado. Guardado manual real pendiente de validar.
+
+## Carga sugerida real - 24/10
+
+La carga sugiere suma de pedidos habituales solo para clientes activos de paradas activas y sin futura baja. No resta envases a devolver. Aplicar referencia es explicito y reemplaza cantidades; luego permite extras o reducciones. Cambiar reparto reinicia cantidades no confirmadas. No inventar pedidos para clientes sin preferencia; advertir faltantes. Carga unica y stock se validan al confirmar por contratos existentes. Falta snapshot historico de referencia/extras.

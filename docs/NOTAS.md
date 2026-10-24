@@ -504,3 +504,9 @@ Continuar y agilizar segun pedido del usuario. Conectar tablas existentes custom
 
 
 Resultado etapa 3 parcial: planilla real con fecha de alta, dias de visita guardados individualmente al tocar y cantidades habituales por producto (cero quita preferencia). Operaciones con tenant_id/customer_id y RLS existentes, sin nuevas migraciones ni consultas/escrituras de stock. Ante respuesta incierta bloquea edicion hasta refrescar. Compilacion verificada; pruebas generales y guardado real/manual pendientes segun prioridad de agilidad. Recomendacion de carga y visita extraordinaria aun pendientes.
+## 2026-10-24 - Carga sugerida real
+
+Retomar tras pull; usuario pide continuar/agilizar. Calcular sugerencia con paradas activas y cantidades habituales de clientes activos sin futura baja. Aplicacion explicita a cantidades del camion, extras y reducciones visibles, sin cambio automatico de stock. Al cambiar reparto descartar cantidades no confirmadas para no cruzarlas. Guardado unico y transaccion de carga existentes; comparacion sugerida no se considera snapshot historico hasta contrato posterior. No nuevas migraciones ni movimientos reales para probar. Suite general sigue pospuesta.
+
+
+Resultado 24/10: carga sugerida real desde paradas/clientes elegibles y cantidades habituales, aplicacion explicita, extras/faltantes visibles y reinicio de cantidades al cambiar reparto. Conteos exactos y paginacion evitan sumar respuestas truncadas. Si no se verifica la referencia, permite carga manual sin inventar cantidades. Flujo de carga unica/relleno existente conservado. 23 comprobaciones dirigidas aprobadas; build correcto. Sin migraciones ni movimientos reales. Comparacion historica sugerido/extras aun sin snapshot propio; cargas reales guardan sus items como antes. Validacion visual/publicacion y suite general pendientes.

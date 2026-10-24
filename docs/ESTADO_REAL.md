@@ -61,3 +61,5 @@ Evidencia posterior del usuario (22/10): correo de recuperacion recibido en Reci
 Recuperacion 22/10: usuario confirma guardado de nueva clave y entrada manual posterior. Se mejora pantalla real con marca/celestes y entrada automatica solo al confirmar Auth. Prueba final del nuevo diseno publicado pendiente.
 
 Etapa 3 parcial (22/10): planilla con dias y cantidades habituales conectadas a tablas existentes y fecha de alta visible. Sin cambio de stock ni nuevas migraciones. Carga recomendada, visitas extraordinarias y comprobacion real/manual pendientes.
+
+Carga sugerida real (24/10): sumar preferencias de clientes activos del reparto sin futura baja; aplicar manualmente y ajustar extras/faltantes antes de la carga unica. Sin nueva migracion ni movimientos de inventario para comprobar. 23 pruebas dirigidas y build correctos. Snapshot historico de sugerido/extras y visitas extraordinarias pendientes.
