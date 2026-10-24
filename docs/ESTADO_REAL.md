@@ -6,7 +6,7 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras avance de etapa 3: 29 migraciones instaladas, 43 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
+Supabase MCP, actualizado tras avance de etapa 3: 30 migraciones instaladas, 44 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
@@ -15,8 +15,8 @@ Supabase MCP, actualizado tras avance de etapa 3: 29 migraciones instaladas, 43 
 | Clientes y ubicacion | Instalada | Alta/edicion/planilla y punto de mapa conectados; dias/habitos conectados; pedidos extraordinarios conectados |
 | Catalogo, stock y dispenser | Instalada, con libro auditado | Alta con stock, movimientos, asignaciones y devoluciones conectados; cambio atomico por modelo conectado; equipos por serie y reparacion pendientes |
 | Promociones | Instalada, incluye permiso y aviso al jefe | Jefe conectado; oferta del asistente pendiente de su circuito real |
-| Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe conectada; chofer abre mapa/paradas/stock aceptados y atiende clientes; ausencias y demas circuito pendientes |
-| Entregas, cobros y deuda | Operaciones y reglas instaladas | Entrega/retorno parcial/cobro de venta del asistente y aprobacion de deuda conectados; cobros anteriores y demas circuito pendientes |
+| Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe conectada; chofer abre mapa/paradas/stock aceptados, atiende y registra ausencias; demas circuito pendiente |
+| Entregas, cobros y deuda | Operaciones y reglas instaladas | Entrega/retorno parcial/cobros de venta y deuda anterior, aprobacion de deuda y ausencias conectados; demas circuito pendiente |
 | Alquileres y futura baja | Contratos instalados | Facturacion/cobro operativo, recuperacion y aprobacion completas pendientes |
 | Rendicion y PDF | Cierre/conciliacion instalados | Circuito real y PDF autenticado pendientes |
 
@@ -105,3 +105,15 @@ Recibo e ID estable evitan duplicar entrega/pago. Ante respuesta desconocida se 
 En Repartos y camion del jefe: Deudas para aprobar, primeras 20 pendientes y cantidad total; aprobar/rechazar con nota usa commerce_review_credit existente. Al resolver aparecen las siguientes. Rechazar no borra cargo ni carga la deuda al asistente. Lista se actualiza cada 30 segundos visible/al foco; avisos guardados en base, sin push del sistema ni correos. Transferencia declarada no verifica acreditacion bancaria.
 
 Verificacion: 38 contratos/permisos, 3 pruebas de formulario/deuda y 7 de invitaciones/continuidad aprobados (48 en total). Compilacion correcta. Suite general, QA visual movil-PC y despliegue publico pendientes. Siguiente: ausencia y reprogramacion, cobros de saldos anteriores, alta de clientes en recorrido; aun pendientes carga inicial del asistente, dispenser operativo, seguimiento compartido, rendicion/PDF y circuito completo entre dispositivos. Pedido extraordinario asignado aun no cambia a estado atendido automaticamente.
+
+## Ausencias y cobros anteriores reales - 24/10/2026
+
+Migracion `20261024190247_assistant_followups_payments.sql` aplicada por MCP: 30 migraciones y 44 tablas publicas con RLS. Nuevas funciones assistant_record_visit, assistant_customer_debts y assistant_collect_debt; assistant_payment_receipts guarda confirmaciones de cobro con lectura del jefe y sin escritura directa. No abre has_role driver ni contratos antiguos. Verificacion remota: anonimo sin acceso, cero recibos de cobro reales; sin operaciones comerciales, cuentas, stock o posiciones reales usados para probar.
+
+En planilla del asistente: No esta / no compro. Ausente permite mas tarde hoy o fecha futura; guarda evento, version y pendiente sin crear venta ni cambiar stock. No compro resuelve parada sin reprogramar. Pendientes de visita se muestran en el recorrido con seleccion rapida. Fecha de hoy se calcula en Buenos Aires. Reintento conserva ID y resultado; version desactualizada pide revisar planilla. La fecha futura no crea otro reparto ni reasigna automaticamente; bandeja global del jefe entre recorridos aun pendiente.
+
+Cobrar saldo pendiente consulta hasta 20 cargos del cliente asignado, con cantidad total y saldo completo; despues de cobrarlos/actualizar aparecen los siguientes. Incluye entregas, alquileres y apertura, tambien deuda rechazada. Seleccion de cargo, importe parcial/total y efectivo/transferencia declarados. Se guarda pago asociado al reparto de cobro, sin nueva venta ni movimiento de stock ni marcar entrega. Si otro pago cambio el saldo se rechaza hasta actualizar; no admite sobrepago. Pago completo resuelve solicitud pending como settled; rechazo historico se conserva aunque luego el saldo quede en cero.
+
+Planilla ya atendida sigue disponible para estos cobros, con otra entrega deshabilitada. Operacion sin respuesta bloquea cambios y permite reintentar mismo ID. Error confirmado obliga a actualizar toda la planilla. Sin datos comerciales en almacenamiento local y sin modo offline/push de pagos.
+
+Verificacion: 46 contratos/permisos y 13 controles UI/continuidad aprobados (59 en total), compilacion correcta. Suite general, QA visual movil-PC y publicacion pendientes. Siguiente: alta de cliente del recorrido con aprobacion del jefe y bandeja global de visitas pendientes; siguen carga inicial del asistente, equipos/promociones, seguimiento compartido y rendicion/PDF. Etapa 4 aun no completa.

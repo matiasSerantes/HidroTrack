@@ -327,3 +327,54 @@ it('revocacion bloqueo o destinatario distinto impiden planilla y escritura incl
 it('idempotencia rechaza cambiar el cobro o la entrega de una operacion confirmada',async()=>{
  const v=await deliveryFixture();await deliverVisit(v);await denied(()=>deliverVisit(v,{paid:200}),/otros datos/);await denied(()=>deliverVisit(v,{q:1,total:100}),/otros datos/);
 });
+
+async function recordAssistantVisit(v,{id=crypto.randomUUID(),version=1,outcome='absent',followup='later_today',offset=0}={}){
+ return (await db.query("select public.assistant_record_visit($1,$2,$3,$4,$5,$6,$7,case when $7::text is null then null else (now() at time zone 'America/Argentina/Buenos_Aires')::date+$8::integer end,'Visita pendiente') as result",[tenant,id,v.trip,v.customer,version,outcome,followup,offset])).rows[0].result;
+}
+async function collectAssistantDebt(v,{id=crypto.randomUUID(),sale=v.id,expected=100,amount=40,method='cash'}={}){return (await db.query("select public.assistant_collect_debt($1,$2,$3,$4,$5,$6,$7,$8,'Cobro anterior') as result",[tenant,id,v.trip,v.customer,sale,expected,amount,method])).rows[0].result;}
+async function customerDebts(v){return (await db.query('select public.assistant_customer_debts($1,$2,$3) as result',[tenant,v.trip,v.customer])).rows[0].result;}
+it('ausencia mas tarde se conserva sin stock ni cargo y permite atender despues con version actualizada',async()=>{
+ const v=await deliveryFixture(),id=crypto.randomUUID();const receipt=await recordAssistantVisit(v,{id});expect(receipt).toMatchObject({id,version:2,outcome:'absent'});expect(await recordAssistantVisit(v,{id})).toEqual(receipt);
+ const trip=(await preview(v.trip)).rows[0].result;expect(trip.stops[0]).toMatchObject({outcome:'absent',followup:'later_today'});expect(trip.stock[0].ready).toBe(5);
+ await denied(()=>recordAssistantVisit(v,{version:1}),/parada cambio/);
+ await deliverVisit(v,{version:2});expect((await preview(v.trip)).rows[0].result.stops[0]).toMatchObject({outcome:'delivered',followup:null,next_date:null});
+});
+it('otro dia requiere fecha futura y no compro cierra sin mover stock ni crear venta',async()=>{
+ const v=await deliveryFixture();await denied(()=>recordAssistantVisit(v,{followup:'date',offset:0}),/otro dia futuro/);
+ await recordAssistantVisit(v,{followup:'date',offset:7});expect((await preview(v.trip)).rows[0].result.stops[0].followup).toBe('date');
+ await recordAssistantVisit(v,{version:2,outcome:'no_purchase',followup:null});await denied(()=>recordAssistantVisit(v,{version:3}),/parada cambio/);
+ await actor(owner);expect((await db.query("select * from public.inventory_operations where kind='delivery'")).rows).toHaveLength(0);expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+});
+it('cobro anterior parcial es idempotente y no genera venta ni movimiento de stock',async()=>{
+ const v=await deliveryFixture();await deliverVisit(v);const before=(await preview(v.trip)).rows[0].result.stock[0];const payment=crypto.randomUUID();
+ const list=await customerDebts(v);expect(list).toMatchObject({count:1,balance:100,items:[{id:v.id,balance:100}]});
+ const result=await collectAssistantDebt(v,{id:payment});expect(result).toMatchObject({id:payment,amount:40,remaining:60});expect(await collectAssistantDebt(v,{id:payment})).toEqual(result);
+ expect((await preview(v.trip)).rows[0].result.stock[0]).toEqual(before);expect((await customerDebts(v)).balance).toBe(60);
+ await actor(owner);expect((await db.query('select * from public.sales')).rows).toHaveLength(1);expect((await db.query('select * from public.payments')).rows).toHaveLength(2);
+ expect((await db.query('select trip_id from public.payments where id=$1',[payment])).rows[0].trip_id).toBe(v.trip);
+});
+it('saldo cambiado y sobrepago se rechazan sin duplicar cobros; pago completo resuelve credito pendiente',async()=>{
+ const v=await deliveryFixture();await deliverVisit(v);await collectAssistantDebt(v);
+ await denied(()=>collectAssistantDebt(v,{expected:100}),/saldo cambio/);await denied(()=>collectAssistantDebt(v,{expected:60,amount:61}),/supera el saldo/);
+ await collectAssistantDebt(v,{expected:60,amount:60,method:'transfer'});expect((await customerDebts(v)).count).toBe(0);
+ await actor(owner);expect((await db.query('select status from public.credit_requests')).rows[0].status).toBe('settled');
+});
+it('deuda rechazada sigue cobrable y no convierte el pago en nueva venta',async()=>{
+ const v=await deliveryFixture();await deliverVisit(v);await actor(owner);await db.query("select public.commerce_review_credit($1,$2,false,'Cobrar')",[tenant,v.id]);await actor(driver);
+ expect((await customerDebts(v)).items[0].credit_status).toBe('rejected');await collectAssistantDebt(v,{amount:100});expect((await customerDebts(v)).balance).toBe(0);
+});
+it('cobra apertura anterior de cliente asignado incluso en futura baja sin entregar productos',async()=>{
+ const v=await deliveryFixture(),sale=crypto.randomUUID();await actor(owner);await db.query("select public.commerce_open_customer_balance($1,$2,$3,250,current_date-1,'Anterior al sistema')",[tenant,sale,v.customer]);
+ await db.query('update public.customers set pending_recovery=true where tenant_id=$1 and id=$2',[tenant,v.customer]);await actor(driver);
+ expect((await customerDebts(v)).items[0]).toMatchObject({kind:'opening',balance:250});await collectAssistantDebt(v,{sale,expected:250,amount:250});
+ expect((await preview(v.trip)).rows[0].result.stock[0].ready).toBe(5);expect((await customerDebts(v)).count).toBe(0);
+});
+it('revocacion y otra cuenta bloquean visitas cargos y cobros incluso reintentos',async()=>{
+ const v=await deliveryFixture(),visit=crypto.randomUUID();await recordAssistantVisit(v,{id:visit});await actor(second);
+ await denied(()=>recordAssistantVisit(v),/Reparto no aceptado/);await denied(()=>customerDebts(v),/Reparto no aceptado/);await denied(()=>collectAssistantDebt(v),/Reparto no aceptado/);
+ await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,v.trip,crypto.randomUUID()]);await actor(driver);await denied(()=>recordAssistantVisit(v,{id:visit}),/Reparto no aceptado/);
+});
+it('cobro no permite cargo de otro cliente y reintento no admite otro importe',async()=>{
+ const v=await deliveryFixture();await deliverVisit(v);const id=crypto.randomUUID();await collectAssistantDebt(v,{id});await denied(()=>collectAssistantDebt(v,{id,amount:50}),/otros datos/);
+ await denied(()=>collectAssistantDebt(v,{sale:crypto.randomUUID()}),/Cargo no accesible/);
+});
