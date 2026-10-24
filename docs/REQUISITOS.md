@@ -294,3 +294,11 @@ La carga sugiere suma de pedidos habituales solo para clientes activos de parada
 ## Visita extraordinaria real - 24/10
 
 Jefe registra fecha/productos/cantidades desde planilla; queda pendiente de reparto. Asignacion a reparto planned/active de la misma fecha agrega/reactiva cliente sin duplicar. Cliente inactivo/futura baja bloqueado. Pedido sustituye habitual en sugerencia para esa visita, no se suma por duplicado. Cancelar conserva historial, parada y carga. Un pedido no cancelado por cliente/fecha; entrega y cobro siguen en etapa 4.
+
+## Cambio real de dispenser por modelo - 24/10/2026
+
+Migracion `20261024140721_dispenser_exchange.sql` aplicada por MCP. Estado comprobado: 26 migraciones y 40 tablas publicas con RLS. Desde la planilla del cliente, Cambiar dispenser registra retiro y reemplazo en una transaccion, desde deposito o camion activo autorizado. Conserva contrato, modalidad, cuota y fecha inicial del alquiler. El retirado bueno vuelve al origen; roto significa baja definitiva del inventario activo, con fecha y responsable. No representa reparacion recuperable.
+
+Reintentos idempotentes, disponibilidad previa al retiro y fechas coherentes; fallo revierte ambos movimientos. Historial de cambios visible al jefe. Equipos individualizados por serie y reparaciones siguen pendientes. Rama operativa del asistente permanece bloqueada hasta etapa 4. Sin cambios con stock real para probar ni ajustes de cuentas/claves.
+
+Verificacion: 25 comprobaciones dirigidas de contratos y permisos y 2 del formulario aprobadas; compilacion correcta. MCP confirma cero cambios reales de dispenser, sin escritura directa ni ejecucion anonima. Suite general, prueba visual movil/PC y despliegue publico pendientes.

@@ -6,14 +6,14 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras avance de etapa 3: 25 migraciones instaladas, 39 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
+Supabase MCP, actualizado tras avance de etapa 3: 26 migraciones instaladas, 40 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
 | Ingreso, perfiles y roles | Auth/perfiles/membresias instalados | Login conectado; administrador y jefe conectados |
 | Perfil personal del asistente | Reutiliza perfil propio y Auth existentes | Nombre, ID copiable y cambio de clave conectados en este avance; validacion con mocks, sin cambiar claves reales |
 | Clientes y ubicacion | Instalada | Alta/edicion/planilla y punto de mapa conectados; dias/habitos conectados; pedidos extraordinarios conectados |
-| Catalogo, stock y dispenser | Instalada, con libro auditado | Alta con stock, movimientos, asignaciones y devoluciones conectados; cambio atomico de equipos/reparacion completo pendiente |
+| Catalogo, stock y dispenser | Instalada, con libro auditado | Alta con stock, movimientos, asignaciones y devoluciones conectados; cambio atomico por modelo conectado; equipos por serie y reparacion pendientes |
 | Promociones | Instalada, incluye permiso y aviso al jefe | Jefe conectado; oferta del asistente pendiente de su circuito real |
 | Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe parcial; pantalla completa del chofer pendiente |
 | Entregas, cobros y deuda | Operaciones y reglas instaladas | Flujo operativo y aprobaciones del jefe pendientes de conectar |
@@ -34,7 +34,7 @@ El ID mostrado en cuenta real usa HT seguido de la identidad UUID estable. No es
 ## Que falta de base de datos adicional
 
 - Vinculos e invitaciones auditados/idempotentes instalados; resumen limitado autorizado. Falta revision/conexion de permisos para cada operacion del chofer en etapa 4.
-- Preferencias/cantidades habituales y dias tienen tablas base, pero falta guardar/editar desde la web con contrato validado. Extender para pedidos de visita extraordinaria, asignacion por fecha y cambios atomicos de dispenser.
+- Preferencias, dias, visitas extraordinarias y cambio atomico por modelo conectados; falta completar operacion del chofer y equipos individualizados.
 - Snapshot de carga recomendada y extras, costo historico SOLO de unidades rellenadas al cargar, y consultas de resultado mensual sin inventar ganancia cuando faltan costos.
 - Reparacion/baja de unidades danadas pendientes y contrato completo de sustitucion de equipos, sin devolver uno y asignar otro como dos operaciones independientes del navegador.
 - PDF real desde cierre historico con permisos y versionado; avisos en vivo y seguimiento autorizado entre dispositivos.
@@ -65,3 +65,11 @@ Etapa 3 parcial (22/10): planilla con dias y cantidades habituales conectadas a 
 Carga sugerida real (24/10): sumar preferencias de clientes activos del reparto sin futura baja; aplicar manualmente y ajustar extras/faltantes antes de la carga unica. Sin nueva migracion ni movimientos de inventario para comprobar. 23 pruebas dirigidas y build correctos. Snapshot historico de sugerido/extras y visitas extraordinarias pendientes.
 
 Visitas extraordinarias (24/10): conectadas con pendientes, asignacion por fecha y cancelacion auditada. Sustituyen habitual en sugerencia de carga; no registran entrega ni cobro. Ver ETAPA_3_PREPARACION.md para pendientes de etapa 3 y operacion del chofer.
+
+## Cambio real de dispenser por modelo - 24/10/2026
+
+Migracion `20261024140721_dispenser_exchange.sql` aplicada por MCP. Estado comprobado: 26 migraciones y 40 tablas publicas con RLS. Desde la planilla del cliente, Cambiar dispenser registra retiro y reemplazo en una transaccion, desde deposito o camion activo autorizado. Conserva contrato, modalidad, cuota y fecha inicial del alquiler. El retirado bueno vuelve al origen; roto significa baja definitiva del inventario activo, con fecha y responsable. No representa reparacion recuperable.
+
+Reintentos idempotentes, disponibilidad previa al retiro y fechas coherentes; fallo revierte ambos movimientos. Historial de cambios visible al jefe. Equipos individualizados por serie y reparaciones siguen pendientes. Rama operativa del asistente permanece bloqueada hasta etapa 4. Sin cambios con stock real para probar ni ajustes de cuentas/claves.
+
+Verificacion: 25 comprobaciones dirigidas de contratos y permisos y 2 del formulario aprobadas; compilacion correcta. MCP confirma cero cambios reales de dispenser, sin escritura directa ni ejecucion anonima. Suite general, prueba visual movil/PC y despliegue publico pendientes.

@@ -130,3 +130,11 @@ Actualizacion etapa 2 (22/10): migracion 20261022131448_trip_invitations aplicad
 ## 24/10 - Solicitudes de visita
 
 Aplicada 20261024134653_extra_visits.sql: solicitudes y eventos con RLS de jefe, RPC auditados e idempotentes, asignacion mediante route_edit_stop sin entrega/venta. 25 migraciones, 39 tablas con RLS. Sin abrir permisos operativos generales de driver. Detalle en ETAPA_3_PREPARACION.md.
+
+## Cambio real de dispenser por modelo - 24/10/2026
+
+Migracion `20261024140721_dispenser_exchange.sql` aplicada por MCP. Estado comprobado: 26 migraciones y 40 tablas publicas con RLS. Desde la planilla del cliente, Cambiar dispenser registra retiro y reemplazo en una transaccion, desde deposito o camion activo autorizado. Conserva contrato, modalidad, cuota y fecha inicial del alquiler. El retirado bueno vuelve al origen; roto significa baja definitiva del inventario activo, con fecha y responsable. No representa reparacion recuperable.
+
+Reintentos idempotentes, disponibilidad previa al retiro y fechas coherentes; fallo revierte ambos movimientos. Historial de cambios visible al jefe. Equipos individualizados por serie y reparaciones siguen pendientes. Rama operativa del asistente permanece bloqueada hasta etapa 4. Sin cambios con stock real para probar ni ajustes de cuentas/claves.
+
+Verificacion: 25 comprobaciones dirigidas de contratos y permisos y 2 del formulario aprobadas; compilacion correcta. MCP confirma cero cambios reales de dispenser, sin escritura directa ni ejecucion anonima. Suite general, prueba visual movil/PC y despliegue publico pendientes.

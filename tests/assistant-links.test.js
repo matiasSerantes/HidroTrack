@@ -21,6 +21,18 @@ async function extraVisit(customer){
  const items=JSON.stringify([{product_id:product,quantity:2}]);
  await db.query("select public.owner_request_extra_visit($1,$2,$3,current_date,$4,'Llamo antes de la visita')",[tenant,id,customerId,items]);return {id,customer:customerId,items};
 }
+async function dispenserContract(){
+ await actor(owner);const old=crypto.randomUUID(),replacement=crypto.randomUUID(),assignment=crypto.randomUUID(),customer=(await db.query('select id from public.customers where tenant_id=$1 order by name limit 1',[tenant])).rows[0].id;
+ for(const product of [old,replacement]){
+  await db.query("select public.catalog_create_item($1,$2,'Dispenser',0,'unidad',false,'dispenser')",[tenant,product]);
+  await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date-10)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:1}])]);
+ }
+ await db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'rental',1000,current_date-10,null)",[tenant,assignment,old,customer]);
+ return {old,replacement,assignment,customer};
+}
+async function exchange(v,{id=crypto.randomUUID(),send=crypto.randomUUID(),state='good',trip=null}={}){
+ await db.query("select public.inventory_exchange_dispenser($1,$2,$3,$4,$5,case when $8::uuid is not null then current_date else current_date-1 end,$6,$7,'Cambio de prueba',$8)",[tenant,id,send,v.assignment,v.replacement,state,state==='broken'?'customer':null,trip]);return {id,send};
+}
 beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
  create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
@@ -154,4 +166,39 @@ it('rechaza fecha distinta sin agregar paradas ni cambiar la solicitud',async()=
  const trip=await assigned(),v=await extraVisit();await db.exec('reset role');await db.query("update public.inventory_trips set service_date=current_date+1 where id=$1",[trip]);await actor(owner);
  await denied(()=>db.query("select public.owner_manage_extra_visit($1,$2,$3,'assigned',$4)",[tenant,crypto.randomUUID(),v.id,trip]),/fecha solicitada/);
  expect((await db.query('select * from public.extra_visit_requests')).rows[0].state).toBe('pending');
+});
+it('cambio mantiene contrato y alquiler, con reintento sin duplicados',async()=>{
+ const v=await dispenserContract(),before=(await db.query('select * from public.dispenser_assignments')).rows[0];
+ await db.query('select public.commerce_charge_rental($1,$2,$3,null,0,current_date-9)',[tenant,crypto.randomUUID(),v.assignment]);
+ const ids=await exchange(v);await exchange(v,ids);
+ const after=(await db.query('select * from public.dispenser_assignments')).rows[0];
+ expect(after.id).toBe(before.id);expect(after.product_id).toBe(v.replacement);expect(after.monthly).toBe(before.monthly);expect(after.occurred_on).toEqual(before.occurred_on);expect(after.status).toBe('active');
+ expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(1);
+ expect((await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.old])).rows[0].depot_ready).toBe(1);
+ await denied(()=>db.query('select public.commerce_charge_rental($1,$2,$3,null,0,current_date)',[tenant,crypto.randomUUID(),v.assignment]),/periodo|período/);
+});
+it('no usa la unidad retirada como su propio reemplazo ni deja retiro parcial',async()=>{
+ const v=await dispenserContract();const before=(await db.query('select count(*) as n from public.inventory_operations')).rows[0].n;
+ await denied(()=>exchange({...v,replacement:v.old}),/No hay reemplazo/);
+ expect((await db.query('select count(*) as n from public.inventory_operations')).rows[0].n).toBe(before);
+ expect((await db.query('select * from public.dispenser_assignments')).rows[0].product_id).toBe(v.old);
+});
+it('retirado roto sale del inventario activo y conserva responsable e historial',async()=>{
+ const v=await dispenserContract();await exchange(v,{state:'broken'});
+ const history=(await db.query('select * from public.dispenser_exchanges')).rows[0];expect(history.involved_kind).toBe('customer');expect(history.involved_id).toBe(v.customer);
+ const old=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.old])).rows[0];expect(old.total_owned).toBe(0);expect(old.depot_ready).toBe(0);
+ expect((await db.query('select * from public.dispenser_assignments')).rows[0].status).toBe('active');
+});
+it('cambio desde camion devuelve el anterior al camion, no al deposito',async()=>{
+ const v=await dispenserContract(),trip=crypto.randomUUID();await db.query("select public.inventory_create_trip($1,$2,$3,'Camion',current_date,$4)",[tenant,trip,owner,[v.customer]]);
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,JSON.stringify([{product_id:v.replacement,quantity:1}])]);
+ await exchange(v,{trip});const old=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.old])).rows[0];expect(old.depot_ready).toBe(0);expect(old.truck_ready).toBe(1);
+});
+it('no permite devolucion fechada antes del ultimo cambio',async()=>{
+ const v=await dispenserContract();await exchange(v);
+ await denied(()=>db.query('select public.inventory_return_dispenser_model($1,$2,$3,current_date-2)',[tenant,crypto.randomUUID(),v.assignment]),/fecha es anterior/);
+});
+it('otro jefe y asistente no pueden cambiar ni leer historial de dispenser',async()=>{
+ const v=await dispenserContract();await exchange(v);await actor(driver);await denied(()=>exchange(v),/Solo el jefe/);expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(0);
+ await actor(otherOwner);await denied(()=>exchange(v),/Solo el jefe/);expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(0);
 });

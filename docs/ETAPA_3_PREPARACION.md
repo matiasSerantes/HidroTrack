@@ -16,7 +16,7 @@ Se admite un pedido extraordinario no cancelado por cliente/fecha. Para corregir
 
 ## Base y permisos
 
-Migracion `20261024134653_extra_visits.sql` aplicada por MCP: 25 migraciones y 39 tablas con RLS.
+Migracion `20261024134653_extra_visits.sql` aplicada por MCP: 26 migraciones y 40 tablas con RLS tras el cambio de dispenser.
 
 extra_visit_requests y extra_visit_events son de lectura del jefe de su empresa. Solo RPC autorizados crean/asignan/cancelan; sin escritura directa ni ejecucion anonima. Crear no genera venta, entrega o movimiento. Asignar usa el contrato existente de edicion de parada del jefe. Reintentos con IDs estables y eventos conservados.
 
@@ -32,7 +32,15 @@ Prueba general y visual/publicacion pendientes segun prioridad del usuario. Sin 
 
 - La solicitud asignada indica organizacion, no atencion completada. Vincular resultado, entrega/cobro y pendientes al circuito real del chofer en etapa 4.
 - Reasignacion, edicion y cierre del pedido tras atencion requieren su contrato posterior; no simularlos como terminados.
-- Snapshot historico de cantidades sugeridas y extras, costo de llenado durante carga, cambio atomico de dispenser y reparacion/retiro completo.
+- Snapshot historico de cantidades sugeridas y extras, costo de llenado durante carga, cambio de equipos por serie y reparacion/retiro completo.
 - Verificacion en movil/PC y entre dispositivos, ademas de la suite general final.
 
 La demo conserva datos y operaciones simulados independientes; estos puntos describen pantallas conectadas a Supabase.
+
+## Cambio real de dispenser por modelo - 24/10/2026
+
+Migracion `20261024140721_dispenser_exchange.sql` aplicada por MCP. Estado comprobado: 26 migraciones y 40 tablas publicas con RLS. Desde la planilla del cliente, Cambiar dispenser registra retiro y reemplazo en una transaccion, desde deposito o camion activo autorizado. Conserva contrato, modalidad, cuota y fecha inicial del alquiler. El retirado bueno vuelve al origen; roto significa baja definitiva del inventario activo, con fecha y responsable. No representa reparacion recuperable.
+
+Reintentos idempotentes, disponibilidad previa al retiro y fechas coherentes; fallo revierte ambos movimientos. Historial de cambios visible al jefe. Equipos individualizados por serie y reparaciones siguen pendientes. Rama operativa del asistente permanece bloqueada hasta etapa 4. Sin cambios con stock real para probar ni ajustes de cuentas/claves.
+
+Verificacion: 25 comprobaciones dirigidas de contratos y permisos y 2 del formulario aprobadas; compilacion correcta. MCP confirma cero cambios reales de dispenser, sin escritura directa ni ejecucion anonima. Suite general, prueba visual movil/PC y despliegue publico pendientes.

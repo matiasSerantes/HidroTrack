@@ -517,3 +517,14 @@ Continuar pedido previo: jefe genera desde planilla fecha/productos/cantidades y
 Resultado visitas extraordinarias (24/10): migracion 20261024134653_extra_visits aplicada, 25 migraciones y 39 tablas con RLS. Pedido desde planilla con productos/fecha, lista paginada, asignacion a reparto de esa fecha sin duplicar parada y cancelacion con historial conservado. Un pedido no cancelado por cliente/fecha. Pedido asignado reemplaza habitual en carga sugerida, sin doble suma. No significa entrega/cobro ni recarga de camion activo. 44 comprobaciones dirigidas aprobadas; verificacion remota confirma sin escritura directa/anonima, driver operativo bloqueado y cero solicitudes reales. Suite general/QA visual/publicacion pendientes. Detalle y limites en docs/ETAPA_3_PREPARACION.md.
 
 Cierre visitas: compilacion final correcta; no se uso envio de correo ni se tocaron claves. Documentacion y plan actualizados; siguiente pendiente de preparacion: cambios atomicos de dispenser y costos/snapshots de carga antes del flujo completo del chofer.
+## 2026-10-24 - Cambio atomico de dispenser por modelo
+
+Usuario pide continuar. Alcance real: sustituir unidad de una asignacion activa por modelo de deposito/camion activo, devolver a la misma ubicacion o registrar roto con baja definitiva explicitada. Preservar ID de contrato, modalidad, cuota y fecha de alquiler; historial del equipo anterior y movimientos vinculados. No reutilizar devolucion como disponibilidad para prestarse la misma unidad: comprobar reemplazo antes del retiro. Auditar fecha/estado/responsable, reintentos y rollback total. Equipos por serie y reparacion recuperable siguen pendientes; no fingir soporte. No ejecutar cambios con stock real para probar.
+
+## Cambio real de dispenser por modelo - 24/10/2026
+
+Migracion `20261024140721_dispenser_exchange.sql` aplicada por MCP. Estado comprobado: 26 migraciones y 40 tablas publicas con RLS. Desde la planilla del cliente, Cambiar dispenser registra retiro y reemplazo en una transaccion, desde deposito o camion activo autorizado. Conserva contrato, modalidad, cuota y fecha inicial del alquiler. El retirado bueno vuelve al origen; roto significa baja definitiva del inventario activo, con fecha y responsable. No representa reparacion recuperable.
+
+Reintentos idempotentes, disponibilidad previa al retiro y fechas coherentes; fallo revierte ambos movimientos. Historial de cambios visible al jefe. Equipos individualizados por serie y reparaciones siguen pendientes. Rama operativa del asistente permanece bloqueada hasta etapa 4. Sin cambios con stock real para probar ni ajustes de cuentas/claves.
+
+Verificacion: 25 comprobaciones dirigidas de contratos y permisos y 2 del formulario aprobadas; compilacion correcta. MCP confirma cero cambios reales de dispenser, sin escritura directa ni ejecucion anonima. Suite general, prueba visual movil/PC y despliegue publico pendientes.
