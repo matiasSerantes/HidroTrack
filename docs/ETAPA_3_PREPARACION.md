@@ -32,7 +32,7 @@ Prueba general y visual/publicacion pendientes segun prioridad del usuario. Sin 
 
 - La solicitud asignada indica organizacion, no atencion completada. Vincular resultado, entrega/cobro y pendientes al circuito real del chofer en etapa 4.
 - Reasignacion, edicion y cierre del pedido tras atencion requieren su contrato posterior; no simularlos como terminados.
-- Snapshot historico de cantidades sugeridas y extras, costo de llenado durante carga, cambio de equipos por serie y reparacion/retiro completo.
+- Cambio de equipos por serie y reparacion/retiro completo. Sugerencia y costo de carga ya conectados; ver actualizacion inferior.
 - Verificacion en movil/PC y entre dispositivos, ademas de la suite general final.
 
 La demo conserva datos y operaciones simulados independientes; estos puntos describen pantallas conectadas a Supabase.
@@ -44,3 +44,13 @@ Migracion `20261024140721_dispenser_exchange.sql` aplicada por MCP. Estado compr
 Reintentos idempotentes, disponibilidad previa al retiro y fechas coherentes; fallo revierte ambos movimientos. Historial de cambios visible al jefe. Equipos individualizados por serie y reparaciones siguen pendientes. Rama operativa del asistente permanece bloqueada hasta etapa 4. Sin cambios con stock real para probar ni ajustes de cuentas/claves.
 
 Verificacion: 25 comprobaciones dirigidas de contratos y permisos y 2 del formulario aprobadas; compilacion correcta. MCP confirma cero cambios reales de dispenser, sin escritura directa ni ejecucion anonima. Suite general, prueba visual movil/PC y despliegue publico pendientes.
+
+## Costo y detalle historico de carga real - 24/10/2026
+
+Migracion `20261024183740_load_cost_snapshots.sql` aplicada por MCP: 27 migraciones y 42 tablas publicas con RLS. Nuevas tablas filling_cost_settings e inventory_load_snapshots, solo lectura del jefe de su empresa; escritura mediante RPC, sin acceso anonimo. No se modificaron cuentas ni existencias reales para comprobar; ambas tablas quedaron sin registros reales al verificar.
+
+En Catalogo, Configuracion del costo de llenado permite activar el control y seleccionar productos retornables con costo por unidad, independiente del precio de venta. Desactivado por defecto; no aplica a dispenser. En carga se anticipa el gasto parcial solo del faltante a rellenar. Al confirmar, inventory_confirm_load registra carga y detalle juntos: nombres, sugerencia calculada en servidor, cantidades cargadas, extras/faltantes, rellenados y costo vigente. Pedido extraordinario reemplaza habitual sin doble suma. Si falla, no queda relleno o carga parcial; reintentar conserva el resultado original.
+
+Repartos muestra las ultimas diez cargas con detalle historico. Cambiar nombre, preferencias o costos despues no altera ese registro. Las cargas anteriores o hechas mediante contratos antiguos no se reconstruyen: pueden existir sin este detalle. Costo desactivado o producto sin costo no significa ganancia conocida; el total solo incluye llenado configurado y excluye otros gastos. Graficos y resultado real del reparto siguen pendientes del circuito de ventas/cobros.
+
+Verificacion: 30 contratos/permisos, 2 controles de configuracion/historial y 4 de sugerencia/preview aprobados (36 en total); compilacion correcta. Suite general y QA visual/publicacion movil-PC pendientes. Siguiente paso: circuito operativo real del asistente con permisos por reparto aceptado, entrega/devolucion y cobro; conservar pendientes de equipos por serie y reparacion.

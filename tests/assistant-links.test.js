@@ -202,3 +202,55 @@ it('otro jefe y asistente no pueden cambiar ni leer historial de dispenser',asyn
  const v=await dispenserContract();await exchange(v);await actor(driver);await denied(()=>exchange(v),/Solo el jefe/);expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(0);
  await actor(otherOwner);await denied(()=>exchange(v),/Solo el jefe/);expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(0);
 });
+
+async function costLoadFixture(){
+ await actor(owner);const product=crypto.randomUUID(),trip=crypto.randomUUID(),id=crypto.randomUUID(),refill=crypto.randomUUID();
+ const customer=(await db.query('select id from public.customers where tenant_id=$1 order by name limit 1',[tenant])).rows[0].id;
+ await db.query("select public.inventory_create_product($1,$2,'Agua costo',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:2}])]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive_empty',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:10}])]);
+ await db.query('insert into public.customer_product_preferences(tenant_id,customer_id,product_id,quantity) values($1,$2,$3,3)',[tenant,customer,product]);
+ await db.query("select public.inventory_create_trip($1,$2,$3,'Carga costo',current_date,$4)",[tenant,trip,owner,[customer]]);
+ await db.query('select public.owner_set_filling_costs($1,true,$2)',[tenant,JSON.stringify([{product_id:product,unit_cost:100}])]);
+ return {product,trip,id,refill,customer};
+}
+async function confirmCostLoad(v,quantity=5,fill=true){return db.query("select public.inventory_confirm_load($1,$2,$3,$4,$5,current_date,$6,'Carga prueba')",[tenant,v.id,v.refill,v.trip,JSON.stringify([{product_id:v.product,quantity}]),fill]);}
+it('costo historico cuenta solo faltante rellenado y conserva sugeridos extras y nombres',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);
+ let snapshot=(await db.query('select * from public.inventory_load_snapshots')).rows[0];
+ expect(Number(snapshot.filling_total)).toBe(300);expect(snapshot.items[0]).toMatchObject({suggested:3,loaded:5,extra:2,missing:0,refilled:3,unit_cost:100,filling_cost:300,name:'Agua costo'});
+ await db.query('select public.owner_set_filling_costs($1,false,$2)',[tenant,JSON.stringify([{product_id:v.product,unit_cost:900}])]);
+ await db.query("update public.products set name='Otro nombre' where id=$1",[v.product]);
+ await db.query('update public.customer_product_preferences set quantity=50 where product_id=$1',[v.product]);
+ await confirmCostLoad(v);snapshot=(await db.query('select * from public.inventory_load_snapshots')).rows[0];
+ expect(Number(snapshot.filling_total)).toBe(300);expect(snapshot.items[0].name).toBe('Agua costo');expect(snapshot.items[0].suggested).toBe(3);
+ expect((await db.query('select * from public.inventory_load_snapshots')).rows).toHaveLength(1);
+ await denied(()=>confirmCostLoad(v,6),/otros datos/);
+});
+it('carga de llenos no cobra llenado y registra faltantes de sugerencia',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v,2,false);
+ const s=(await db.query('select * from public.inventory_load_snapshots')).rows[0];
+ expect(Number(s.filling_total)).toBe(0);expect(s.items[0]).toMatchObject({suggested:3,loaded:2,missing:1,extra:0,refilled:0});
+});
+it('control desactivado no atribuye costos retroactivos y fallo no deja relleno ni snapshot',async()=>{
+ const v=await costLoadFixture();const before=(await db.query('select count(*) n from public.inventory_operations')).rows[0].n;
+ await denied(()=>confirmCostLoad(v,20),/suficientes/);
+ expect((await db.query('select count(*) n from public.inventory_operations')).rows[0].n).toBe(before);
+ expect((await db.query('select * from public.inventory_load_snapshots')).rows).toHaveLength(0);
+ await db.query("select public.owner_set_filling_costs($1,false,'[]')",[tenant]);await confirmCostLoad(v);
+ const s=(await db.query('select * from public.inventory_load_snapshots')).rows[0];expect(s.cost_enabled).toBe(false);expect(Number(s.filling_total)).toBe(0);expect(s.items[0].unit_cost).toBe(null);
+});
+it('snapshot usa pedido extraordinario en lugar del habitual',async()=>{
+ const v=await costLoadFixture(),request=crypto.randomUUID();
+ await db.query("select public.owner_request_extra_visit($1,$2,$3,current_date,$4,'')",[tenant,request,v.customer,JSON.stringify([{product_id:v.product,quantity:4}])]);
+ await db.query("select public.owner_manage_extra_visit($1,$2,$3,'assigned',$4)",[tenant,crypto.randomUUID(),request,v.trip]);
+ await confirmCostLoad(v);expect((await db.query('select items from public.inventory_load_snapshots')).rows[0].items[0]).toMatchObject({suggested:4,loaded:5,extra:1});
+});
+it('costos y snapshots solo jefe de la empresa sin escritura directa',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);
+ await actor(otherOwner);expect((await db.query('select * from public.inventory_load_snapshots')).rows).toHaveLength(0);expect((await db.query('select * from public.filling_cost_settings')).rows).toHaveLength(0);
+ await denied(()=>db.query("select public.owner_set_filling_costs($1,true,'[]')",[tenant]),/Solo el jefe/);
+ await actor(driver);await denied(()=>confirmCostLoad(v),/Solo el jefe/);
+ await actor(owner);await denied(()=>db.query('update public.inventory_load_snapshots set filling_total=0'),/permission denied/);
+ await denied(()=>db.query('select public.owner_set_filling_costs($1,true,$2)',[tenant,JSON.stringify([{product_id:v.product,unit_cost:-1}])]),/Costo o producto/);
+});

@@ -26,3 +26,12 @@ it('pedido extraordinario reemplaza el habitual sin duplicar cantidades',async()
  const {client}=clientFixture(false,true);render(<OwnerLoadSuggestion client={client} tenantId="a" tripId="route" products={products} available={()=>20}/>);
  fireEvent.click(await screen.findByRole('button',{name:'Usar carga sugerida'}));expect(screen.getByLabelText('Cargar Agua 20 L').value).toBe('1');
 });
+
+it('preview solo incluye el faltante rellenado de productos con costo',async()=>{
+ const {client}=clientFixture();const priced=[{id:'water',name:'Agua 20 L',unit:'unidad',returnable:true,family:'article'}];
+ const view=render(<OwnerLoadSuggestion client={client} tenantId="a" tripId="route" products={priced} available={()=>20} depotReady={()=>2} fillOnLoad={true} fillingSettings={{enabled:true,costs:[{product_id:'water',unit_cost:100}]}}/>);
+ await screen.findByRole('button',{name:'Usar carga sugerida'});
+ fireEvent.change(screen.getByLabelText('Cargar Agua 20 L'),{target:{value:'5'}});expect(screen.getByText('Agua 20 L: 3 a rellenar')).toBeTruthy();
+ view.rerender(<OwnerLoadSuggestion client={client} tenantId="a" tripId="route" products={priced} available={()=>20} depotReady={()=>2} fillOnLoad={false} fillingSettings={{enabled:true,costs:[{product_id:'water',unit_cost:100}]}}/>);
+ expect(screen.queryByText('Agua 20 L: 3 a rellenar')).toBe(null);
+});
