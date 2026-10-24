@@ -59,3 +59,14 @@ it('oculta stock y clientes si falla la verificacion al actualizar',async()=>{
  fireEvent.click(screen.getByRole('button',{name:'Stock del camión'}));expect(screen.getByText('Agua del camion')).toBeTruthy();
  fail=true;fireEvent.click(screen.getByRole('button',{name:'Actualizar recorridos'}));await screen.findByRole('alert');expect(screen.queryByText('1. Primero')).toBe(null);expect(screen.queryByText('Agua del camion')).toBe(null);
 });
+it('no cambia de cliente ni pierde el reintento si la entrega se guardo pero se perdio la respuesta',async()=>{
+ let delivered=false;const client={rpc:vi.fn(async(name,args)=>{
+  if(name==='assistant_trip_invitations')return {data:[{...invitation,state:'accepted'}],error:null};
+  if(name==='assistant_open_trip')return {data:{...activeRoute,stops:activeRoute.stops.map((s,i)=>({...s,outcome:i===0&&delivered?'delivered':'pending'}))},error:null};
+  if(name==='assistant_customer_visit')return {data:{customer:{id:'c1',name:'Primero',pending_recovery:false},version:1,outcome:'pending',balance:0,products:[{id:'p',name:'Agua',price:100,ready:3,held:0,active:true,returnable:true}],equipment:[]},error:null};
+  if(name==='assistant_deliver'){if(!delivered){delivered=true;return {data:null,error:{message:'Respuesta perdida'}};}return {data:{id:args.p_id,total:100,paid:0,remaining:100},error:null};}
+ })};
+ render(<AssistantTripInvitations client={client}/>);fireEvent.click(await screen.findByRole('button',{name:'Abrir reparto'}));await screen.findByText('1. Primero');fireEvent.click(screen.getByRole('button',{name:'Atender cliente'}));await screen.findByText('Planilla de Primero');fireEvent.change(screen.getByLabelText('Entregar Agua'),{target:{value:'1'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar entrega y cobro'}));await screen.findByText('Respuesta perdida');
+ fireEvent(window,new Event('focus'));await waitFor(()=>expect(screen.getByLabelText('Parada del recorrido').value).toBe('c1'));
+ fireEvent.click(screen.getByRole('button',{name:'Reintentar misma entrega'}));await screen.findByText(/Entrega confirmada:/);const commands=client.rpc.mock.calls.filter(([n])=>n==='assistant_deliver').map(([,a])=>a);expect(commands[0]).toEqual(commands[1]);
+});

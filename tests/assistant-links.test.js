@@ -271,3 +271,59 @@ it('apertura del asistente incluye solo stock de su camion aceptado sin deposito
  expect((await db.query('select * from public.inventory_movements')).rows).toHaveLength(0);
  await denied(()=>preview(otherTrip),/Reparto no aceptado/);
 });
+
+async function deliveryFixture(){
+ const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);const product=crypto.randomUUID();
+ const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query("select public.inventory_create_product($1,$2,'Agua visita',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:10}])]);
+ await db.query("select public.inventory_record_stock($1,$2,'opening_customer',null,$3,$4,'',current_date)",[tenant,crypto.randomUUID(),customer,JSON.stringify([{product_id:product,quantity:2}])]);
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,JSON.stringify([{product_id:product,quantity:5}])]);
+ await actor(driver);return {trip,product,customer,id:crypto.randomUUID()};
+}
+async function visitDetail(v){return (await db.query('select public.assistant_customer_visit($1,$2,$3) as d',[tenant,v.trip,v.customer])).rows[0].d;}
+async function deliverVisit(v,{q=2,r=1,paid=100,total=200,version=1,id=v.id,method=paid>0?'cash':null,items=null}={}){return (await db.query("select public.assistant_deliver($1,$2,$3,$4,$5,$6,$7,$8,$9,'Visita de prueba') as result",[tenant,id,v.trip,v.customer,version,items??JSON.stringify([{product_id:v.product,quantity:q,returned:r}]),total,paid,method])).rows[0].result;}
+it('entrega parcial atomica actualiza envases camion cobro y aviso sin duplicar al reintentar',async()=>{
+ const v=await deliveryFixture(),before=await visitDetail(v);expect(before.products[0]).toMatchObject({held:2,ready:5,price:100});
+ const receipt=await deliverVisit(v);expect(receipt).toMatchObject({total:200,paid:100,remaining:100,credit_status:'pending',version:2});expect(await deliverVisit(v)).toEqual(receipt);
+ const detail=await visitDetail(v);expect(detail.products[0]).toMatchObject({held:3,ready:3});expect(detail.balance).toBe(100);expect(detail.outcome).toBe('delivered');
+ expect((await preview(v.trip)).rows[0].result.stock[0].empties).toBe(1);
+ expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+ await actor(owner);expect((await db.query('select * from public.payments')).rows).toHaveLength(1);expect((await db.query('select * from public.owner_notifications')).rows).toHaveLength(2);
+ expect((await db.query('select public.owner_credit_inbox($1) as inbox',[tenant])).rows[0].inbox).toMatchObject({count:1,items:[{customer:'Cliente A',balance:100}]});
+ await db.query("select public.commerce_review_credit($1,$2,false,'Cobrar pendiente')",[tenant,v.id]);
+ await actor(driver);expect((await visitDetail(v)).balance).toBe(100);
+ await denied(()=>deliverVisit(v,{id:crypto.randomUUID()}),/parada cambio/);
+});
+it('pago completo no pide credito y retorno sin entrega conserva el envase restante',async()=>{
+ const v=await deliveryFixture();const result=await deliverVisit(v,{q:0,r:1,total:0,paid:0});expect(result).toMatchObject({total:0,remaining:0,credit_status:'paid'});
+ expect((await visitDetail(v)).products[0].held).toBe(1);
+ await actor(owner);expect((await db.query('select * from public.credit_requests')).rows).toHaveLength(0);expect((await db.query('select * from public.payments')).rows).toHaveLength(0);
+});
+it('total pagado en transferencia crea un pago y ningun pedido de deuda',async()=>{
+ const v=await deliveryFixture();await deliverVisit(v,{paid:200,method:'transfer'});await actor(owner);
+ expect((await db.query('select * from public.credit_requests')).rows).toHaveLength(0);expect((await db.query('select method,amount from public.payments')).rows[0]).toMatchObject({method:'transfer',amount:'200.00'});
+});
+it('rechazo por stock retorno excesivo version precio o sobrepago no deja movimientos parciales',async()=>{
+ const v=await deliveryFixture();
+ await denied(()=>deliverVisit(v,{q:6,total:600}),/Stock insuficiente/);
+ await denied(()=>deliverVisit(v,{r:5}),/mas envases/);
+ await denied(()=>deliverVisit(v,{version:99}),/parada cambio/);
+ await denied(()=>deliverVisit(v,{total:201}),/precio cambio/);
+ await denied(()=>deliverVisit(v,{paid:201}),/cobro supera/);
+ await denied(()=>deliverVisit(v,{items:JSON.stringify([{product_id:v.product,quantity:1},{product_id:v.product,quantity:1}])}),/repetido/);
+ await actor(owner);expect((await db.query("select * from public.inventory_operations where kind='delivery'")).rows).toHaveLength(0);expect((await db.query('select * from public.sales')).rows).toHaveLength(0);expect((await db.query('select * from public.owner_notifications')).rows).toHaveLength(0);
+});
+it('futura baja permite solo recuperar y no entrega de productos',async()=>{
+ const v=await deliveryFixture();await actor(owner);await db.query('update public.customers set pending_recovery=true where tenant_id=$1 and id=$2',[tenant,v.customer]);await actor(driver);
+ await denied(()=>deliverVisit(v),/futura baja/);await deliverVisit(v,{q:0,r:1,total:0,paid:0});expect((await visitDetail(v)).products[0].held).toBe(1);
+});
+it('revocacion bloqueo o destinatario distinto impiden planilla y escritura incluso reintento',async()=>{
+ const v=await deliveryFixture();await actor(second);await denied(()=>deliverVisit(v),/Reparto no aceptado/);await denied(()=>visitDetail(v),/Reparto no aceptado/);
+ await actor(driver);await deliverVisit(v);await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,v.trip,crypto.randomUUID()]);await actor(driver);await denied(()=>deliverVisit(v),/Reparto no aceptado/);
+ await denied(()=>db.query('select public.owner_credit_inbox($1)',[tenant]),/Solo el jefe/);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_credit_inbox($1)',[tenant]),/Solo el jefe/);
+});
+it('idempotencia rechaza cambiar el cobro o la entrega de una operacion confirmada',async()=>{
+ const v=await deliveryFixture();await deliverVisit(v);await denied(()=>deliverVisit(v,{paid:200}),/otros datos/);await denied(()=>deliverVisit(v,{q:1,total:100}),/otros datos/);
+});

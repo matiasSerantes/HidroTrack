@@ -1,0 +1,42 @@
+import {useEffect,useRef,useState,type FormEvent} from 'react';
+import type {SupabaseClient} from '@supabase/supabase-js';
+import {currency,parseMoney} from '../domain/demo';
+import './AssistantVisit.css';
+type Product={id:string;name:string;price:number;returnable:boolean;active:boolean;ready:number;held:number};
+type Detail={customer:{id:string;name:string;pending_recovery:boolean};version:number;outcome:string;balance:number;products:Product[];equipment:{name:string;mode:string;monthly:number}[]};
+type Receipt={id:string;total:number;paid:number;remaining:number;credit_status:string};
+type Command={p_tenant:string;p_id:string;p_trip:string;p_customer:string;p_version:number;p_items:{product_id:string;quantity:number;returned:number}[];p_expected_total:number;p_paid:number;p_method:string|null;p_note:string};
+export function AssistantVisit({client,tenantId,tripId,customerId,resolved,onLock,onChanged}:{client:SupabaseClient;tenantId:string;tripId:string;customerId:string;resolved:boolean;onLock:(locked:boolean)=>void;onChanged:()=>void}){
+ const [show,setShow]=useState(false),[detail,setDetail]=useState<Detail|null>(null),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[retry,setRetry]=useState(0),[pending,setPending]=useState<Command|null>(null),[receipt,setReceipt]=useState<Receipt|null>(null);
+ const [quantities,setQuantities]=useState<Record<string,{quantity:number;returned:number}>>({}),[paid,setPaid]=useState('0'),[method,setMethod]=useState('cash');
+ const inFlight=useRef(false);const locked=busy||pending!==null;
+ useEffect(()=>{onLock(locked);return()=>onLock(false);},[locked,onLock]);
+ useEffect(()=>{if(!show)return;let active=true;setLoading(true);setDetail(null);setError('');void(async()=>{try{const r=await client.rpc('assistant_customer_visit',{p_tenant:tenantId,p_trip:tripId,p_customer:customerId});if(r.error||r.data?.customer?.id!==customerId||!Array.isArray(r.data.products)||!Array.isArray(r.data.equipment))throw r.error??new Error();if(active){setDetail(r.data);setQuantities({});setPaid('0');}}catch{if(active)setError('No pudimos verificar esta planilla. Actualizá antes de registrar una entrega.');}finally{if(active)setLoading(false);}})();return()=>{active=false;};},[client,tenantId,tripId,customerId,show,retry]);
+ const total=detail?.products.reduce((sum,p)=>sum+Math.round(Number(p.price)*100)*(quantities[p.id]?.quantity??0),0)??0;
+ let paidCents=0;try{paidCents=parseMoney(paid);}catch{paidCents=NaN;}
+ async function execute(command:Command){
+  if(inFlight.current)return;inFlight.current=true;setBusy(true);setPending(command);setError('');
+  try{const r=await client.rpc('assistant_deliver',command);if(r.error){if(/^[0-9A-Z]{5}$/.test(r.error.code??'')){setPending(null);setDetail(null);onChanged();}throw r.error;}
+   if(r.data?.id!==command.p_id)throw new Error('Sin confirmación verificable');
+   setReceipt(r.data);setPending(null);setShow(false);setDetail(null);onChanged();
+  }catch(e){setError((e as {message?:string}).message||'No recibimos confirmación. Reintentá la misma operación; no cargues otra entrega.');}
+  finally{inFlight.current=false;setBusy(false);}
+ }
+ function submit(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();if(locked||!detail)return;
+  try{const amount=parseMoney(paid);if(!Number.isSafeInteger(total)||amount>total)throw new Error('El cobro no puede superar esta entrega. La deuda anterior se cobra por separado.');
+   const items=detail.products.map(p=>({product_id:p.id,quantity:quantities[p.id]?.quantity??0,returned:quantities[p.id]?.returned??0})).filter(i=>i.quantity+i.returned>0);
+   if(!items.length)throw new Error('Indicá qué entregás o cuántos envases devuelve.');
+   if(items.some(i=>![i.quantity,i.returned].every(q=>Number.isSafeInteger(q)&&q>=0&&q<=100000)))throw new Error('Revisá las cantidades enteras.');
+   void execute({p_tenant:tenantId,p_id:crypto.randomUUID(),p_trip:tripId,p_customer:customerId,p_version:detail.version,p_items:items,p_expected_total:total/100,p_paid:amount/100,p_method:amount>0?method:null,p_note:String(new FormData(e.currentTarget).get('note')||'')});
+  }catch(e){setError((e as Error).message);}
+ }
+ return <section className="assistant-visit"><button className="hd-btn primary" disabled={locked||resolved} aria-expanded={show} onClick={()=>{setReceipt(null);setShow(v=>!v);}}>Atender cliente</button>
+ {receipt&&<p role="status" className="assistant-real-notice">Entrega confirmada: {currency(Number(receipt.total)*100)}. Cobrado: {currency(Number(receipt.paid)*100)}.{Number(receipt.remaining)>0?` Quedan ${currency(Number(receipt.remaining)*100)} pendientes; se avisó al jefe para revisar la deuda.`:''}</p>}
+ {error&&<p role="alert" className="assistant-real-error">{error}</p>}{pending&&<div className="assistant-visit-pending"><p>Hay una confirmación pendiente. No modifiques cantidades ni registres otra entrega. El reintento usa el mismo identificador.</p><button className="hd-btn primary" disabled={busy} onClick={()=>void execute(pending)}>Reintentar misma entrega</button></div>}
+ {show&&<>{loading?<p role="status">Consultando saldo, envases y camión…</p>:!detail?<button className="hd-btn" disabled={locked} onClick={()=>setRetry(v=>v+1)}>Actualizar planilla</button>:<><h4>Planilla de {detail.customer.name}</h4><p className={Number(detail.balance)>0?'assistant-real-error':'assistant-real-notice'}>Saldo pendiente del cliente: {currency(Number(detail.balance)*100)}</p>{detail.equipment.map((a,i)=><p key={i}>{a.name} · {a.mode==='rental'?`Alquiler ${currency(Number(a.monthly)*100)}/mes`:a.mode==='customer_owned'?'Propiedad del cliente':'Préstamo gratuito'}</p>)}
+ {detail.customer.pending_recovery&&<p className="assistant-real-error">Futura baja: solo recuperar envases. No entregar productos.</p>}
+ <form onSubmit={submit}><fieldset disabled={locked||resolved||['delivered','no_purchase'].includes(detail.outcome)}>{detail.products.map(p=>{const q=quantities[p.id]?.quantity??0,r=quantities[p.id]?.returned??0;return <article className="assistant-visit-product" key={p.id}><strong>{p.name}</strong><p>{p.ready} en el camión · {currency(Number(p.price)*100)} por unidad</p>{p.returnable&&<p>El cliente tiene {p.held} envases para devolver.</p>}<div className="assistant-visit-quantities"><label>Entregar {p.name}<input type="number" inputMode="numeric" min="0" max={p.active&&!detail.customer.pending_recovery?Math.min(Number(p.ready),100000):0} value={q} onChange={e=>setQuantities(prev=>({...prev,[p.id]:{quantity:Number(e.target.value),returned:r}}))}/></label>{p.returnable&&<label>Devuelve {p.name}<input type="number" inputMode="numeric" min="0" max={Math.min(Number(p.held)+q,100000)} value={r} onChange={e=>setQuantities(prev=>({...prev,[p.id]:{quantity:q,returned:Number(e.target.value)}}))}/></label>}</div>{p.returnable&&<p>Quedarán {Number(p.held)+q-r} envases para la próxima visita.</p>}</article>;})}
+ {!detail.products.length&&<p>No hay productos disponibles ni envases de este cliente para recuperar.</p>}<p><strong>Total de esta entrega: {currency(total)}</strong></p><label>Cuánto paga ahora ($)<input inputMode="decimal" required value={paid} onChange={e=>setPaid(e.target.value)}/></label><button type="button" className="hd-btn" onClick={()=>setPaid((total/100).toFixed(2))}>Paga el total</button><label>Medio de pago<select value={method} onChange={e=>setMethod(e.target.value)}><option value="cash">Efectivo</option><option value="transfer">Transferencia</option></select></label>{Number.isFinite(paidCents)&&paidCents<total&&<p className="assistant-real-error">Quedarán {currency(total-paidCents)} pendientes de cobro. Se solicita aprobación al jefe; rechazar la deuda no borra ese saldo.</p>}<label>Nota<textarea name="note" maxLength={400} rows={2}/></label><button className="hd-btn primary" disabled={!detail.products.length}>Confirmar entrega y cobro</button><p>La transferencia se registra como declarada; no verifica acreditación bancaria. Cobros de deuda anterior y cambios de dispenser van por operaciones separadas.</p></fieldset></form></>}</>}
+ </section>;
+}

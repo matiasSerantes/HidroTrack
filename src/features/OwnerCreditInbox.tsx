@@ -1,0 +1,20 @@
+import {useEffect,useRef,useState} from 'react';
+import type {SupabaseClient} from '@supabase/supabase-js';
+import {currency} from '../domain/demo';
+type Item={sale_id:string;customer:string;trip:string|null;created_at:string;total:number;initial_paid:number|null;balance:number};
+type Decision={item:Item;approve:boolean;note:string};
+export function OwnerCreditInbox({client,tenantId,disabled}:{client:SupabaseClient;tenantId:string;disabled:boolean}){
+ const [data,setData]=useState<{count:number;items:Item[]}|null>(null),[retry,setRetry]=useState(0),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[pending,setPending]=useState<Decision|null>(null);
+ const inFlight=useRef(false);
+ useEffect(()=>{const refresh=()=>{if(document.visibilityState!=='hidden')setRetry(v=>v+1);};const timer=window.setInterval(refresh,30000);window.addEventListener('focus',refresh);return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);};},[]);
+ useEffect(()=>{let active=true;void(async()=>{try{const r=await client.rpc('owner_credit_inbox',{p_tenant:tenantId});if(r.error||!Array.isArray(r.data?.items))throw r.error??new Error();if(active){setData(r.data);}}catch{if(active){setData(null);setError('No pudimos consultar las deudas pendientes. Actualizá antes de decidir.');}}})();return()=>{active=false;};},[client,tenantId,retry]);
+ async function decide(command:Decision){
+  if(inFlight.current||disabled)return;inFlight.current=true;setBusy(true);setPending(command);setError('');setNotice('');
+  try{const r=await client.rpc('commerce_review_credit',{p_tenant:tenantId,p_sale:command.item.sale_id,p_approve:command.approve,p_note:command.note});if(r.error){if(/^[0-9A-Z]{5}$/.test(r.error.code??''))setPending(null);throw r.error;}
+   if(r.data!==(command.approve?'approved':'rejected'))throw new Error('Respuesta sin confirmar');setPending(null);setNotice(command.approve?'Deuda aprobada. Se conserva el saldo pendiente del cliente.':'Deuda rechazada. El importe sigue pendiente de cobro al cliente.');setRetry(v=>v+1);
+  }catch(e){setError((e as {message?:string}).message||'No se confirmó la respuesta. Reintentá la misma decisión.');}finally{inFlight.current=false;setBusy(false);}
+ }
+ return <section className="stock-panel"><h3>Deudas para aprobar</h3><p>Los importes entregados y no cobrados quedan pendientes del cliente, incluso si rechazás que queden a cuenta.</p><button disabled={disabled||busy||pending!==null} onClick={()=>{setError('');setRetry(v=>v+1);}}>Actualizar deudas</button>{notice&&<p role="status" className="stock-notice">{notice}</p>}{error&&<p role="alert" className="stock-error">{error}</p>}{pending&&<><p>Decisión pendiente de confirmar para {pending.item.customer}. Se conserva la misma respuesta.</p><button className="primary" disabled={disabled||busy} onClick={()=>void decide(pending)}>Reintentar misma decisión</button></>}
+ {!data?<p>Lista sin verificar.</p>:<><p>{data.count} solicitudes pendientes. Se muestran las primeras 20; al resolverlas aparecen las siguientes.</p>{!data.items.length&&<p>No hay deudas esperando aprobación.</p>}{data.items.map(item=><article key={item.sale_id}><h4>{item.customer} · {currency(Number(item.balance)*100)}</h4><p>{item.trip||'Cargo del cliente'} · {new Date(item.created_at).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})}</p><p>Venta: {currency(Number(item.total)*100)} · Cobrado al entregar: {item.initial_paid===null?'Sin registro inicial':currency(Number(item.initial_paid)*100)}</p><form onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget),action=(e.nativeEvent as SubmitEvent).submitter?.getAttribute('value');if(action!=='approve'&&action!=='reject')return;void decide({item,approve:action==='approve',note:String(f.get('note')||'')});}}><fieldset disabled={disabled||busy||pending!==null}><label>Nota de la decisión<input name="note" maxLength={400}/></label><div className="catalog-create-actions"><button className="primary" value="approve">Aprobar deuda</button><button value="reject">Rechazar deuda</button></div></fieldset></form></article>)}</>}
+ </section>;
+}

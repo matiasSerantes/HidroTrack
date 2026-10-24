@@ -20,6 +20,7 @@ function useRefreshPulse(){
 export function AssistantTripInvitations({client,userId}:{client:SupabaseClient;userId?:string}){
  const [items,setItems]=useState<Invitation[]|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[pulse,refresh]=useRefreshPulse();
  const [selected,setSelected]=useState<RoutePointer|null>(()=>restoreRoute(userId)),[preview,setPreview]=useState<AssistantTrip|null>(null),[previewLoading,setPreviewLoading]=useState(false);
+ const [deliveryLocked,setDeliveryLocked]=useState(false);
  const request=useRef<{key:string;id:string}|null>(null);
  useEffect(()=>{if(!userId)return;try{if(selected)localStorage.setItem(assistantRouteKey(userId),JSON.stringify(selected));else localStorage.removeItem(assistantRouteKey(userId));}catch{}},[userId,selected]);
  useEffect(()=>{let active=true;void (async()=>{
@@ -29,26 +30,26 @@ export function AssistantTripInvitations({client,userId}:{client:SupabaseClient;
  const selectedAllowed=Boolean(selected&&items?.some(i=>i.tenant_id===selected.tenant&&i.trip_id===selected.trip&&i.state==='accepted'));
  useEffect(()=>{let active=true;if(!selected||!selectedAllowed){setPreviewLoading(false);return;}
   setPreviewLoading(true);void (async()=>{
-   try{const r=await client.rpc('assistant_open_trip',{p_tenant:selected.tenant,p_trip:selected.trip});if(r.error||!r.data?.trip||!Array.isArray(r.data.stops))throw r.error??new Error();if(active)setPreview(r.data);}
+   try{const r=await client.rpc('assistant_open_trip',{p_tenant:selected.tenant,p_trip:selected.trip});if(r.error||!r.data?.trip||!Array.isArray(r.data.stops))throw r.error??new Error();if(active){setPreview(r.data);const first=r.data.stops.find((s:{outcome:string})=>['pending','present'].includes(s.outcome))??r.data.stops[0];if(first)setSelected(previous=>previous&&previous.tenant===selected.tenant&&previous.trip===selected.trip&&!previous.stop?{...previous,stop:first.id}:previous);}}
    catch(e){if(active){setPreview(null);if((e as {code?:string})?.code==='42501')setSelected(null);setError('El recorrido ya no está disponible o no pudimos verificarlo. Actualizá tus invitaciones.');}}
    finally{if(active)setPreviewLoading(false);}
   })();return()=>{active=false;};},[client,selected?.tenant,selected?.trip,selectedAllowed,pulse]);
  async function answer(i:Invitation,accept:boolean){
-  if(busy)return;const key=`${i.tenant_id}:${i.trip_id}:${accept}`;if(request.current?.key!==key)request.current={key,id:crypto.randomUUID()};
+  if(busy||deliveryLocked)return;const key=`${i.tenant_id}:${i.trip_id}:${accept}`;if(request.current?.key!==key)request.current={key,id:crypto.randomUUID()};
   setBusy(true);setError('');setNotice('');
   try{const r=await client.rpc('assistant_answer_trip_invitation',{p_tenant:i.tenant_id,p_trip:i.trip_id,p_accept:accept,p_request:request.current.id});if(r.error)throw r.error;
    request.current=null;setPreview(null);setSelected(null);setNotice(r.data==='accepted'?'Aceptaste el reparto. Ya podés abrir el recorrido.':r.data==='rejected'?'Rechazaste la invitación. El jefe puede ver tu respuesta.':'La invitación ya no está disponible.');refresh();
   }catch{setError('No pudimos confirmar la respuesta. Actualizá las invitaciones antes de reintentar.');refresh();}
   finally{setBusy(false);}
  }
- return <section className="assistant-profile-card trip-invitations"><div className="invitation-heading"><h2>Mis invitaciones y recorridos</h2><button className="hd-btn" disabled={busy} onClick={refresh}>Actualizar recorridos</button></div>
+ return <section className="assistant-profile-card trip-invitations"><div className="invitation-heading"><h2>Mis invitaciones y recorridos</h2><button className="hd-btn" disabled={busy||deliveryLocked} onClick={refresh}>Actualizar recorridos</button></div>
   {error&&<p role="alert" className="assistant-real-error">{error}</p>}{notice&&<p role="status" className="assistant-real-notice">{notice}</p>}
   {items===null?<p>Consultando acceso a recorridos…</p>:!items.length?<p>En espera de recorrido. Cuando un jefe te invite, aparecerá acá.</p>:items.map(i=><article className="invitation-card" key={i.trip_id}><span className={`invitation-state ${i.state}`}>{labels[i.state]}</span><h3>{i.name}</h3><p>{i.chief} · {i.company}</p><p>{dateLabel(i.date)}</p>
-   {i.state==='pending'&&<><p>¿Aceptás este reparto? Al aceptar podrás consultar sus clientes.</p><div className="invitation-actions"><button className="hd-btn primary" disabled={busy} onClick={()=>void answer(i,true)}>Aceptar reparto</button><button className="hd-btn" disabled={busy} onClick={()=>void answer(i,false)}>Rechazar</button></div></>}
-   {i.state==='accepted'&&<button className="hd-btn primary" disabled={busy} onClick={()=>{setError('');setPreview(null);setSelected({tenant:i.tenant_id,trip:i.trip_id});}}>Abrir reparto</button>}
+   {i.state==='pending'&&<><p>¿Aceptás este reparto? Al aceptar podrás consultar sus clientes.</p><div className="invitation-actions"><button className="hd-btn primary" disabled={busy||deliveryLocked} onClick={()=>void answer(i,true)}>Aceptar reparto</button><button className="hd-btn" disabled={busy||deliveryLocked} onClick={()=>void answer(i,false)}>Rechazar</button></div></>}
+   {i.state==='accepted'&&<button className="hd-btn primary" disabled={busy||deliveryLocked} onClick={()=>{setError('');setPreview(null);setSelected({tenant:i.tenant_id,trip:i.trip_id});}}>Abrir reparto</button>}
   </article>)}
   {selectedAllowed&&previewLoading&&<p role="status">Verificando el recorrido aceptado…</p>}
-  {selectedAllowed&&preview&&<AssistantTripView data={preview} selectedId={selected?.stop} onSelect={id=>setSelected(previous=>previous?{...previous,stop:id}:null)} onClose={()=>{setSelected(null);setPreview(null);}}/>}
+  {selectedAllowed&&preview&&<AssistantTripView client={client} tenantId={selected?.tenant} tripId={selected?.trip} locked={deliveryLocked} onLock={setDeliveryLocked} onChanged={refresh} data={preview} selectedId={selected?.stop} onSelect={id=>setSelected(previous=>previous?{...previous,stop:id}:null)} onClose={()=>{setSelected(null);setPreview(null);}}/>}
  </section>;
 }
 
