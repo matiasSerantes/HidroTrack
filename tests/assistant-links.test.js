@@ -378,3 +378,28 @@ it('cobro no permite cargo de otro cliente y reintento no admite otro importe',a
  const v=await deliveryFixture();await deliverVisit(v);const id=crypto.randomUUID();await collectAssistantDebt(v,{id});await denied(()=>collectAssistantDebt(v,{id,amount:50}),/otros datos/);
  await denied(()=>collectAssistantDebt(v,{sale:crypto.randomUUID()}),/Cargo no accesible/);
 });
+
+async function pendingOwnerFixture(){const v=await deliveryFixture();await recordAssistantVisit(v);await actor(owner);const target=crypto.randomUUID();await db.query("select public.inventory_create_trip($1,$2,$3,'Ruta destino',current_date,$4)",[tenant,target,owner,[v.customer]]);return {...v,target,command:crypto.randomUUID(),sourceEvent:crypto.randomUUID(),targetEvent:crypto.randomUUID()};}
+async function manageFollowup(v,{action='assign',target=v.target,note='Reprogramado',version=2}={}){return (await db.query('select public.owner_manage_followup($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) as result',[tenant,v.command,v.sourceEvent,v.targetEvent,v.trip,v.customer,version,action,target,note])).rows[0].result;}
+it('bandeja traslada pendiente sin duplicar parada ni cambiar inventario y reintento es estable',async()=>{
+ const v=await pendingOwnerFixture();expect((await db.query('select public.owner_followup_inbox($1) as inbox',[tenant])).rows[0].inbox.count).toBe(1);
+ const before=(await db.query('select count(*) n from public.inventory_operations')).rows[0].n;const result=await manageFollowup(v);expect(await manageFollowup(v)).toEqual(result);
+ expect((await db.query('select public.owner_followup_inbox($1) as inbox',[tenant])).rows[0].inbox.count).toBe(0);
+ const source=(await db.query('select active,outcome,next_date,version from public.route_stops where tenant_id=$1 and trip_id=$2',[tenant,v.trip])).rows[0];expect(source).toMatchObject({active:false,outcome:'absent',version:3});expect(source.next_date).toBeTruthy();
+ expect((await db.query('select * from public.route_stops where trip_id=$1',[v.target])).rows).toHaveLength(1);expect((await db.query('select count(*) n from public.inventory_operations')).rows[0].n).toBe(before);
+ await denied(()=>manageFollowup(v,{note:'Otra nota'}),/otros datos/);
+});
+it('bandeja acepta origen cerrado y exige motivo al resolver conservando la ausencia',async()=>{
+ const v=await pendingOwnerFixture();await db.exec(`reset role; update public.inventory_trips set status='closed',submitted_at=now(),closed_at=now() where id='${v.trip}'`);await actor(owner);
+ expect((await db.query('select public.owner_followup_inbox($1) as inbox',[tenant])).rows[0].inbox.items[0].trip_status).toBe('closed');
+ await denied(()=>manageFollowup(v,{action:'resolve',target:null,note:''}),/motivo invalido/);await manageFollowup(v,{action:'resolve',target:null,note:'Ya fue atendido'});
+ expect((await db.query("select * from public.route_events where trip_id=$1 and action='absent'",[v.trip])).rows).toHaveLength(1);
+});
+it('destino temprano o ya resuelto revierte traslado y mantiene origen pendiente',async()=>{
+ const v=await pendingOwnerFixture();await db.exec('reset role');await db.query('update public.inventory_trips set service_date=current_date-1 where id=$1',[v.target]);await actor(owner);await denied(()=>manageFollowup(v),/otro reparto abierto/);
+ await db.exec('reset role');await db.query('update public.inventory_trips set service_date=current_date where id=$1',[v.target]);await db.exec(`reset role; update public.route_stops set outcome='no_purchase' where trip_id='${v.target}'`);await actor(owner);await denied(()=>manageFollowup(v),/otro resultado/);
+ expect((await db.query('select active from public.route_stops where trip_id=$1',[v.trip])).rows[0].active).toBe(true);expect((await db.query('select * from public.followup_resolutions')).rows).toHaveLength(0);
+});
+it('solo jefe de la empresa lee y resuelve pendientes',async()=>{
+ const v=await pendingOwnerFixture();await actor(driver);await denied(()=>db.query('select public.owner_followup_inbox($1)',[tenant]),/Solo el jefe/);await denied(()=>manageFollowup(v),/Solo el jefe/);await actor(otherOwner);await denied(()=>manageFollowup(v),/Solo el jefe/);expect((await db.query('select * from public.followup_resolutions')).rows).toHaveLength(0);
+});
