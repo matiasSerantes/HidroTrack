@@ -267,3 +267,5 @@ Invitacion/respuesta/revocacion y resumen limitado del recorrido aceptado conect
 ## 24/10 - Carga sugerida conectada
 
 La seccion real Repartos y camion calcula referencia desde cantidades habituales y permite extras/faltantes. La demo mantiene su propia simulacion y no sirve de comprobacion de stock real. Sin snapshot historico separado de sugerencia/extras aun.
+
+Visitas extraordinarias 24/10: planilla y lista reales conectadas a nuevas solicitudes de Supabase; demo independiente. Asignar es organizar la visita, no completar entrega ni cobro. Ver ETAPA_3_PREPARACION.md.

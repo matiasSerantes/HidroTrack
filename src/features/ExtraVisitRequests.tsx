@@ -1,0 +1,45 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { stockToday } from './OwnerStockIncident';
+import './ExtraVisitRequests.css';
+type Product={id:string;name:string;active:boolean};
+type Trip={id:string;name:string;status:string;service_date?:string};
+type Item={product_id:string;quantity:number};
+type Visit={id:string;customer_id:string;requested_on:string;items:Item[];note:string;state:string;trip_id:string|null;customers:{name:string}|null};
+type Command={name:string;args:Record<string,unknown>;id:string;message:string};
+export function ExtraVisitRequests({client,tenantId,customerId,products,trips,disabled,onLock,onChanged}:{client:SupabaseClient;tenantId:string;customerId?:string;products:Product[];trips:Trip[];disabled:boolean;onLock:(value:boolean)=>void;onChanged?:()=>void}){
+ const [visits,setVisits]=useState<Visit[]|null>(null),[total,setTotal]=useState(0),[page,setPage]=useState(0),[filter,setFilter]=useState(customerId?'all':'pending'),[version,setVersion]=useState(0),[busy,setBusy]=useState(false),[pending,setPending]=useState<Command|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[show,setShow]=useState(false),[lines,setLines]=useState<Item[]>([]),[product,setProduct]=useState(''),[quantity,setQuantity]=useState('1'),[choices,setChoices]=useState<Record<string,string>>({});
+ useEffect(()=>{onLock(busy||!!pending);return()=>onLock(false);},[busy,pending,onLock]);
+ useEffect(()=>{let active=true;setVisits(null);void (async()=>{try{
+  let query=client.from('extra_visit_requests').select('id,customer_id,requested_on,items,note,state,trip_id,customers(name)',{count:'exact'}).eq('tenant_id',tenantId);
+  if(customerId)query=query.eq('customer_id',customerId);if(filter!=='all')query=query.eq('state',filter);
+  const r=await query.order('requested_on').order('created_at').range(page*20,page*20+19);if(r.error||r.count===null)throw new Error();
+  if(active){setVisits(r.data as unknown as Visit[]);setTotal(r.count);}
+ }catch{if(active)setError('No se pudieron consultar las visitas. Actualizá; esta sección requiere la actualización de base de visitas extraordinarias.');}})();return()=>{active=false;};},[client,tenantId,customerId,filter,page,version]);
+ const locked=disabled||busy||!!pending;
+ async function execute(command:Command){
+  if(busy||disabled)return;setBusy(true);setPending(command);setError('');setNotice('');
+  try{const r=await client.rpc(command.name,command.args);if(r.error){if(r.error.code)setPending(null);throw r.error;}if(r.data!==command.id)throw new Error();
+   setPending(null);setNotice(command.message);setShow(false);setLines([]);setPage(0);setVersion(v=>v+1);onChanged?.();
+  }catch(e){const safe=['Ya hay una visita extraordinaria para ese cliente y fecha','Cliente inactivo o pendiente de recuperacion','Elegi un reparto abierto de la fecha solicitada','La parada ya fue resuelta; elegi otro reparto','La visita ya no esta pendiente'];const msg=(e as {message?:string}).message;setError(msg&&safe.includes(msg)?msg:'No pudimos confirmar la operación. Reintentá la misma solicitud si aparece ese botón; si no, actualizá antes de volver a guardar.');}
+  finally{setBusy(false);}
+ }
+ function addLine(){
+  const q=Number(quantity);if(locked||!products.some(p=>p.id===product&&p.active)||!Number.isInteger(q)||q<1||q>100000){setError('Elegí un producto y cantidad entera entre 1 y 100000.');return;}
+  if(lines.length>=200||lines.some(l=>l.product_id===product)){setError('Ese producto ya está en el pedido. Quitalo para cambiar la cantidad.');return;}
+  setLines(current=>[...current,{product_id:product,quantity:q}]);setError('');setProduct('');setQuantity('1');
+ }
+ function create(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();if(locked||!customerId)return;if(!lines.length){setError('Agregá al menos un producto al pedido.');return;}const f=new FormData(e.currentTarget),id=crypto.randomUUID();
+  void execute({name:'owner_request_extra_visit',args:{p_tenant:tenantId,p_id:id,p_customer:customerId,p_date:f.get('date'),p_items:lines,p_note:String(f.get('note')||'')},id,message:'Visita extraordinaria guardada como pendiente. Podés asignarla a un reparto de esa fecha.'});
+ }
+ function assign(v:Visit,trip:string){if(locked||!trip)return;void execute({name:'owner_manage_extra_visit',args:{p_tenant:tenantId,p_id:crypto.randomUUID(),p_visit:v.id,p_action:'assigned',p_trip:trip},id:v.id,message:'Visita asignada. El cliente está en el recorrido; si el camión ya salió, revisá la carga disponible.'});}
+ function cancel(v:Visit){if(locked||!window.confirm('¿Cancelar este pedido extraordinario? Se conserva el historial. Si ya estaba asignado, el cliente sigue en el recorrido y la carga no cambia.'))return;void execute({name:'owner_manage_extra_visit',args:{p_tenant:tenantId,p_id:crypto.randomUUID(),p_visit:v.id,p_action:'cancelled',p_trip:null},id:v.id,message:'Pedido extraordinario cancelado. Historial y recorrido conservados.'});}
+ return <section className="extra-visits"><div className="section-heading"><h3>Visitas extraordinarias</h3><button type="button" disabled={disabled||busy} onClick={()=>{setError('');setVersion(v=>v+1);}}>Actualizar visitas</button></div>
+  {error&&<p role="alert" className="notice">{error}</p>}{notice&&<p role="status" className="notice">{notice}</p>}{pending&&!busy&&<button type="button" disabled={disabled} onClick={()=>void execute(pending)}>Reintentar misma solicitud</button>}
+  {customerId&&<><p>Si pide productos antes de su visita habitual, generá un pedido con fecha. No registra venta ni entrega.</p><button type="button" className="primary" disabled={locked} aria-expanded={show} onClick={()=>setShow(v=>!v)}>Generar visita extraordinaria</button>{show&&<form onSubmit={create}><fieldset disabled={locked}><label>Fecha solicitada<input type="date" name="date" required min={stockToday()} defaultValue={stockToday()}/></label><div className="extra-visit-fields"><label>Producto solicitado<select value={product} onChange={e=>setProduct(e.target.value)}><option value="">Elegí un producto</option>{products.filter(p=>p.active).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>Cantidad solicitada<input type="number" inputMode="numeric" min="1" max="100000" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)}/></label></div><button type="button" onClick={addLine}>Agregar al pedido</button>{lines.map(l=><div className="extra-visit-item" key={l.product_id}><span>{products.find(p=>p.id===l.product_id)?.name} · {l.quantity} unidades</span><button type="button" onClick={()=>setLines(current=>current.filter(i=>i.product_id!==l.product_id))}>Quitar del pedido</button></div>)}<label>Nota del pedido<textarea name="note" maxLength={400} rows={2}/></label><button className="primary">Guardar visita pendiente</button></fieldset></form>}</>}
+  <label>Mostrar visitas<select value={filter} disabled={locked} onChange={e=>{setFilter(e.target.value);setPage(0);}}><option value="pending">Pendientes</option><option value="assigned">Asignadas</option><option value="all">Todas, incluso canceladas</option></select></label>
+  {visits===null?<p>{error?'Actualizá para consultar las visitas.':'Consultando visitas…'}</p>:!visits.length?<p>No hay visitas en esta lista.</p>:visits.map(v=>{const options=trips.filter(t=>t.service_date===v.requested_on&&(t.status==='planned'||t.status==='active')),selected=choices[v.id]??(options.length===1?options[0].id:'');return <article className="extra-visit-card" key={v.id}><strong>{v.customers?.name||'Cliente'} · {new Date(`${v.requested_on}T12:00:00`).toLocaleDateString('es-AR')}</strong><p>{({pending:'Pendiente de reparto',assigned:'Asignada a reparto',cancelled:'Cancelada'} as Record<string,string>)[v.state]}</p>{v.items.map(i=><p key={i.product_id}>{products.find(p=>p.id===i.product_id)?.name||'Producto anterior'} · {i.quantity} unidades</p>)}{v.note&&<p>{v.note}</p>}{v.state==='pending'&&<><label>Reparto de esa fecha<select value={selected} disabled={locked} onChange={e=>setChoices(current=>({...current,[v.id]:e.target.value}))}><option value="">Elegí un reparto</option>{options.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>{!options.length&&<p>Prepará un reparto para esa fecha y actualizá la lista.</p>}<button type="button" className="primary" disabled={locked||!selected} onClick={()=>assign(v,selected)}>Asignar visita al reparto</button></>}{v.state==='assigned'&&<p>Reparto: {trips.find(t=>t.id===v.trip_id)?.name||'Reparto anterior'}</p>}{v.state!=='cancelled'&&<button type="button" disabled={locked} onClick={()=>cancel(v)}>Cancelar pedido extraordinario</button>}</article>;})}
+  {total>20&&<div className="extra-visit-pages"><button type="button" disabled={locked||page===0} onClick={()=>setPage(p=>p-1)}>Anteriores</button><span>Página {page+1} de {Math.ceil(total/20)}</span><button type="button" disabled={locked||(page+1)*20>=total} onClick={()=>setPage(p=>p+1)}>Siguientes</button></div>}
+ </section>;
+}

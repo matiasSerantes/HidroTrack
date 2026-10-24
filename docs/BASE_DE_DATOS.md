@@ -126,3 +126,7 @@ Aplicada `20261022123826_assistant_links.sql`: auditoria de vinculos, RPC de jef
 
 Actualizacion 22/10: bloqueo temporal autorizado explicitamente e instalado como 20261022130128_assistant_waiting_access.sql; 23 migraciones, 35 tablas con RLS. Referencias anteriores al SQL pendiente son historicas. SMTP a cargo del usuario, aun sin validar.
 Actualizacion etapa 2 (22/10): migracion 20261022131448_trip_invitations aplicada; 24 migraciones, 37 tablas con RLS. Agrega invitaciones/eventos, RPC limitados, guardia de carga y desvinculacion de planes rechazados/revocados sin carga. No habilita permisos operativos generales del driver. Ver [detalle](ETAPA_2_INVITACIONES.md).
+
+## 24/10 - Solicitudes de visita
+
+Aplicada 20261024134653_extra_visits.sql: solicitudes y eventos con RLS de jefe, RPC auditados e idempotentes, asignacion mediante route_edit_stop sin entrega/venta. 25 migraciones, 39 tablas con RLS. Sin abrir permisos operativos generales de driver. Detalle en ETAPA_3_PREPARACION.md.

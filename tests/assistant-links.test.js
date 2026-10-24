@@ -14,6 +14,13 @@ async function assigned(){
 async function answer(trip,accept=true,request=crypto.randomUUID()){return db.query('select public.assistant_answer_trip_invitation($1,$2,$3,$4) as state',[tenant,trip,accept,request]);}
 async function preview(trip){return db.query('select public.assistant_open_trip($1,$2) as result',[tenant,trip]);}
 async function denied(action,pattern){await db.exec('savepoint denied');await expect(action()).rejects.toThrow(pattern);await db.exec('rollback to savepoint denied; release savepoint denied');}
+async function extraVisit(customer){
+ await actor(owner);const id=crypto.randomUUID(),product=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Agua extra',100,'unidad',true)",[tenant,product]);
+ const customerId=customer??(await db.query('select id from public.customers where tenant_id=$1 order by name limit 1',[tenant])).rows[0].id;
+ const items=JSON.stringify([{product_id:product,quantity:2}]);
+ await db.query("select public.owner_request_extra_visit($1,$2,$3,current_date,$4,'Llamo antes de la visita')",[tenant,id,customerId,items]);return {id,customer:customerId,items};
+}
 beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
  create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
@@ -115,4 +122,36 @@ it('el jefe no puede cargar un camion pendiente de aceptacion',async()=>{
  await denied(()=>db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,items]),/debe aceptar/);
  await actor(driver);await answer(trip);await actor(owner);
  await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,items]);
+});
+it('solicitud extraordinaria es idempotente y no registra stock ni venta',async()=>{
+ const v=await extraVisit();await db.query("select public.owner_request_extra_visit($1,$2,$3,current_date,$4,'Llamo antes de la visita')",[tenant,v.id,v.customer,v.items]);
+ expect((await db.query('select * from public.extra_visit_events')).rows).toHaveLength(1);
+ expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
+ expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+});
+it('asistente y otro jefe no pueden leer o crear pedidos de la empresa',async()=>{
+ const v=await extraVisit();await actor(driver);expect((await db.query('select * from public.extra_visit_requests')).rows).toHaveLength(0);
+ await denied(()=>db.query("select public.owner_request_extra_visit($1,$2,$3,current_date,$4,'')",[tenant,crypto.randomUUID(),v.customer,v.items]),/Acceso denegado/);
+ await actor(otherOwner);expect((await db.query('select * from public.extra_visit_requests')).rows).toHaveLength(0);
+});
+it('asignar pedido no duplica parada existente ni suma stock',async()=>{
+ const trip=await assigned(),v=await extraVisit();const event=crypto.randomUUID();
+ await db.query("select public.owner_manage_extra_visit($1,$2,$3,'assigned',$4)",[tenant,event,v.id,trip]);
+ await db.query("select public.owner_manage_extra_visit($1,$2,$3,'assigned',$4)",[tenant,event,v.id,trip]);
+ expect((await db.query('select * from public.route_stops where trip_id=$1',[trip])).rows).toHaveLength(1);
+ expect((await db.query('select * from public.extra_visit_requests')).rows[0].state).toBe('assigned');
+ expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
+});
+it('agrega cliente nuevo al recorrido y cancelar preserva parada e historial',async()=>{
+ const trip=await assigned(),customer=crypto.randomUUID();await db.exec('reset role');await db.query("insert into public.customers(id,tenant_id,name,address) values($1,$2,'Nuevo','Direccion nueva')",[customer,tenant]);
+ const v=await extraVisit(customer);await db.query("select public.owner_manage_extra_visit($1,$2,$3,'assigned',$4)",[tenant,crypto.randomUUID(),v.id,trip]);
+ expect((await db.query('select * from public.route_stops where trip_id=$1',[trip])).rows).toHaveLength(2);
+ await db.query("select public.owner_manage_extra_visit($1,$2,$3,'cancelled',null)",[tenant,crypto.randomUUID(),v.id]);
+ expect((await db.query('select * from public.route_stops where trip_id=$1',[trip])).rows).toHaveLength(2);
+ expect((await db.query('select * from public.extra_visit_events')).rows).toHaveLength(3);
+});
+it('rechaza fecha distinta sin agregar paradas ni cambiar la solicitud',async()=>{
+ const trip=await assigned(),v=await extraVisit();await db.exec('reset role');await db.query("update public.inventory_trips set service_date=current_date+1 where id=$1",[trip]);await actor(owner);
+ await denied(()=>db.query("select public.owner_manage_extra_visit($1,$2,$3,'assigned',$4)",[tenant,crypto.randomUUID(),v.id,trip]),/fecha solicitada/);
+ expect((await db.query('select * from public.extra_visit_requests')).rows[0].state).toBe('pending');
 });

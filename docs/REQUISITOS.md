@@ -290,3 +290,7 @@ Planilla real: fecha de alta de solo lectura, dias habituales por seleccion inme
 ## Carga sugerida real - 24/10
 
 La carga sugiere suma de pedidos habituales solo para clientes activos de paradas activas y sin futura baja. No resta envases a devolver. Aplicar referencia es explicito y reemplaza cantidades; luego permite extras o reducciones. Cambiar reparto reinicia cantidades no confirmadas. No inventar pedidos para clientes sin preferencia; advertir faltantes. Carga unica y stock se validan al confirmar por contratos existentes. Falta snapshot historico de referencia/extras.
+
+## Visita extraordinaria real - 24/10
+
+Jefe registra fecha/productos/cantidades desde planilla; queda pendiente de reparto. Asignacion a reparto planned/active de la misma fecha agrega/reactiva cliente sin duplicar. Cliente inactivo/futura baja bloqueado. Pedido sustituye habitual en sugerencia para esa visita, no se suma por duplicado. Cancelar conserva historial, parada y carga. Un pedido no cancelado por cliente/fecha; entrega y cobro siguen en etapa 4.

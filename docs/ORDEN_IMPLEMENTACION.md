@@ -27,6 +27,8 @@ Cierre: pruebas de aceptar, rechazar, no responder, revocar y cerrar; otra cuent
 
 ## 3. Clientes, inventario y preparacion
 
+Avance 24/10: visitas extraordinarias reales con productos/fecha, pendientes y asignacion; sustituyen habitual en referencia de carga para evitar duplicados. Ver [detalle y pendientes](ETAPA_3_PREPARACION.md).
+
 Avance 24/10: carga sugerida conectada a cantidades habituales por cliente del recorrido, extras/faltantes visibles y confirmacion unica existente. Comparacion historica sugerido/extras y resto de la etapa pendientes.
 
 Avance 22/10 parcial: dias de visita y cantidades habituales conectados en planilla, fecha de alta visible. Compilacion comprobada; guardado manual/real y demas puntos de etapa pendientes.

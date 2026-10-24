@@ -1,5 +1,6 @@
 import { ExternalNavigation } from './ExternalNavigation';
 import { OwnerCustomerHabits } from './OwnerCustomerHabits';
+import { ExtraVisitRequests } from './ExtraVisitRequests';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { parseMoney, currency } from '../domain/demo';
@@ -9,7 +10,7 @@ type Customer = {latitude?:number|null;longitude?:number|null;created_at?:string
 type Product = {family?:string;id:string;name:string;active:boolean;returnable:boolean};
 type Asset = {retired?:boolean;id:string;name:string;serial:string;ownership:string;location:string;customer_id:string|null;mode:string|null;monthly:number};
 type ModelAssignment={id:string;product_id:string;customer_id:string;mode:string;monthly:number;status:string;occurred_on:string};
-type Snapshot = {modelEnabled:boolean;assignments:ModelAssignment[];balances:{product_id:string;depot_ready:number}[];truck:{product_id:string;trip_id:string;ready:number}[];trips:{id:string;name:string;status:string}[];products:Product[];held:{product_id:string;quantity:number}[];assets:Asset[];operations:{id:string;kind:string;created_at:string;note:string;items:{product_id:string;quantity:number}[]}[]};
+type Snapshot = {modelEnabled:boolean;assignments:ModelAssignment[];balances:{product_id:string;depot_ready:number}[];truck:{product_id:string;trip_id:string;ready:number}[];trips:{id:string;name:string;status:string;service_date?:string}[];products:Product[];held:{product_id:string;quantity:number}[];assets:Asset[];operations:{id:string;kind:string;created_at:string;note:string;items:{product_id:string;quantity:number}[]}[]};
 type Command = {name:string;args:Record<string,unknown>;message:string};
 
 export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLock,onArchive,disabled=false}:{client:SupabaseClient;tenantId:string;customer:Customer;onClose:()=>void;onEdit:()=>void;onArchive?:()=>void;disabled?:boolean;onLock:(value:boolean)=>void}) {
@@ -18,7 +19,8 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
   const [showOpening,setShowOpening]=useState(false),[showAsset,setShowAsset]=useState(false),[mode,setMode]=useState('loan'),[selection,setSelection]=useState('');
   const [showDispenserOpening,setShowDispenserOpening]=useState(false);
   const [habitsBusy,setHabitsBusy]=useState(false);
-  useEffect(()=>{onLock(busy||!!pending||habitsBusy);return()=>onLock(false);},[busy,pending,habitsBusy,onLock]);
+  const [extraBusy,setExtraBusy]=useState(false);
+  useEffect(()=>{onLock(busy||!!pending||habitsBusy||extraBusy);return()=>onLock(false);},[busy,pending,habitsBusy,extraBusy,onLock]);
   async function load():Promise<Snapshot>{
     const results=await Promise.all([
       client.from('products').select('*').eq('tenant_id',tenantId).order('name'),
@@ -27,7 +29,7 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
       client.from('inventory_operations').select('id,kind,created_at,note,items').eq('tenant_id',tenantId).eq('customer_id',customer.id).order('created_at',{ascending:false}).limit(30),
       client.from('inventory_owned_stock').select('product_id,depot_ready').eq('tenant_id',tenantId),
       client.from('inventory_truck_stock').select('product_id,trip_id,ready').eq('tenant_id',tenantId),
-      client.from('inventory_trips').select('id,name,status').eq('tenant_id',tenantId),
+      client.from('inventory_trips').select('id,name,status,service_date').eq('tenant_id',tenantId),
       client.from('dispenser_assignments').select('*').eq('tenant_id',tenantId).eq('customer_id',customer.id),
     ]);
     if(results.slice(0,7).some(r=>r.error))throw new Error('No pudimos cargar la ficha. Revisá la conexión e intentá nuevamente.');
@@ -76,7 +78,7 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
     if(!data?.modelEnabled||!data.products.some(p=>p.id===product&&p.active&&isDispenserModel(p))||!Number.isInteger(quantity)||quantity<1||quantity>100000){setError('Elegí un modelo de dispenser y una cantidad entera mayor que cero.');return;}
     void execute({name:'inventory_record_stock',args:{p_tenant:tenantId,p_id:crypto.randomUUID(),p_kind:'receive',p_trip:null,p_customer:null,p_items:[{product_id:product,quantity}],p_note:String(f.get('note')||'Registro de unidades existentes desde la planilla del cliente'),p_date:f.get('date')},message:'Unidades de dispenser registradas. Ahora elegí Asignar dispenser para dejar una en este cliente.'});
   }
-  const locked=busy||!!pending||disabled||habitsBusy, assignedModels=data?.assignments.filter(a=>a.status==='active')||[], assigned=data?.assets.filter(a=>a.customer_id===customer.id&&a.location==='customer'&&!a.retired)||[];
+  const locked=busy||!!pending||disabled||habitsBusy||extraBusy, assignedModels=data?.assignments.filter(a=>a.status==='active')||[], assigned=data?.assets.filter(a=>a.customer_id===customer.id&&a.location==='customer'&&!a.retired)||[];
   const models=data?.products.filter(p=>p.active&&isDispenserModel(p))||[];
   const hasAvailable=!!data&&(data.assets.some(a=>a.ownership==='company'&&a.location==='depot'&&!a.retired)||models.some(p=>Number(data.balances.find(b=>b.product_id===p.id)?.depot_ready||0)>0||data.truck.some(b=>b.product_id===p.id&&Number(b.ready)>0&&data.trips.some(t=>t.id===b.trip_id&&t.status==='active'))));
   return <section className="panel owner-customer-sheet" aria-labelledby="customer-sheet-title"><div className="section-heading"><div><span className="hd-kicker">PLANILLA DEL CLIENTE</span><h2 id="customer-sheet-title">{customer.name}</h2><p>{customer.address}{customer.phone?` · ${customer.phone}`:''}</p></div><div className="customer-actions"><button disabled={locked} onClick={onEdit}>Editar datos</button><button disabled={locked} onClick={onClose}>Volver a clientes</button></div></div>
@@ -94,7 +96,8 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
       {showAsset&&<form onSubmit={assign}><fieldset disabled={locked}><label>Dispenser disponible<select name="asset" disabled={!hasAvailable} value={selection} onChange={e=>setSelection(e.target.value)} required><option value="">Elegí un dispenser disponible</option><optgroup label="Stock por modelo">{data.products.filter(p=>p.active&&isDispenserModel(p)).flatMap(p=>{const depot=Number(data.balances.find(b=>b.product_id===p.id)?.depot_ready||0);return [...(depot>0?[<option disabled={!data.modelEnabled} key={`${p.id}.depot`} value={`model:${p.id}:depot`}>{p.name} · {depot} disponibles en depósito</option>]:[]),...data.truck.filter(b=>b.product_id===p.id&&Number(b.ready)>0&&data.trips.some(t=>t.id===b.trip_id&&t.status==='active')).map(b=><option disabled={!data.modelEnabled} key={`${p.id}.${b.trip_id}`} value={`model:${p.id}:${b.trip_id}`}>{p.name} · {Number(b.ready)} disponibles en {data.trips.find(t=>t.id===b.trip_id)?.name}</option>)];})}</optgroup><optgroup label="Equipos individualizados">{data.assets.filter(a=>a.ownership==='company'&&a.location==='depot'&&!a.retired).map(a=><option key={a.id} value={a.id}>{a.name} · {a.serial||a.id.slice(0,8)}</option>)}</optgroup></select></label><p>El stock disponible por modelo aparece aquí sin volver a cargar cada equipo. Asignarlo descuenta una unidad disponible; devolverlo la libera.</p>{!data.modelEnabled&&<p className="notice">La asignación desde stock por modelo necesita aplicar la actualización de base. Los equipos individualizados siguen disponibles.</p>}{selection.startsWith('model:')&&<label>Fecha de asignación<input name="date" type="date" max={stockToday()} defaultValue={stockToday()} required/></label>}<label>Modalidad del dispenser<select value={mode} onChange={e=>setMode(e.target.value)}><option value="loan">Préstamo gratuito</option><option value="rental">Alquiler</option></select></label>{mode==='rental'&&<label>Cuota mensual ($)<input name="monthly" required inputMode="decimal"/></label>}<button className="primary" disabled={!selection||!hasAvailable}>Guardar dispenser del cliente</button></fieldset></form>}</section></div>
       <section><h3>Movimientos del cliente</h3>{data.operations.map(o=><article className="customer-held-row" key={o.id}><div><strong>{o.kind==='opening_customer'?'Inventario inicial':o.kind==='delivery'?'Entrega / devolución':o.kind==='dispenser_assign'?'Dispenser asignado':o.kind==='dispenser_return'?'Devolución de dispenser':'Movimiento de inventario'}</strong><small>{new Date(o.created_at).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})} · {o.note||'Sin observaciones'}</small>{o.items?.map(i=><small key={i.product_id}>{data.products.find(p=>p.id===i.product_id)?.name||'Artículo'}: {i.quantity}</small>)}</div></article>)}{!data.operations.length&&<p>Todavía no hay movimientos registrados.</p>}</section>
     </>}
-    <OwnerCustomerHabits client={client} tenantId={tenantId} customerId={customer.id} createdAt={customer.created_at} disabled={busy||!!pending||disabled} onLock={setHabitsBusy}/>
+    <OwnerCustomerHabits client={client} tenantId={tenantId} customerId={customer.id} createdAt={customer.created_at} disabled={busy||!!pending||disabled||extraBusy} onLock={setHabitsBusy}/>
+    {data&&<ExtraVisitRequests client={client} tenantId={tenantId} customerId={customer.id} products={data.products} trips={data.trips} disabled={busy||!!pending||disabled||habitsBusy} onLock={setExtraBusy}/>}
     {onArchive&&<section className="customer-archive-section"><h3>Administración del cliente</h3><p>Archivar lo retira de los clientes activos. Conserva su historial, envases y equipos registrados.</p><div className="customer-actions"><button className="customer-delete" disabled={locked} onClick={onArchive}>Archivar cliente</button></div></section>}
   </section>;
 }
