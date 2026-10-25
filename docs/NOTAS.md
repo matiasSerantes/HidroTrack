@@ -701,3 +701,5 @@ Migracion 20261025052354_assistant_initial_load.sql aplicada por MCP: 36 migraci
 ID y datos identicos al reintentar; otra carga o salida sin cierre/aprobacion anterior se bloquea. Respuesta desconocida congela formulario y actualizaciones de recorrido para no perder reintento aunque servidor ya haya activado. Confirmacion muestra recorrido activo y Stock del camion. Formularios celestes, cantidades tactiles y adaptacion movil/PC; revision visual manual autenticada pendiente.
 
 Verificacion: 71 contratos SQL/permisos y 13 controles de carga/invitacion/recorrido aprobados (84 total), compilacion correcta. Incluye stock insuficiente con rollback, costos privados, permisos y reintento ante respuesta perdida. Publicacion pendiente tras push. Cierre/aprobacion/PDF del asistente es el siguiente incremento.
+
+Publicacion verificada el 25/10/2026 tras push 5fdb728: HTTP 200, AccountWorkspace-CGu-tPoU.js sirve assistant_confirm_load y Registrar carga e iniciar reparto. Sin iniciar sesion ni cargar inventario real para comprobar. Validacion manual autenticada pendiente.
