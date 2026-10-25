@@ -178,3 +178,5 @@ Registro conectado en /?registro=jefe: crear cuenta de jefe, confirmar correo y 
 Migracion 20261025044949_owner_signup.sql aplicada por MCP. Estado comprobado: 35 migraciones y 49 tablas publicas con RLS; politica auto_trial=true, trial_days=30. Nuevas owner_signup_policy y owner_registrations. Alta transaccional verificada por Auth, solo empresa propia; metadatos no conceden privilegios. Reintento reutiliza empresa sin duplicar ni renovar prueba. Licencias existentes intactas. Cero altas reales durante verificacion.
 
 Verificacion local: 67 contratos SQL/permisos y 9 pruebas de acceso/formulario aprobados; build correcto. Publicacion pendiente de verificar tras push. Prueba manual autenticada de correo, alta y uso movil/PC pendiente; no se enviaron correos ni crearon cuentas reales para probar.
+
+Publicacion verificada el 25/10/2026: HTTP 200, formulario Crear cuenta de jefe y RPC owner_create_workspace presentes en recursos publicos (AccountWorkspace-Cl6JIRc9.js), tras push e59bae0. Enlace compartible: https://hidrotrack.matilegen.workers.dev/?registro=jefe. No se inicio sesion ni se enviaron correos para comprobar; prueba manual autenticada pendiente.
