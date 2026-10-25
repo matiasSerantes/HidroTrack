@@ -3,7 +3,8 @@ function pdfText(text:string){return text.replace(/[–—−]/g,'-').replace(/[
 /** Self-contained A4 PDF. All content is escaped and encoded with WinAnsi fonts. */
 export function createTextReceiptPdf(lines:string[],footer:string):Uint8Array{
  const wrapped=lines.flatMap(line=>{const result:string[]=[];let text=line.replace(/[\r\n\t]/g,' ');while(text.length>90){let split=text.lastIndexOf(' ',90);if(split<20)split=90;result.push(text.slice(0,split));text=text.slice(split).trimStart();}result.push(text);return result;});
- const pages:string[][]=[];for(let i=0;i<wrapped.length;i+=41)pages.push(wrapped.slice(i,i+41));
+ const heading=(line:string)=>/[A-ZÁÉÍÓÚÑ]/.test(line)&&/^[A-ZÁÉÍÓÚÑ ·/]+$/.test(line);
+ const pages:string[][]=[];for(let i=0;i<wrapped.length;){let end=Math.min(i+41,wrapped.length);if(end<wrapped.length){for(let j=Math.max(i,end-2);j<end;j++){if(heading(wrapped[j])){end=j;break;}}}pages.push(wrapped.slice(i,end));i=end;}
  if(!pages.length)pages.push([]);
  const objects:string[]=['','<< /Type /Catalog /Pages 2 0 R >>','','<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'];
  const kids:number[]=[];

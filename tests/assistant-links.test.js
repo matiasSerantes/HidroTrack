@@ -582,3 +582,29 @@ it('ni presentacion ni observacion generan comprobante aprobado; anonimos y no c
 it('comprobante guarda nombres del cierre aunque cambien empresa catalogo y perfil despues',async()=>{
  const v=await approvedAssistantReceipt();await db.query("update public.products set name='Nombre nuevo' where id=$1",[v.product]);await db.exec('reset role');await db.query("update public.tenants set name='Empresa renombrada' where id=$1",[tenant]);await actor(driver);const h=(await db.query('select public.assistant_close_receipts() as h')).rows[0].h[0];expect(h.company).toBe('Empresa A');expect(h.stock[0].name).toBe('Agua visita');expect(h.initial_load[0].name).toBe('Agua visita');
 });
+
+async function equipmentTripFixture(asAssistant=false,state='good'){
+ const v=await dispenserContract();let trip;
+ if(asAssistant){trip=await assigned();await actor(driver);await answer(trip);await actor(owner);}
+ else{trip=crypto.randomUUID();await db.query("select public.inventory_create_trip($1,$2,$3,'Equipos',current_date,$4)",[tenant,trip,owner,[v.customer]]);}
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,JSON.stringify([{product_id:v.replacement,quantity:1}])]);
+ const ids=await exchange(v,{trip,state});return {...v,trip,...ids};
+}
+it('detalle de cambios no duplica retorno y asignacion de reemplazo; queda congelado en cierre propio',async()=>{
+ const v=await equipmentTripFixture();await db.query("select public.inventory_assign_dispenser_model($1,$2,$3,$4,'loan',0,current_date,$5)",[tenant,crypto.randomUUID(),v.old,v.customer,v.trip]);await recordAssistantVisit(v);const q=await ownerCloseQuote(v);expect(q.equipment_detail.models).toHaveLength(2);expect(q.equipment_detail.models.map(e=>e.kind).sort()).toEqual(['assigned','exchanged']);expect(q.equipment_detail.models.find(e=>e.kind==='exchanged')).toMatchObject({state:'good',quantity:1});
+ const receipt=await finishOwner(v,q);await db.query("update public.products set name='Modelo renombrado' where tenant_id=$1 and id=$2",[tenant,v.old]);const h=(await db.query('select public.owner_self_close_history($1) as h',[tenant])).rows[0].h[0];expect(h.equipment_detail).toEqual(receipt.equipment_detail);expect(JSON.stringify(h.equipment_detail)).not.toContain('Modelo renombrado');
+});
+it('retirado roto figura en detalle pero no se acredita como unidad disponible del camion',async()=>{
+ const v=await equipmentTripFixture(false,'broken');const q=await ownerCloseQuote(v);expect(q.equipment_detail.models).toHaveLength(1);expect(q.equipment_detail.models[0]).toMatchObject({kind:'exchanged',state:'broken'});expect(q.stock.find(p=>p.product_id===v.old)).toBeUndefined();
+});
+it('equipo por serie muestra carga y regreso vinculados sin inventar un cambio',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);const asset=crypto.randomUUID();
+ await db.query("select public.inventory_save_dispenser($1,$2,$3,'Equipo identificado','EQ-TEST','company','truck',null,$4,null,0)",[tenant,crypto.randomUUID(),asset,v.trip]);const before=await ownerCloseQuote(v);expect(before.equipment_count).toBe(1);expect(before.equipment_detail.serialized[0]).toMatchObject({kind:'loaded',serial:'EQ-TEST'});
+ await db.query("select public.inventory_save_dispenser($1,$2,$3,'Equipo identificado','EQ-TEST','company','depot',null,null,null,0)",[tenant,crypto.randomUUID(),asset]);await recordAssistantVisit(v);const q=await ownerCloseQuote(v);expect(q.equipment_count).toBe(0);expect(q.equipment_detail.serialized.map(e=>e.kind).sort()).toEqual(['loaded','returned']);await finishOwner(v,q);
+});
+it('comprobante del asistente comparte detalle sin cliente alquiler responsable ni costos',async()=>{
+ const v=await equipmentTripFixture(true);await actor(driver);await recordAssistantVisit(v);const q=await assistantCloseQuote(v);expect(q.equipment_detail.models).toHaveLength(1);const closeId=crypto.randomUUID();await submitAssistantClose({...v,closeId},q);await actor(owner);await reviewAssistantClose(closeId);await actor(driver);const r=(await db.query('select public.trip_close_receipt($1,$2) as r',[tenant,closeId])).rows[0].r.receipt;expect(r.equipment_detail).toEqual(q.equipment_detail);const detail=JSON.stringify(r.equipment_detail);for(const field of ['customer_id','monthly','involved_id','unit_cost',v.customer])expect(detail).not.toContain(field);await denied(()=>db.query('select private.trip_equipment_close_detail($1,$2)',[tenant,v.trip]),/permission denied/);
+});
+it('rendicion antigua sin detalle se aprueba sin reconstruir movimientos nuevos',async()=>{
+ const v={...await deliveryFixture(),closeId:crypto.randomUUID()};await deliverVisit(v);await submitAssistantClose(v,await assistantCloseQuote(v));await db.exec('reset role');await db.query("update public.assistant_trip_close_snapshots set request=jsonb_set(request,'{expected}',(request->'expected')-'equipment_detail'),snapshot=snapshot-'equipment_detail' where tenant_id=$1 and id=$2",[tenant,v.closeId]);await actor(owner);await reviewAssistantClose(v.closeId);const h=(await db.query('select public.owner_assistant_close_inbox($1) as h',[tenant])).rows[0].h[0];expect(h.closure_state).toBe('approved');expect(h).not.toHaveProperty('equipment_detail');
+});

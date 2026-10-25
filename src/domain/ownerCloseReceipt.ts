@@ -1,6 +1,7 @@
+import {equipmentCloseLines,type EquipmentCloseDetail} from './equipmentCloseDetail';
 import {createTextReceiptPdf,downloadPdf} from './textReceiptPdf';
 
-export type OwnerCloseSnapshot={id?:string;closed_at?:string;note?:string;trip:{id:string;name:string;date:string;status:string};cash:number;transfer:number;sales:number;pending_visits:number;equipment_count:number;pending_closure:boolean;stock:{product_id:string;name:string;family:string;ready:number;empties:number}[];initial_load:{product_id:string;name:string;loaded:number}[]};
+export type OwnerCloseSnapshot={equipment_detail?:EquipmentCloseDetail|null;id?:string;closed_at?:string;note?:string;trip:{id:string;name:string;date:string;status:string};cash:number;transfer:number;sales:number;pending_visits:number;equipment_count:number;pending_closure:boolean;stock:{product_id:string;name:string;family:string;ready:number;empties:number}[];initial_load:{product_id:string;name:string;loaded:number}[]};
 const money=(value:number)=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(value);
 const validQuantity=(n:unknown)=>typeof n==='number'&&Number.isSafeInteger(n)&&n>=0&&n<=100000;
 const validMoney=(n:unknown)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=999999999999.99;
@@ -12,7 +13,7 @@ export function ownerCloseReceiptLines(h:OwnerCloseSnapshot,tenantId:string):str
  lines.push('','REGRESO CONFIRMADO AL DEPÓSITO');
  for(const p of h.stock){lines.push(p.name,p.family==='dispenser'?`Unidades disponibles que vuelven: ${p.ready}`:`Llenos / unidades listas: ${p.ready} | Vacíos: ${p.empties}`);}
  if(!h.stock.length)lines.push('Sin mercadería pendiente de regreso al cierre.');
- lines.push('','OBSERVACIONES',h.note||'Sin observaciones.','','Comprobante interno del reparto propio del jefe. No es factura fiscal.','Cantidades e importes del resumen guardado al cerrar.','Este resumen no desglosa cambios ni series de dispenser.');
+ lines.push('',...equipmentCloseLines(h.equipment_detail),'','OBSERVACIONES',h.note||'Sin observaciones.','','Comprobante interno del reparto propio del jefe. No es factura fiscal.','Cantidades e importes del resumen guardado al cerrar.');
  return lines;
 }
 export function createOwnerClosePdf(h:OwnerCloseSnapshot,tenantId:string){return createTextReceiptPdf(ownerCloseReceiptLines(h,tenantId),'Copia del jefe - Cierre propio');}

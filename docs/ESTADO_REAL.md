@@ -6,7 +6,7 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras avance de etapa 3: 38 migraciones instaladas, 50 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
+Supabase MCP, actualizado tras avance de etapa 3: 39 migraciones instaladas, 50 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
@@ -240,3 +240,13 @@ Pruebas actualizadas al contrato vigente inventory_confirm_load (relleno opciona
 Suite completa: 52 archivos, 412 pruebas aprobadas, cero fallos y cero avisos de claves duplicadas. Compilacion final correcta; publicacion por verificar. Sin migraciones ni cambios en inventario/cuentas/cierres reales: base mantiene 38 migraciones y 50 tablas con RLS. QA visual autenticada movil/PC sigue pendiente por bloqueo de Computer Use al no poder verificar la URL de Chrome; no se presenta esta suite local como prueba visual ni recorrido real completo.
 
 Publicacion verificada el 25/10/2026 tras push 9ca43f4: HTTP 200 y AccountWorkspace-CMGxi-q9.js contiene claves independientes closures/proposals/followups. Suite completa 412/412 y build correctos. Sin acceso automatizado a Chrome ni cambios de datos reales; QA visual autenticada sigue pendiente.
+
+## 2026-10-25 - Detalle de dispenser conectado al cierre
+
+Proximas presentaciones/cierres guardan equipment_detail version 1 con operaciones vinculadas explicitamente al reparto: asignaciones por modelo, cambios con reemplazo y estado retirado, roturas/retiros de camion, y cargas/entregas/regresos/traslados de equipos por serie. Cambios excluyen sus dos movimientos componentes para no duplicarlos como nueva asignacion o retiro adicional. Equipo roto no suma disponibilidad. No infiere que el equipo entregado sea de fabrica nuevo ni atribuye devoluciones del deposito al camion solo por fecha/cliente.
+
+Migracion 20261025170559_equipment_close_detail.sql aplicada por MCP: 39 migraciones, 50 tablas con RLS. Helper privado sin EXECUTE directo del usuario, quote propio/asistente incorpora el detalle y proyeccion del recibo propio lo comparte sin cliente, alquiler, responsable, costos ni GPS. Nuevos cambios despues de presentar impiden aprobar sin revisar; rendiciones anteriores sin equipment_detail mantienen sus reglas originales. No se actualizan snapshots antiguos ni saldos/contratos; etiquetas por modelo se congelan al presentar/cerrar, no se afirma reconstruir nombres al dia de un movimiento anterior.
+
+Pantalla de rendicion/historial y PDFs propio del jefe y compartido muestran movimientos sin sumarlos de nuevo al regreso. Comprobantes anteriores conservan aviso de no contener desglose, sin inventar eventos. Se mejora paginacion comun de PDF para que encabezados finales acompanen su contenido. Copias ficticias del jefe (dos paginas) y asistente (una pagina) parseadas y renderizadas sin cortes, incluido titulo Observaciones junto a su texto.
+
+Verificacion final: suite completa 53 archivos, 422 pruebas aprobadas. Incluye cambio bueno/roto, no duplicacion de reemplazo, serie/carga/regreso, snapshot congelado, proyeccion sin datos privados y aprobacion compatible de rendicion antigua. Compilacion final correcta; publicacion pendiente de verificar. Sin movimientos, cambios de dispenser o cierres reales para probar. QA manual autenticada movil/PC aun pendiente por bloqueo de control de Chrome.
