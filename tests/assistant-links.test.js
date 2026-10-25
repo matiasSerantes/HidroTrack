@@ -498,3 +498,43 @@ it('registro administrativo existente se reutiliza sin alterar su licencia ni cr
 it('modo aprobacion conserva espera y reconoce activacion sin restaurar una cuenta dada de baja',async()=>{
  await db.exec('update public.owner_signup_policy set auto_trial=false');await actor(driver);const target=(await db.query("select public.owner_create_workspace('Empresa en espera') as id")).rows[0].id;expect((await db.query('select public.owner_signup_status() as status')).rows[0].status.state).toBe('waiting');await db.exec('reset role');await db.query("update public.licenses set status='active' where tenant_id=$1",[target]);await actor(driver);expect((await db.query('select public.owner_signup_status() as status')).rows[0].status.state).toBe('ready');await db.exec('reset role');await db.query('update public.tenant_members set active=false where tenant_id=$1 and user_id=$2',[target,driver]);await actor(driver);expect((await db.query('select public.owner_signup_status() as status')).rows[0].status.state).toBe('blocked');expect((await db.query("select public.owner_create_workspace('Otra') as id")).rows[0].id).toBe(target);
 });
+
+async function initialLoadFixture(){
+ const trip=await assigned();await actor(owner);const product=crypto.randomUUID(),equipment=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Agua para carga',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.catalog_create_item($1,$2,'Dispenser basico',0,'unidad',false,'dispenser')",[tenant,equipment]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:2},{product_id:equipment,quantity:1}])]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive_empty',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:10}])]);
+ await db.query('select public.owner_set_filling_costs($1,true,$2)',[tenant,JSON.stringify([{product_id:product,unit_cost:5.25}])]);
+ await db.exec('reset role');const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;await db.query('insert into public.customer_product_preferences values($1,$2,$3,3)',[tenant,customer,product]);
+ await actor(driver);await answer(trip);const date=(await db.query("select (now() at time zone 'America/Argentina/Buenos_Aires')::date::text d")).rows[0].d;
+ return {trip,product,equipment,date,id:crypto.randomUUID(),refill:crypto.randomUUID()};
+}
+async function confirmAssistantLoad(v,items=[{product_id:v.product,quantity:4}],fill=true){return db.query("select public.assistant_confirm_load($1,$2,$3,$4,$5,$6,$7,'Carga revisada') as id",[tenant,v.id,v.refill,v.trip,JSON.stringify(items),v.date,fill]);}
+it('asistente aceptado carga una vez, rellena solo faltantes y conserva costo historico privado',async()=>{
+ const v=await initialLoadFixture();const options=(await db.query('select public.assistant_load_options($1,$2) as data',[tenant,v.trip])).rows[0].data;
+ expect(options.products.find(p=>p.id===v.product)).toMatchObject({ready:2,empties:10,suggested:3});expect(JSON.stringify(options)).not.toContain('unit_cost');expect(JSON.stringify(options)).not.toContain('price');
+ await confirmAssistantLoad(v);await confirmAssistantLoad(v);await denied(()=>confirmAssistantLoad(v,[{product_id:v.product,quantity:5}]),/ID de carga/);await denied(()=>confirmAssistantLoad({...v,id:crypto.randomUUID(),refill:crypto.randomUUID()}),/Carga ya confirmada/);
+ const open=(await preview(v.trip)).rows[0].result;expect(open.trip.status).toBe('active');expect(open.stock.find(p=>p.product_id===v.product)).toMatchObject({loaded:4,ready:4,empties:0});
+ expect((await db.query('select * from public.inventory_load_snapshots')).rows).toHaveLength(0);
+ await db.exec('reset role');const history=(await db.query('select * from public.inventory_load_snapshots where trip_id=$1',[v.trip])).rows[0];expect(Number(history.filling_total)).toBe(10.5);expect(history.items.find(p=>p.product_id===v.product)).toMatchObject({loaded:4,suggested:3,extra:1,refilled:2,unit_cost:5.25});
+ expect((await db.query("select count(*)::int n from public.inventory_operations where trip_id=$1 and kind='load'",[v.trip])).rows[0].n).toBe(1);expect((await db.query('select sum(depot_ready)::int ready,sum(depot_empty)::int empties from public.inventory_movements where tenant_id=$1 and product_id=$2',[tenant,v.product])).rows[0]).toMatchObject({ready:0,empties:8});
+});
+it('carga requiere aceptacion y bloquea revocacion, licencia vencida, otro usuario y anonimos',async()=>{
+ const v=await initialLoadFixture();await actor(second);await denied(()=>confirmAssistantLoad(v),/no aceptado/);await actor(owner);await denied(()=>confirmAssistantLoad(v),/no aceptado/);
+ await db.exec('reset role');await db.query("update public.trip_invitations set state='pending' where trip_id=$1",[v.trip]);await actor(driver);await denied(()=>confirmAssistantLoad(v),/no aceptado/);await denied(()=>db.query('select public.assistant_load_options($1,$2)',[tenant,v.trip]),/no disponible/);
+ await db.exec('reset role');await db.query("update public.trip_invitations set state='accepted' where trip_id=$1",[v.trip]);await db.query("update public.licenses set status='suspended' where tenant_id=$1",[tenant]);await actor(driver);await denied(()=>confirmAssistantLoad(v),/no aceptado/);
+ await db.exec('reset role;set local role anon');await denied(()=>confirmAssistantLoad(v),/permission denied/);
+});
+it('stock insuficiente, duplicados, productos ajenos y parametros inventados no dejan carga parcial',async()=>{
+ const v=await initialLoadFixture();
+ for(const items of [[{product_id:v.product,quantity:4},{product_id:v.equipment,quantity:2}],[{product_id:v.product,quantity:1000}],[{product_id:v.product,quantity:1},{product_id:v.product,quantity:1}],[{product_id:crypto.randomUUID(),quantity:1}],[{product_id:v.product,quantity:1,unit_cost:0}],[{product_id:v.product,quantity:1.5}]])await denied(()=>confirmAssistantLoad(v,items),/Stock insuficiente|repetido|habilitado|invalida/);
+ await denied(()=>confirmAssistantLoad(v,undefined,false),/Stock insuficiente/);await denied(()=>confirmAssistantLoad({...v,date:'2099-01-01'}),/fecha de hoy/);
+ await db.exec('reset role');expect((await db.query('select * from public.inventory_load_snapshots where trip_id=$1',[v.trip])).rows).toHaveLength(0);expect((await db.query('select status from public.inventory_trips where id=$1',[v.trip])).rows[0].status).toBe('planned');expect((await db.query("select * from public.inventory_operations where kind='refill'",[])).rows).toHaveLength(0);
+});
+it('carga sin rellenado usa llenos, y no permite segunda salida antes de aprobar la anterior',async()=>{
+ const v=await initialLoadFixture();await confirmAssistantLoad(v,[{product_id:v.product,quantity:1},{product_id:v.equipment,quantity:1}],false);
+ const trip2=await assigned();await actor(driver);await answer(trip2);await denied(()=>confirmAssistantLoad({...v,trip:trip2,id:crypto.randomUUID(),refill:crypto.randomUUID()},[{product_id:v.product,quantity:1}],false),/reparto anterior/);
+ await actor(owner);await denied(()=>db.query("select public.inventory_confirm_load($1,$2,$3,$4,$5,$6,false,'')",[tenant,crypto.randomUUID(),crypto.randomUUID(),v.trip,JSON.stringify([{product_id:v.product,quantity:1}]),v.date]),/Carga ya confirmada/);
+ await db.exec('reset role');expect(Number((await db.query('select filling_total from public.inventory_load_snapshots where trip_id=$1',[v.trip])).rows[0].filling_total)).toBe(0);
+});

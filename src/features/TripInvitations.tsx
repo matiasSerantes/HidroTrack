@@ -23,17 +23,17 @@ export function AssistantTripInvitations({client,userId}:{client:SupabaseClient;
  const [deliveryLocked,setDeliveryLocked]=useState(false);
  const request=useRef<{key:string;id:string}|null>(null);
  useEffect(()=>{if(!userId)return;try{if(selected)localStorage.setItem(assistantRouteKey(userId),JSON.stringify(selected));else localStorage.removeItem(assistantRouteKey(userId));}catch{}},[userId,selected]);
- useEffect(()=>{let active=true;void (async()=>{
+ useEffect(()=>{if(deliveryLocked)return;let active=true;void (async()=>{
   try{const r=await client.rpc('assistant_trip_invitations');if(r.error||!Array.isArray(r.data))throw r.error;if(active){setError('');setItems(r.data??[]);setSelected(previous=>previous&&r.data.some((i:Invitation)=>i.tenant_id===previous.tenant&&i.trip_id===previous.trip&&i.state==='accepted')?previous:null);}}
   catch{if(active){setItems(null);setPreview(null);setError('No pudimos consultar las invitaciones. Actualizá para verificar tu acceso.');}}
- })();return()=>{active=false;};},[client,pulse]);
+ })();return()=>{active=false;};},[client,pulse,deliveryLocked]);
  const selectedAllowed=Boolean(selected&&items?.some(i=>i.tenant_id===selected.tenant&&i.trip_id===selected.trip&&i.state==='accepted'));
- useEffect(()=>{let active=true;if(!selected||!selectedAllowed){setPreviewLoading(false);return;}
+ useEffect(()=>{if(deliveryLocked)return;let active=true;if(!selected||!selectedAllowed){setPreviewLoading(false);return;}
   setPreviewLoading(true);void (async()=>{
    try{const r=await client.rpc('assistant_open_trip',{p_tenant:selected.tenant,p_trip:selected.trip});if(r.error||!r.data?.trip||!Array.isArray(r.data.stops))throw r.error??new Error();if(active){setPreview(r.data);const first=r.data.stops.find((s:{outcome:string})=>['pending','present'].includes(s.outcome))??r.data.stops[0];if(first)setSelected(previous=>previous&&previous.tenant===selected.tenant&&previous.trip===selected.trip&&!previous.stop?{...previous,stop:first.id}:previous);}}
    catch(e){if(active){setPreview(null);if((e as {code?:string})?.code==='42501')setSelected(null);setError('El recorrido ya no está disponible o no pudimos verificarlo. Actualizá tus invitaciones.');}}
    finally{if(active)setPreviewLoading(false);}
-  })();return()=>{active=false;};},[client,selected?.tenant,selected?.trip,selectedAllowed,pulse]);
+  })();return()=>{active=false;};},[client,selected?.tenant,selected?.trip,selectedAllowed,pulse,deliveryLocked]);
  async function answer(i:Invitation,accept:boolean){
   if(busy||deliveryLocked)return;const key=`${i.tenant_id}:${i.trip_id}:${accept}`;if(request.current?.key!==key)request.current={key,id:crypto.randomUUID()};
   setBusy(true);setError('');setNotice('');

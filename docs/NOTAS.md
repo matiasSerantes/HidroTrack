@@ -687,3 +687,17 @@ Sin migraciones ni escritura remota: base conserva 35 migraciones y 49 tablas co
 Verificacion: 14 pruebas dirigidas de cierre/descarga/PDF/demo aprobadas y build correcto. PDF ficticio normal de una pagina y prueba extensa de ocho paginas leidos con pypdf, renderizados y revisados visualmente; sin texto fuera de margenes. Archivos de prueba y herramientas de render fuera de Git. Publicacion pendiente tras push. Prueba manual de descarga en telefono/PC autenticados pendiente. Cierre/PDF del asistente y desglose historico de cambios de dispenser siguen pendientes.
 
 Publicacion comprobada el 25/10/2026 tras push 05d9e12: HTTP 200, boton Descargar PDF del cierre en AccountWorkspace-DdsbnOuW.js y modulo ownerCloseReceipt-DlJRzD7E.js servido. Sin iniciar sesion ni descargar comprobantes reales. Validacion manual movil/PC autenticada sigue pendiente.
+
+## 2026-10-25 - Carga inicial del asistente aceptado
+
+Continuar circuito real: asistente abre reparto preparado y aceptado, consulta productos/sugerencia para su carga, ingresa cantidades y extras, puede rellenar faltantes retornables y confirma una sola carga. RPC dedicadas sin habilitar permisos generales driver ni administracion de deposito. Fecha de carga del servidor, libro/snapshot atomicos y reintento con mismo ID sin duplicar; costos privados se calculan segun configuracion del jefe. Jefe conserva su formulario de carga. En esta entrega completar carga; cierre/aprobacion/PDF del asistente quedan para el siguiente incremento.
+
+## 2026-10-25 - Carga inicial real del asistente
+
+Asistente acepta invitacion > Abrir reparto preparado > Iniciar reparto / Carga del camion. Consulta sugerencia por habitos o pedido extraordinario asignado, modifica cantidades y extras, elige rellenar faltantes y confirma carga fisica. Fecha actual de Buenos Aires del servidor. Una sola carga por reparto; no se edita al activar. Si jefe ya cargo, asistente ve stock y no otro formulario.
+
+Migracion 20261025052354_assistant_initial_load.sql aplicada por MCP: 36 migraciones, 49 tablas con RLS. assistant_load_options y assistant_confirm_load requieren invitacion aceptada vigente, chofer asignado y licencia activa. No abren has_role driver ni RPC generales. Solo lista necesaria para preparar carga: nombre/unidad/modelo/existencias/sugerencia; no precios/costos ni cartera ajena. Libro de stock, rellenado necesario, estado activo y snapshot se guardan en una transaccion. Usa existencias disponibles y costos del jefe en servidor, conserva historial/sugerencia/extras/costo. No se probaron operaciones remotas con inventario real.
+
+ID y datos identicos al reintentar; otra carga o salida sin cierre/aprobacion anterior se bloquea. Respuesta desconocida congela formulario y actualizaciones de recorrido para no perder reintento aunque servidor ya haya activado. Confirmacion muestra recorrido activo y Stock del camion. Formularios celestes, cantidades tactiles y adaptacion movil/PC; revision visual manual autenticada pendiente.
+
+Verificacion: 71 contratos SQL/permisos y 13 controles de carga/invitacion/recorrido aprobados (84 total), compilacion correcta. Incluye stock insuficiente con rollback, costos privados, permisos y reintento ante respuesta perdida. Publicacion pendiente tras push. Cierre/aprobacion/PDF del asistente es el siguiente incremento.

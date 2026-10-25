@@ -1,4 +1,5 @@
 import {CustomerProposals} from './CustomerProposals';
+import {AssistantInitialLoad} from './AssistantInitialLoad';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {AssistantVisit} from './AssistantVisit';
 import {lazy,Suspense,useState,useEffect} from 'react';
@@ -9,14 +10,15 @@ export type TripStop={id:string;name:string;address:string;locality?:string;phon
 export type AssistantTrip={trip:{name:string;date:string;status:string};stops:TripStop[];stock?:{product_id:string;name:string;unit:string;family:string;returnable:boolean;loaded:number;ready:number;empties:number}[]};
 const outcomes:Record<string,string>={pending:'Pendiente',present:'Presente',absent:'Ausente',no_purchase:'No compró',delivered:'Atendido'};
 export function AssistantTripView({data,selectedId,onSelect,onClose,client,tenantId,tripId,locked=false,onLock,onChanged,owner=false}:{owner?:boolean;client?:SupabaseClient;tenantId?:string;tripId?:string;locked?:boolean;onLock?:(locked:boolean)=>void;onChanged?:()=>void;data:AssistantTrip;selectedId?:string;onSelect:(id:string)=>void;onClose:()=>void}){
- const [showMap,setShowMap]=useState(false),[showStock,setShowStock]=useState(false),[showProposals,setShowProposals]=useState(false),[visitLocked,setVisitLocked]=useState(false),[proposalLocked,setProposalLocked]=useState(false);
- useEffect(()=>{onLock?.(visitLocked||proposalLocked);return()=>onLock?.(false);},[visitLocked,proposalLocked,onLock]);
+ const [showMap,setShowMap]=useState(false),[showStock,setShowStock]=useState(false),[showProposals,setShowProposals]=useState(false),[visitLocked,setVisitLocked]=useState(false),[proposalLocked,setProposalLocked]=useState(false),[loadLocked,setLoadLocked]=useState(false);
+ useEffect(()=>{onLock?.(visitLocked||proposalLocked||loadLocked);return()=>onLock?.(false);},[visitLocked,proposalLocked,loadLocked,onLock]);
  const selected=data.stops.find(s=>s.id===selectedId)??data.stops.find(s=>['pending','present'].includes(s.outcome))??data.stops[0];
  const targets=data.stops.map(s=>({id:s.id,name:s.name,address:s.address,locality:s.locality,geo:s.latitude!=null&&s.longitude!=null?{lat:s.latitude,lng:s.longitude}:undefined}));
  const attended=data.stops.filter(s=>['delivered','no_purchase'].includes(s.outcome)).length;
  const pendingIds=new Set(data.stops.filter(s=>['pending','present'].includes(s.outcome)||(s.outcome==='absent'&&s.followup==='later_today')).map(s=>s.id));
  return <section className="assistant-trip-view"><div className="invitation-heading"><h3>{data.trip.name}</h3><button className="hd-btn" disabled={locked} onClick={onClose}>{owner?'Volver a mis repartos':'Cerrar recorrido'}</button></div>
- <p>{data.trip.status==='planned'?'Esperando la carga del camión por el jefe.':data.trip.status==='submitted'?'Reparto presentado para rendir.':'En recorrido'}</p><p><strong>Atendidos: {attended} de {data.stops.length} clientes</strong></p>
+ <p>{data.trip.status==='planned'?'Preparado · Falta confirmar la carga del camión.':data.trip.status==='submitted'?'Reparto presentado para rendir.':'En recorrido'}</p><p><strong>Atendidos: {attended} de {data.stops.length} clientes</strong></p>
+ {!owner&&client&&tenantId&&tripId&&onChanged&&data.trip.status==='planned'&&<AssistantInitialLoad key={tripId} client={client} tenantId={tenantId} tripId={tripId} disabled={visitLocked||proposalLocked} onLock={setLoadLocked} onDone={onChanged}/>}
  <div className="assistant-route-actions"><button className="hd-btn primary" aria-expanded={showMap} onClick={()=>setShowMap(v=>!v)}>{showMap?'Ocultar mapa':'Ver mapa del reparto'}</button><button className="hd-btn primary" aria-expanded={showStock} onClick={()=>setShowStock(v=>!v)}>Stock del camión</button></div>
  {showStock&&<section className="assistant-route-stock"><h4>Stock de este camión</h4>{!(data.stock?.length)&&<p>Todavía no hay carga registrada para este reparto.</p>}{data.stock?.map(p=><article key={p.product_id}><strong>{p.name}</strong><p>{p.family==='dispenser'?`${p.ready} disponibles`:`${p.ready} llenos / unidades listas${p.returnable?` · ${p.empties} vacíos`:''}`}</p><small>Carga inicial: {p.loaded} {p.unit}</small></article>)}<p>Se consulta el saldo del servidor al actualizar. La carga confirmada no se edita desde acá.</p></section>}
  {showMap&&<Suspense fallback={<p role="status">Cargando mapa…</p>}><RouteMap stops={data.stops} selectedId={selected?.id} onSelect={id=>{if(!locked)onSelect(id);}}/></Suspense>}
