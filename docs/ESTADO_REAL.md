@@ -18,7 +18,7 @@ Supabase MCP, actualizado tras avance de etapa 3: 35 migraciones instaladas, 49 
 | Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe conectada; asistente aceptado o jefe asignado a si mismo abre mapa/paradas/stock, atiende y registra ausencias; jefe traslada/cierra pendientes; demas circuito pendiente |
 | Entregas, cobros y deuda | Operaciones y reglas instaladas | Entrega/retorno parcial/cobros de venta y deuda anterior, aprobacion de deuda y ausencias conectados; demas circuito pendiente |
 | Alquileres y futura baja | Contratos instalados | Facturacion/cobro operativo, recuperacion y aprobacion completas pendientes |
-| Rendicion y PDF | Cierre/conciliacion instalados | Cierre conciliado del jefe propio e historial conectados; asistente y PDF pendientes |
+| Rendicion y PDF | Cierre/conciliacion instalados | Cierre conciliado, historial y PDF del jefe propio conectados; cierre/PDF del asistente pendientes |
 
 ## Que falta de usuarios y permisos — prioridad inmediata
 
@@ -180,3 +180,11 @@ Migracion 20261025044949_owner_signup.sql aplicada por MCP. Estado comprobado: 3
 Verificacion local: 67 contratos SQL/permisos y 9 pruebas de acceso/formulario aprobados; build correcto. Publicacion pendiente de verificar tras push. Prueba manual autenticada de correo, alta y uso movil/PC pendiente; no se enviaron correos ni crearon cuentas reales para probar.
 
 Publicacion verificada el 25/10/2026: HTTP 200, formulario Crear cuenta de jefe y RPC owner_create_workspace presentes en recursos publicos (AccountWorkspace-Cl6JIRc9.js), tras push e59bae0. Enlace compartible: https://hidrotrack.matilegen.workers.dev/?registro=jefe. No se inicio sesion ni se enviaron correos para comprobar; prueba manual autenticada pendiente.
+
+## 2026-10-25 - PDF conectado del cierre propio
+
+Repartos y camion > Ver mis ultimos cierres > abrir cierre > Descargar PDF del cierre. Comprobante interno generado localmente desde el snapshot autorizado, previa nueva consulta RPC owner_self_close_history. Incluye carga inicial, regreso listo/vacio por producto/modelo, ventas, efectivo, transferencias declaradas, fecha/ID y nota. No confunde cobros anteriores con ventas ni presenta ganancia neta o conciliacion bancaria. Identifica empresa por ID; no inventa nombre historico no guardado. Cambios/series de dispenser no estan desglosados en este snapshot y se indica en el PDF.
+
+Sin migraciones ni escritura remota: base conserva 35 migraciones y 49 tablas con RLS. Descarga no crea cierres, pagos ni movimientos, no envia correos, no persiste datos en localStorage. Error permite reintento; salir o cambiar empresa durante consulta cancela descarga antigua. Generador compartido con demo, que conserva marca DEMO y sus datos separados; modulo real se carga al solicitar PDF.
+
+Verificacion: 14 pruebas dirigidas de cierre/descarga/PDF/demo aprobadas y build correcto. PDF ficticio normal de una pagina y prueba extensa de ocho paginas leidos con pypdf, renderizados y revisados visualmente; sin texto fuera de margenes. Archivos de prueba y herramientas de render fuera de Git. Publicacion pendiente tras push. Prueba manual de descarga en telefono/PC autenticados pendiente. Cierre/PDF del asistente y desglose historico de cambios de dispenser siguen pendientes.

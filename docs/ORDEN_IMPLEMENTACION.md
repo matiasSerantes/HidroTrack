@@ -207,3 +207,11 @@ Registro conectado en /?registro=jefe: crear cuenta de jefe, confirmar correo y 
 Migracion 20261025044949_owner_signup.sql aplicada por MCP. Estado comprobado: 35 migraciones y 49 tablas publicas con RLS; politica auto_trial=true, trial_days=30. Nuevas owner_signup_policy y owner_registrations. Alta transaccional verificada por Auth, solo empresa propia; metadatos no conceden privilegios. Reintento reutiliza empresa sin duplicar ni renovar prueba. Licencias existentes intactas. Cero altas reales durante verificacion.
 
 Verificacion local: 67 contratos SQL/permisos y 9 pruebas de acceso/formulario aprobados; build correcto. Publicacion pendiente de verificar tras push. Prueba manual autenticada de correo, alta y uso movil/PC pendiente; no se enviaron correos ni crearon cuentas reales para probar.
+
+## 2026-10-25 - PDF conectado del cierre propio
+
+Repartos y camion > Ver mis ultimos cierres > abrir cierre > Descargar PDF del cierre. Comprobante interno generado localmente desde el snapshot autorizado, previa nueva consulta RPC owner_self_close_history. Incluye carga inicial, regreso listo/vacio por producto/modelo, ventas, efectivo, transferencias declaradas, fecha/ID y nota. No confunde cobros anteriores con ventas ni presenta ganancia neta o conciliacion bancaria. Identifica empresa por ID; no inventa nombre historico no guardado. Cambios/series de dispenser no estan desglosados en este snapshot y se indica en el PDF.
+
+Sin migraciones ni escritura remota: base conserva 35 migraciones y 49 tablas con RLS. Descarga no crea cierres, pagos ni movimientos, no envia correos, no persiste datos en localStorage. Error permite reintento; salir o cambiar empresa durante consulta cancela descarga antigua. Generador compartido con demo, que conserva marca DEMO y sus datos separados; modulo real se carga al solicitar PDF.
+
+Verificacion: 14 pruebas dirigidas de cierre/descarga/PDF/demo aprobadas y build correcto. PDF ficticio normal de una pagina y prueba extensa de ocho paginas leidos con pypdf, renderizados y revisados visualmente; sin texto fuera de margenes. Archivos de prueba y herramientas de render fuera de Git. Publicacion pendiente tras push. Prueba manual de descarga en telefono/PC autenticados pendiente. Cierre/PDF del asistente y desglose historico de cambios de dispenser siguen pendientes.
