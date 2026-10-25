@@ -214,3 +214,5 @@ Requiere invitacion aceptada, reparto activo, licencia y resultados de todas las
 Respuesta desconocida conserva conteo/decision e ID y bloquea navegacion/refresco que lo descartaria. Reintento conocido del propio envio despues de cerrado/revocado devuelve solamente ID de confirmacion, sin reabrir ni leer datos. No se tocaron stock, pagos, cuentas o cierres reales para probar. Cierre del jefe propio y licencias existentes conservados.
 
 Verificacion: 76 contratos SQL/permisos y 19 controles de formularios/invitaciones/carga/cierre aprobados (95 total); compilacion correcta. QA manual autenticada movil/PC pendiente. Publicacion pendiente tras push. Proximo incremento: PDF de este cierre para ambos y acceso historico limitado del asistente; no confundirlo con PDF propio del jefe ya publicado. Desglose historico de cambios de dispenser pendiente.
+
+Publicacion verificada el 25/10/2026 tras push 38180d5: HTTP 200 y AccountWorkspace-Cw6QDbuF.js incluye assistant_submit_close y owner_assistant_close_inbox. Sin iniciar sesion ni presentar/aprobar repartos reales. Prueba manual autenticada y PDF compartido siguen pendientes.
