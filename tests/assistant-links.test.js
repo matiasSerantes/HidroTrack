@@ -447,3 +447,32 @@ it('suspender licencia o cerrar ruta propia retira acceso operativo del jefe',as
  const v=await costLoadFixture();await confirmCostLoad(v);await db.exec(`reset role; update public.licenses set status='suspended' where tenant_id='${tenant}'`);await actor(owner);await denied(()=>visitDetail(v),/Reparto no aceptado/);
  await db.exec(`reset role; update public.licenses set status='active' where tenant_id='${tenant}'; update public.inventory_trips set status='closed',submitted_at=now(),closed_at=now() where id='${v.trip}'`);await actor(owner);await denied(()=>preview(v.trip),/Reparto no aceptado/);expect((await db.query('select public.owner_my_trips($1) as trips',[tenant])).rows[0].trips).toHaveLength(0);
 });
+
+async function ownerCloseQuote(v){return (await db.query('select public.owner_preview_trip_close($1,$2) as result',[tenant,v.trip])).rows[0].result;}
+async function finishOwner(v,quote,{id=crypto.randomUUID(),cash=quote.cash,transfer=quote.transfer,stock=quote.stock.map(p=>({product_id:p.product_id,ready:p.ready,empties:p.empties}))}={}){return (await db.query("select public.owner_finish_self_trip($1,$2,$3,$4,$5,$6,$7,'Conteo revisado') as result",[tenant,id,v.trip,JSON.stringify(quote),cash,transfer,JSON.stringify(stock)])).rows[0].result;}
+it('cierre propio devuelve stock y permite siguiente carga sin duplicar caja ni historial',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);const opening=crypto.randomUUID();
+ await db.query("select public.commerce_open_customer_balance($1,$2,$3,50,current_date-1,'Saldo anterior')",[tenant,opening,v.customer]);await collectAssistantDebt({...v,id:opening},{expected:50,amount:50});
+ const visit={...v,id:crypto.randomUUID()};await deliverVisit(visit,{r:0});await collectAssistantDebt(visit,{amount:100,method:'transfer'});
+ await db.query('select public.route_publish_position($1,$2,1,1,5)',[tenant,v.trip]);const quote=await ownerCloseQuote(v);expect(quote).toMatchObject({cash:150,transfer:100,sales:200,pending_visits:0});
+ const id=crypto.randomUUID(),receipt=await finishOwner(v,quote,{id});expect(receipt.trip.status).toBe('closed');expect(await finishOwner(v,quote,{id})).toEqual(receipt);
+ expect((await db.query("select * from public.inventory_operations where kind='close'")).rows).toHaveLength(1);expect((await db.query('select * from public.payments')).rows).toHaveLength(3);expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(1);
+ const stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.product])).rows[0];expect(Number(stock.depot_ready)).toBe(3);expect(Number(stock.truck_ready)).toBe(0);
+ await db.query("update public.products set name='Nuevo nombre' where id=$1",[v.product]);expect((await db.query('select public.owner_self_close_history($1) as history',[tenant])).rows[0].history[0].stock[0].name).toBe('Agua costo');
+ const next=crypto.randomUUID();await db.query("select public.inventory_create_trip($1,$2,$3,'Otra salida',current_date,$4)",[tenant,next,owner,[v.customer]]);await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),next,JSON.stringify([{product_id:v.product,quantity:1}])]);
+});
+it('cierre exige resultado de paradas y conserva ausencias en bandeja global tras cerrar',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);const quote=await ownerCloseQuote(v);await denied(()=>finishOwner(v,quote),/clientes sin resultado/);
+ expect((await db.query('select status from public.inventory_trips where id=$1',[v.trip])).rows[0].status).toBe('active');await recordAssistantVisit(v);await finishOwner(v,await ownerCloseQuote(v));expect((await db.query('select public.owner_followup_inbox($1) as inbox',[tenant])).rows[0].inbox.count).toBe(1);
+});
+it('diferencias y resumen obsoleto no dejan rendicion parcial',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);await recordAssistantVisit(v,{outcome:'no_purchase',followup:null});const quote=await ownerCloseQuote(v);
+ await denied(()=>finishOwner(v,quote,{cash:1}),/conteo no coincide/);await denied(()=>finishOwner(v,quote,{stock:[{product_id:v.product,ready:4,empties:0}]}),/conteo no coincide/);
+ const opening=crypto.randomUUID();await db.query("select public.commerce_open_customer_balance($1,$2,$3,50,current_date-1,'Saldo anterior')",[tenant,opening,v.customer]);await collectAssistantDebt({...v,id:opening},{expected:50,amount:50});await denied(()=>finishOwner(v,quote),/reparto cambio/);
+ expect((await db.query('select * from public.trip_closures')).rows).toHaveLength(0);expect((await db.query('select status from public.inventory_trips where id=$1',[v.trip])).rows[0].status).toBe('active');
+});
+it('solo titular asignado cierra su ruta y puede recuperar estado submitted antiguo',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);await recordAssistantVisit(v,{outcome:'no_purchase',followup:null});const quote=await ownerCloseQuote(v);
+ await actor(otherOwner);await denied(()=>finishOwner(v,quote),/Solo el jefe asignado/);await actor(driver);await denied(()=>ownerCloseQuote(v),/Solo el jefe asignado/);await actor(owner);
+ await db.query('select public.inventory_submit_trip($1,$2)',[tenant,v.trip]);await finishOwner(v,await ownerCloseQuote(v));await denied(()=>db.query("insert into public.owner_trip_close_snapshots(tenant_id,id,trip_id,actor_id,request,snapshot) values($1,$2,$3,$4,'{}','{}')",[tenant,crypto.randomUUID(),v.trip,owner]),/permission denied/);
+});

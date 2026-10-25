@@ -6,7 +6,7 @@ Plan de trabajo detallado: [Orden recomendado de implementacion](ORDEN_IMPLEMENT
 
 ## Comprobado
 
-Supabase MCP, actualizado tras avance de etapa 3: 33 migraciones instaladas, 46 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
+Supabase MCP, actualizado tras avance de etapa 3: 34 migraciones instaladas, 47 tablas publicas con RLS. RLS habilitado no prueba por si solo que cada permiso cumpla la ultima regla comercial. Sin solicitudes extraordinarias reales al comprobar. Ver [etapa 1](ETAPA_1_USUARIOS.md) y [etapa 2](ETAPA_2_INVITACIONES.md).
 
 | Modulo | Base de datos | Pantalla real |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Supabase MCP, actualizado tras avance de etapa 3: 33 migraciones instaladas, 46 
 | Repartos y mapa operativo | Contratos basicos instalados | Preparacion/carga del jefe conectada; asistente aceptado o jefe asignado a si mismo abre mapa/paradas/stock, atiende y registra ausencias; jefe traslada/cierra pendientes; demas circuito pendiente |
 | Entregas, cobros y deuda | Operaciones y reglas instaladas | Entrega/retorno parcial/cobros de venta y deuda anterior, aprobacion de deuda y ausencias conectados; demas circuito pendiente |
 | Alquileres y futura baja | Contratos instalados | Facturacion/cobro operativo, recuperacion y aprobacion completas pendientes |
-| Rendicion y PDF | Cierre/conciliacion instalados | Circuito real y PDF autenticado pendientes |
+| Rendicion y PDF | Cierre/conciliacion instalados | Cierre conciliado del jefe propio e historial conectados; asistente y PDF pendientes |
 
 ## Que falta de usuarios y permisos — prioridad inmediata
 
@@ -153,3 +153,17 @@ Deuda dejada por el jefe queda aprobada por el con actor y fecha, sin notificaci
 Verificacion: 58 contratos/permisos y 12 controles de apertura/retomar/cierre/invitaciones/atencion aprobados (70 total); compilacion correcta. MCP confirma gate propio y permisos anonimos bloqueados, sin habilitar helper driver global. QA visual/manual y circuito completo publicados pendientes; consulta publica HTTP inicial responde 200, version nueva aun por verificar despues de push. Cierre/rendicion/PDF y carga inicial del asistente aun pendientes; prioridad actual es prueba del jefe trabajando solo.
 
 Publicacion del jefe verificada (24/10 local): URL publica responde HTTP 200 y el modulo servido AccountWorkspace-CvFJT9Sx.js incluye Abrir mi reparto despues del push e7bdea8. Se comprobaron recursos publicos, sin iniciar sesion ni crear entregas. Esto confirma publicacion del codigo; no sustituye QA visual/manual autenticada en movil/PC ni el cierre completo. Uso: Repartos y camion, preparar con nombre del propio jefe, confirmar carga unica y Abrir mi reparto.
+
+## Cierre conciliado del reparto propio del jefe - 24/10/2026
+
+Migracion `20261025001926_owner_trip_close.sql` aplicada por MCP: 34 migraciones y 47 tablas con RLS. Nueva owner_trip_close_snapshots conserva resumen inmutable de cierre. Funciones owner_preview_trip_close, owner_finish_self_trip y owner_self_close_history, solo jefe asignado a si mismo con licencia vigente. No abre helper global driver ni cierre del asistente. Cero cierres nuevos reales al verificar; sin tocar stock, posiciones, cuentas ni operaciones reales para probar.
+
+Desde Abrir mi reparto > Finalizar mi reparto: muestra ventas registradas, efectivo y transferencias del recorrido (incluye cobros de deudas anteriores), conteo de llenos/unidades y vacios de regreso. Exige confirmar revision fisica. Resumen esperado se calcula en servidor; si hubo movimientos/cobros/cambios de paradas desde la consulta, pide actualizar. Caja y stock deben coincidir; diferencias se concilian en Stock antes de cerrar. No transforma faltantes en ajustes automaticos.
+
+Cierre atomico reutiliza inventory_submit_trip, trip_closures aprobada e inventory_post close, devuelve stock al deposito y libera la siguiente carga del mismo chofer. No crea ventas, duplica cobros, manda autoavisos ni borra driver_positions. Permite recuperar estado submitted antiguo sin rendicion; si ya existe una rendicion submitted debe resolverse por el circuito previo antes de otro cierre. No reemplaza ni reescribe una rendicion existente.
+
+Requiere resultado de todas las paradas activas (atencion, ausencia o no compro). Ausencias se conservan en bandeja global aunque origen cierre. Equipos por modelo se cuentan; equipos identificados por serie aun en camion deben volver desde Catalogo antes de cerrar. Se retira el boton antiguo de finalizar/regreso para recorridos propios, para evitar salida que no concilia caja. Circuito de cierre de asistentes sigue pendiente de integrar.
+
+Respuesta desconocida conserva ID y conteo y bloquea la navegacion/actualizacion del recorrido hasta reintento. Error SQL no deja cierre parcial. Mis ultimos diez cierres muestra carga inicial y regreso con nombres/importes congelados. Para cargas antiguas sin snapshot de preparacion, cantidades iniciales vienen del libro y nombres se fijan al cerrar, sin afirmar nombre historico al cargar. PDF todavia pendiente.
+
+Verificacion: 62 contratos/permisos y 6 controles de formulario/apertura/reintento/cierre aprobados (68 total), compilacion correcta. Incluye retorno al deposito, siguiente carga, pagos previos sin nueva venta, snapshot inmutable, diferencias y resumen obsoleto con rollback, preservacion de posicion y permisos. Publicacion nueva y QA visual/manual autenticada pendientes de comprobar; suite general al final segun preferencia del usuario.
