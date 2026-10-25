@@ -63,3 +63,15 @@ Respuesta desconocida conserva conteo/decision e ID y bloquea navegacion/refresc
 Verificacion: 76 contratos SQL/permisos y 19 controles de formularios/invitaciones/carga/cierre aprobados (95 total); compilacion correcta. QA manual autenticada movil/PC pendiente. Publicacion pendiente tras push. Proximo incremento: PDF de este cierre para ambos y acceso historico limitado del asistente; no confundirlo con PDF propio del jefe ya publicado. Desglose historico de cambios de dispenser pendiente.
 
 Publicacion verificada el 25/10/2026 tras push 38180d5: HTTP 200 y AccountWorkspace-Cw6QDbuF.js incluye assistant_submit_close y owner_assistant_close_inbox. Sin iniciar sesion ni presentar/aprobar repartos reales. Prueba manual autenticada y PDF compartido siguen pendientes.
+
+## 2026-10-25 - PDF compartido de cierre aprobado
+
+Jefe: Repartos y camion > Rendiciones de asistentes > abrir Aprobada > Descargar PDF del jefe. Asistente: debajo de invitaciones, Mis comprobantes > Ver mis comprobantes > Descargar mi PDF. Ultimos diez cierres propios aprobados. Cierre pendiente o devuelto no genera comprobante aprobado. Sin envio automatico de mensajes ni email.
+
+Migracion 20261025163405_shared_close_receipts.sql aplicada por MCP: 38 migraciones, 50 tablas con RLS. Nuevas consultas assistant_close_receipts y trip_close_receipt verifican usuario confirmado y actor del trabajo o jefe de esa empresa con licencia vigente. Asistente conserva comprobante de su propio trabajo aun sin vinculo/licencia/recorrido abierto, sin obtener acceso a clientes, mapas, stock ni otras personas. Proyeccion del servidor excluye ventas, transferencias, costos privados y revisiones internas; copia del jefe incluye ventas y cobros por medio.
+
+Ambas copias identifican empresa/repartidor/reparto/fecha, carga inicial, regreso confirmado y efectivo validado, notas y aprobacion. Nombres y cantidades provienen del snapshot, sin recalcular con datos actuales. No es factura fiscal ni calculo de ganancia neta; desglose de cambios/series de dispenser pendiente. Descarga revalida por ID y rol en servidor; salir o cambiar contexto cancela respuesta antigua. Generacion local bajo demanda, sin escribir movimientos ni guardar PDF/datos de negocio en localStorage.
+
+Correccion adicional: reintento confirmado solo con ID tras cierre/revocacion libera el formulario sin intentar mostrar un resumen incompleto. No se alteraron cierres, inventario o cuentas reales para probar.
+
+Verificacion: 80 contratos SQL/permisos, 3 de PDF y 16 controles de acceso/descarga/cierre/invitaciones aprobados (99 total). PDFs ficticios de ambas copias y caso extenso de seis paginas leidos con pypdf, renderizados y revisados sin desbordes. Archivos y herramientas de QA fuera de Git. Compilacion final correcta; publicacion por verificar. Prueba manual autenticada movil/PC del circuito completo pendiente; siguiente: esa validacion y completar detalle de cambios de dispenser.
