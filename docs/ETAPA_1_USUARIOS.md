@@ -39,3 +39,12 @@ Compilacion correcta. Comprobaciones dirigidas: 26 pruebas aprobadas de acceso/p
 Pendientes para cerrar etapa 1: configurar envio Auth y validar publicacion. Luego continuar etapa 2: invitaciones, aceptacion y permisos por recorrido. Foto/terminacion visual se mantienen para la etapa 7 segun el plan.
 
 Actualizacion SMTP 22/10: el usuario configuro Gmail. Consulta de lectura confirma host/puerto, remitente/usuario esperados y URLs correctas. Configuracion verificada; autenticacion/envio, recepcion y recuperacion completa aun pendientes. Las menciones previas a SMTP sin configurar son historicas. Sin secretos en Git.
+
+
+## 2026-10-25 - Alta real de jefes con prueba gratuita
+
+Registro conectado en /?registro=jefe: crear cuenta de jefe, confirmar correo y Crear mi empresa. Prueba gratuita de 30 dias desde el alta de empresa, plan basico con 1 asistente. Luego administracion puede cambiar la licencia conservando empresa y datos. No incluye cobro automatico.
+
+Migracion 20261025044949_owner_signup.sql aplicada por MCP. Estado comprobado: 35 migraciones y 49 tablas publicas con RLS; politica auto_trial=true, trial_days=30. Nuevas owner_signup_policy y owner_registrations. Alta transaccional verificada por Auth, solo empresa propia; metadatos no conceden privilegios. Reintento reutiliza empresa sin duplicar ni renovar prueba. Licencias existentes intactas. Cero altas reales durante verificacion.
+
+Verificacion local: 67 contratos SQL/permisos y 9 pruebas de acceso/formulario aprobados; build correcto. Publicacion pendiente de verificar tras push. Prueba manual autenticada de correo, alta y uso movil/PC pendiente; no se enviaron correos ni crearon cuentas reales para probar.

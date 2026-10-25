@@ -656,3 +656,18 @@ Respuesta desconocida conserva ID y conteo y bloquea la navegacion/actualizacion
 Verificacion: 62 contratos/permisos y 6 controles de formulario/apertura/reintento/cierre aprobados (68 total), compilacion correcta. Incluye retorno al deposito, siguiente carga, pagos previos sin nueva venta, snapshot inmutable, diferencias y resumen obsoleto con rollback, preservacion de posicion y permisos. Publicacion nueva y QA visual/manual autenticada pendientes de comprobar; suite general al final segun preferencia del usuario.
 
 Publicacion del cierre verificada (24/10 local): HTTP 200 y recurso publico AccountWorkspace-3od-uj1s.js contiene owner_finish_self_trip tras push 4dede18. Confirmado codigo publicado sin iniciar sesion ni cerrar repartos reales. Prueba manual autenticada movil-PC aun pendiente. Uso: Repartos y camion > Abrir mi reparto > Finalizar mi reparto > revisar conteo > Confirmar conteo y cerrar reparto. PDF es el siguiente avance.
+
+## 2026-10-24 - Registro publico de jefes
+
+Usuario pide habilitar crear cuenta de jefe desde la web compartida. Agregar formulario diferenciado con nombre/empresa, correo confirmado y alta atomica de empresa/membresia propia/licencia basica desde RPC verificada, sin admin ni permisos sobre otras empresas. Metadatos solo indican intencion; no definen rol, tenant o licencia. Una empresa de autoalta por cuenta, reintento sin duplicar y sin renovar prueba al repetir. Pregunta pendiente al usuario: prueba gratis 30 dias basico/1 asistente o espera aprobacion administrativa. Preparar politica administrada en servidor con valor conservador de espera hasta definir; no tocar licencias existentes ni crear cuentas reales para probar. Registro de asistentes se conserva. Enlace directo propuesto /?registro=jefe.
+
+Decision del usuario: prueba gratuita de 30 dias, plan basico con 1 asistente para nuevas cuentas de jefe. Aplicar solo a nuevas empresas; inicio al completar alta tras correo confirmado. No modifica licencias existentes ni renueva plazo por reintentar. Politica inicial de servidor ajustada a esta decision antes de aplicar migracion.
+
+
+## 2026-10-25 - Alta real de jefes con prueba gratuita
+
+Registro conectado en /?registro=jefe: crear cuenta de jefe, confirmar correo y Crear mi empresa. Prueba gratuita de 30 dias desde el alta de empresa, plan basico con 1 asistente. Luego administracion puede cambiar la licencia conservando empresa y datos. No incluye cobro automatico.
+
+Migracion 20261025044949_owner_signup.sql aplicada por MCP. Estado comprobado: 35 migraciones y 49 tablas publicas con RLS; politica auto_trial=true, trial_days=30. Nuevas owner_signup_policy y owner_registrations. Alta transaccional verificada por Auth, solo empresa propia; metadatos no conceden privilegios. Reintento reutiliza empresa sin duplicar ni renovar prueba. Licencias existentes intactas. Cero altas reales durante verificacion.
+
+Verificacion local: 67 contratos SQL/permisos y 9 pruebas de acceso/formulario aprobados; build correcto. Publicacion pendiente de verificar tras push. Prueba manual autenticada de correo, alta y uso movil/PC pendiente; no se enviaron correos ni crearon cuentas reales para probar.

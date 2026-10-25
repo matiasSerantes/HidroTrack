@@ -369,3 +369,12 @@ Requiere resultado de todas las paradas activas (atencion, ausencia o no compro)
 Respuesta desconocida conserva ID y conteo y bloquea la navegacion/actualizacion del recorrido hasta reintento. Error SQL no deja cierre parcial. Mis ultimos diez cierres muestra carga inicial y regreso con nombres/importes congelados. Para cargas antiguas sin snapshot de preparacion, cantidades iniciales vienen del libro y nombres se fijan al cerrar, sin afirmar nombre historico al cargar. PDF todavia pendiente.
 
 Verificacion: 62 contratos/permisos y 6 controles de formulario/apertura/reintento/cierre aprobados (68 total), compilacion correcta. Incluye retorno al deposito, siguiente carga, pagos previos sin nueva venta, snapshot inmutable, diferencias y resumen obsoleto con rollback, preservacion de posicion y permisos. Publicacion nueva y QA visual/manual autenticada pendientes de comprobar; suite general al final segun preferencia del usuario.
+
+
+## 2026-10-25 - Alta real de jefes con prueba gratuita
+
+Registro conectado en /?registro=jefe: crear cuenta de jefe, confirmar correo y Crear mi empresa. Prueba gratuita de 30 dias desde el alta de empresa, plan basico con 1 asistente. Luego administracion puede cambiar la licencia conservando empresa y datos. No incluye cobro automatico.
+
+Migracion 20261025044949_owner_signup.sql aplicada por MCP. Estado comprobado: 35 migraciones y 49 tablas publicas con RLS; politica auto_trial=true, trial_days=30. Nuevas owner_signup_policy y owner_registrations. Alta transaccional verificada por Auth, solo empresa propia; metadatos no conceden privilegios. Reintento reutiliza empresa sin duplicar ni renovar prueba. Licencias existentes intactas. Cero altas reales durante verificacion.
+
+Verificacion local: 67 contratos SQL/permisos y 9 pruebas de acceso/formulario aprobados; build correcto. Publicacion pendiente de verificar tras push. Prueba manual autenticada de correo, alta y uso movil/PC pendiente; no se enviaron correos ni crearon cuentas reales para probar.
