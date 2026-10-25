@@ -228,3 +228,5 @@ Ambas copias identifican empresa/repartidor/reparto/fecha, carga inicial, regres
 Correccion adicional: reintento confirmado solo con ID tras cierre/revocacion libera el formulario sin intentar mostrar un resumen incompleto. No se alteraron cierres, inventario o cuentas reales para probar.
 
 Verificacion: 80 contratos SQL/permisos, 3 de PDF y 16 controles de acceso/descarga/cierre/invitaciones aprobados (99 total). PDFs ficticios de ambas copias y caso extenso de seis paginas leidos con pypdf, renderizados y revisados sin desbordes. Archivos y herramientas de QA fuera de Git. Compilacion final correcta; publicacion por verificar. Prueba manual autenticada movil/PC del circuito completo pendiente; siguiente: esa validacion y completar detalle de cambios de dispenser.
+
+Publicacion verificada el 25/10/2026 tras push 7ffb072: HTTP 200, AccountWorkspace-CCy1rEXF.js sirve assistant_close_receipts y trip_close_receipt; modulo sharedCloseReceiptPdf--xaAaZgc.js disponible con copia del asistente aprobada. No se iniciaron sesiones ni consultaron cierres reales para comprobar. Prueba manual autenticada movil/PC del circuito completo pendiente.
