@@ -49,3 +49,15 @@ ID y datos identicos al reintentar; otra carga o salida sin cierre/aprobacion an
 Verificacion: 71 contratos SQL/permisos y 13 controles de carga/invitacion/recorrido aprobados (84 total), compilacion correcta. Incluye stock insuficiente con rollback, costos privados, permisos y reintento ante respuesta perdida. Publicacion pendiente tras push. Cierre/aprobacion/PDF del asistente es el siguiente incremento.
 
 Publicacion verificada el 25/10/2026 tras push 5fdb728: HTTP 200, AccountWorkspace-CGu-tPoU.js sirve assistant_confirm_load y Registrar carga e iniciar reparto. Sin iniciar sesion ni cargar inventario real para comprobar. Validacion manual autenticada pendiente.
+
+## 2026-10-25 - Rendicion y aprobacion real de asistentes
+
+Asistente: Abrir reparto activo > Terminar y rendir reparto > contar regreso, efectivo y transferencias > Enviar rendicion al jefe. Se presenta, sin devolver stock ni permitir otra salida. Jefe: Repartos y camion > Rendiciones de asistentes > revisar > aprobar y cerrar o devolver para corregir con motivo. Nueva presentacion despues de observar usa nuevo ID y conserva la anterior. Se retira el viejo boton de finalizar sin rendicion de la pantalla del jefe.
+
+Migracion 20261025053209_assistant_trip_close.sql aplicada por MCP: 37 migraciones, 50 tablas publicas con RLS. Nueva assistant_trip_close_snapshots conserva solicitud original y resumen compartido; snapshot solo cambia al registrar decision. Preview del asistente elimina costos privados de carga. Nuevas RPC dedicadas, sin habilitar helper driver global. La RPC existente trip_review_close pasa por conciliacion de snapshots nuevos; su implementacion anterior queda privada y sin EXECUTE de authenticated para compatibilidad de registros viejos.
+
+Requiere invitacion aceptada, reparto activo, licencia y resultados de todas las visitas. Carga, nombres, conteo y caja se verifican en servidor. Las diferencias requieren nota; se pueden presentar para revision, pero no aprobar hasta corregir. Cambios desde la presentacion obligan a devolver y presentar de nuevo. Aprobar devuelve stock una sola vez y conserva ultima posicion GPS historica; observar reabre reparto sin mover stock. Avisa al jefe dentro de la app, sin email/push externo. Cantidades y montos guardados no son ganancia neta ni conciliacion bancaria.
+
+Respuesta desconocida conserva conteo/decision e ID y bloquea navegacion/refresco que lo descartaria. Reintento conocido del propio envio despues de cerrado/revocado devuelve solamente ID de confirmacion, sin reabrir ni leer datos. No se tocaron stock, pagos, cuentas o cierres reales para probar. Cierre del jefe propio y licencias existentes conservados.
+
+Verificacion: 76 contratos SQL/permisos y 19 controles de formularios/invitaciones/carga/cierre aprobados (95 total); compilacion correcta. QA manual autenticada movil/PC pendiente. Publicacion pendiente tras push. Proximo incremento: PDF de este cierre para ambos y acceso historico limitado del asistente; no confundirlo con PDF propio del jefe ya publicado. Desglose historico de cambios de dispenser pendiente.
