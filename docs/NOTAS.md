@@ -739,3 +739,20 @@ Correccion adicional: reintento confirmado solo con ID tras cierre/revocacion li
 Verificacion: 80 contratos SQL/permisos, 3 de PDF y 16 controles de acceso/descarga/cierre/invitaciones aprobados (99 total). PDFs ficticios de ambas copias y caso extenso de seis paginas leidos con pypdf, renderizados y revisados sin desbordes. Archivos y herramientas de QA fuera de Git. Compilacion final correcta; publicacion por verificar. Prueba manual autenticada movil/PC del circuito completo pendiente; siguiente: esa validacion y completar detalle de cambios de dispenser.
 
 Publicacion verificada el 25/10/2026 tras push 7ffb072: HTTP 200, AccountWorkspace-CCy1rEXF.js sirve assistant_close_receipts y trip_close_receipt; modulo sharedCloseReceiptPdf--xaAaZgc.js disponible con copia del asistente aprobada. No se iniciaron sesiones ni consultaron cierres reales para comprobar. Prueba manual autenticada movil/PC del circuito completo pendiente.
+
+## 2026-10-25 - Validacion del circuito y regresiones
+
+Continuar con suite completa e inspeccion de interfaz movil/PC. Registrar fallos antes de corregirlos y distinguir validacion local de uso publico autenticado. No modificar inventario/cierres reales para probar. Si navegador o autenticacion impiden un paso, anotar limite concreto y continuar comprobaciones independientes.
+
+
+## 2026-10-25 - Correccion de regresiones detectadas por suite completa
+
+Usuario pide corregir. Suite inicial 6/411 fallos; repeticion con reporte 5/411, un caso de rendicion intermitente bajo carga. Detectadas claves React iguales en paneles hermanos de OwnerStock, textos de carga con acentos reemplazados por ?, y mocks/asserts antiguos de RPC de carga y driver_plan. Ficha consulta habitos aun sin lectura principal verificada. Corregir fuentes y alinear pruebas a contratos vigentes, sin quitar validaciones. Control de Chrome del turno anterior fue detenido por no verificar URL; no usarlo como evidencia de QA visual ni intentar eludir el bloqueo.
+
+## 2026-10-25 - Regresiones de suite completa corregidas
+
+Claves React de paneles hermanos de Repartos y camion ahora identifican tipo de panel y empresa; evita reconciliacion ambigua y mezcla de estado. Corregidos textos de carga/stock con acentos reemplazados por signos de pregunta. Habitos del cliente solo se consultan despues de lectura principal verificada, sin alertas secundarias antes de cargar ficha; actualizacion de disponibilidad respeta operaciones de habitos/pedidos en curso. Retry de ficha despues de desconexion conserva comprobacion antes de permitir cantidades.
+
+Pruebas actualizadas al contrato vigente inventory_confirm_load (relleno opcional, snapshot, IDs estables) y al driver_plan custom de licencias existentes. Mocks de consultas de bandejas no simulan escrituras. Se conservaron verificaciones de empresa, cantidades, reintento identico y retiro del formulario tras confirmar. Nueva comprobacion de recuperacion de ficha y ausencia de advertencias de claves duplicadas.
+
+Suite completa: 52 archivos, 412 pruebas aprobadas, cero fallos y cero avisos de claves duplicadas. Compilacion final correcta; publicacion por verificar. Sin migraciones ni cambios en inventario/cuentas/cierres reales: base mantiene 38 migraciones y 50 tablas con RLS. QA visual autenticada movil/PC sigue pendiente por bloqueo de Computer Use al no poder verificar la URL de Chrome; no se presenta esta suite local como prueba visual ni recorrido real completo.

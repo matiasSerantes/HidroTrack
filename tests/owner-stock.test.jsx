@@ -12,7 +12,7 @@ function fixture(section,{legacy=false}={}) {
     dispensers:[{id:'asset',name:'Básico',serial:'B-1',ownership:'company',location:'customer',customer_id:'c1',mode:'loan',monthly:0},{id:'own',name:'Equipo de María',serial:'',ownership:'customer',location:'customer',customer_id:'c1',mode:'customer_owned',monthly:0}],
     inventory_customer_containers:[{customer_id:'c1',product_id:'b20',quantity:3}],inventory_trips:[{id:'t1',name:'Mañana',status:'planned'}],inventory_operations:[],tenant_members:[{user_id:'owner',role:'owner'}],inventory_truck_stock:[],
   };
-  const client={rpc:vi.fn(async(name,args)=>{if(name==='owner_trip_invitations')return {data:[],error:null};if(name==='catalog_archive_item'){const p=records.products.find(p=>p.id===args.p_product);if(p)p.active=false;}if(name==='inventory_writeoff_dispenser'){const a=records.dispensers.find(a=>a.id===args.p_asset);if(a)a.retired=true;}return {data:'ok',error:null};}),from:vi.fn(table=>{
+  const client={rpc:vi.fn(async(name,args)=>{if(['owner_trip_invitations','owner_assistant_close_inbox','owner_my_trips','customer_proposal_inbox','owner_followup_inbox'].includes(name))return {data:[],error:null};if(name==='catalog_archive_item'){const p=records.products.find(p=>p.id===args.p_product);if(p)p.active=false;}if(name==='inventory_writeoff_dispenser'){const a=records.dispensers.find(a=>a.id===args.p_asset);if(a)a.retired=true;}return {data:'ok',error:null};}),from:vi.fn(table=>{
     let patch=null,target='',probe=false;const chain={select:(columns)=>{probe=columns==='occurred_on';return chain;},update:value=>{patch=value;return chain;},single:()=>chain,eq:(key,value)=>{filters.push([table,key,value]);if(key==='id')target=value;return chain;},order:()=>chain,limit:()=>chain,range:()=>chain,then:(resolve,reject)=>{if(patch){const product=records.products.find(p=>p.id===target);Object.assign(product,patch);}return Promise.resolve({data:patch?{id:target}:records[table]||[],count:(records[table]||[]).length,error:legacy&&probe?{code:'42703',message:'Missing column'}:null}).then(resolve,reject);}};return chain;
   })};
   const rendered=render(<OwnerStock section={section} client={client} tenantId="tenant-a" customers={[{id:'c1',name:'María'}]}/>);
@@ -68,6 +68,7 @@ describe('inventario conectado del jefe',()=>{
     await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_kind:'receive',p_items:[{product_id:'b20',quantity:600}]})));
   });
   it('relleno y carga se envían juntos con identificadores estables al reintentar',async()=>{
+    const consoleError=vi.spyOn(console,'error');
     const {client}=fixture('trips');await screen.findByRole('heading',{name:'Carga de camión'});
     expect(screen.getByLabelText('Cargar Bidón 20').max).toBe('10');
     fireEvent.click(screen.getByRole('checkbox',{name:/Rellenar los vacíos/}));
@@ -76,10 +77,11 @@ describe('inventario conectado del jefe',()=>{
     client.rpc.mockRejectedValueOnce(new Error('Sin respuesta'));
     fireEvent.click(screen.getByText('Registrar carga'));
     await screen.findByText('Reintentar misma operación');
-    expect(client.rpc).toHaveBeenCalledWith('inventory_fill_and_load',expect.objectContaining({p_trip:'t1',p_items:[{product_id:'b20',quantity:13}],p_refill_id:expect.any(String),p_date:expect.any(String)}));
-    const first=client.rpc.mock.calls.find(([name])=>name==='inventory_fill_and_load');expect(first[1].p_id).not.toBe(first[1].p_refill_id);
+    expect(client.rpc).toHaveBeenCalledWith('inventory_confirm_load',expect.objectContaining({p_trip:'t1',p_fill:true,p_items:[{product_id:'b20',quantity:13}],p_refill_id:expect.any(String),p_date:expect.any(String)}));
+    const first=client.rpc.mock.calls.find(([name])=>name==='inventory_confirm_load');expect(first[1].p_id).not.toBe(first[1].p_refill_id);
     fireEvent.click(screen.getByText('Reintentar misma operación'));
-    await screen.findByText(/Carga única confirmada/);expect(client.rpc.mock.calls.filter(([name])=>name==='inventory_fill_and_load')[1]).toEqual(first);
+    await screen.findByText(/Carga única confirmada/);expect(client.rpc.mock.calls.filter(([name])=>name==='inventory_confirm_load')[1]).toEqual(first);
+    expect(consoleError.mock.calls.filter(args=>args.some(value=>String(value).includes('same key')))).toEqual([]);
   });
   it('elimina un bidón sin existencias de activos conservando su registro',async()=>{
     const {records,filters}=fixture('catalog');records.inventory_owned_stock=[];records.inventory_customer_containers=[];
@@ -160,11 +162,11 @@ describe('inventario conectado del jefe',()=>{
     fireEvent.change(screen.getByLabelText('Cargar Bidón 4 litros'),{target:{value:'12'}});
     fireEvent.change(screen.getByLabelText('Cargar Dispenser básico'),{target:{value:'2'}});
     expect(screen.getByText('20 unidades')).toBeTruthy();
-    client.rpc.mockImplementation(async(name)=>{if(name==='owner_trip_invitations')return {data:[],error:null};records.inventory_trips[0].status='active';return {data:'ok',error:null};});
+    client.rpc.mockImplementation(async(name)=>{if(['owner_trip_invitations','owner_assistant_close_inbox','owner_my_trips','customer_proposal_inbox','owner_followup_inbox'].includes(name))return {data:[],error:null};records.inventory_trips[0].status='active';return {data:'ok',error:null};});
     fireEvent.click(screen.getByText('Registrar carga'));
     await screen.findByText(/Carga única confirmada/);
-    expect(client.rpc.mock.calls.filter(([name])=>name==='inventory_record_stock')).toHaveLength(1);
-    expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_kind:'load',p_trip:'t1',p_items:[{product_id:'b20',quantity:6},{product_id:'b4',quantity:12},{product_id:'dispenser',quantity:2}]}));
+    expect(client.rpc.mock.calls.filter(([name])=>name==='inventory_confirm_load')).toHaveLength(1);
+    expect(client.rpc).toHaveBeenCalledWith('inventory_confirm_load',expect.objectContaining({p_fill:false,p_trip:'t1',p_items:[{product_id:'b20',quantity:6},{product_id:'b4',quantity:12},{product_id:'dispenser',quantity:2}]}));
     expect(screen.queryByRole('button',{name:'Registrar carga'})).toBeNull();
     expect(screen.getByText(/No hay repartos pendientes de carga/)).toBeTruthy();
   });
@@ -214,7 +216,7 @@ describe('inventario conectado del jefe',()=>{
     fireEvent.change(screen.getByLabelText('Cargar Bidón 20'),{target:{value:'2'}});
     fireEvent.click(screen.getByText('Registrar carga'));
     await screen.findByText(/Carga única confirmada/);
-    expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_kind:'load',p_trip:'t1',p_customer:null,p_items:[{product_id:'b20',quantity:2}]}));
+    expect(client.rpc).toHaveBeenCalledWith('inventory_confirm_load',expect.objectContaining({p_fill:false,p_trip:'t1',p_items:[{product_id:'b20',quantity:2}]}));
   });
   it('consulta saldos por empresa y registra recarga con la función real, sin comprar envases',async()=>{
     const {client,filters}=fixture(); await screen.findByText('Dónde están los artículos');

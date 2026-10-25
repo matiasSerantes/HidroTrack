@@ -249,3 +249,11 @@ Ambas copias identifican empresa/repartidor/reparto/fecha, carga inicial, regres
 Correccion adicional: reintento confirmado solo con ID tras cierre/revocacion libera el formulario sin intentar mostrar un resumen incompleto. No se alteraron cierres, inventario o cuentas reales para probar.
 
 Verificacion: 80 contratos SQL/permisos, 3 de PDF y 16 controles de acceso/descarga/cierre/invitaciones aprobados (99 total). PDFs ficticios de ambas copias y caso extenso de seis paginas leidos con pypdf, renderizados y revisados sin desbordes. Archivos y herramientas de QA fuera de Git. Compilacion final correcta; publicacion por verificar. Prueba manual autenticada movil/PC del circuito completo pendiente; siguiente: esa validacion y completar detalle de cambios de dispenser.
+
+## 2026-10-25 - Regresiones de suite completa corregidas
+
+Claves React de paneles hermanos de Repartos y camion ahora identifican tipo de panel y empresa; evita reconciliacion ambigua y mezcla de estado. Corregidos textos de carga/stock con acentos reemplazados por signos de pregunta. Habitos del cliente solo se consultan despues de lectura principal verificada, sin alertas secundarias antes de cargar ficha; actualizacion de disponibilidad respeta operaciones de habitos/pedidos en curso. Retry de ficha despues de desconexion conserva comprobacion antes de permitir cantidades.
+
+Pruebas actualizadas al contrato vigente inventory_confirm_load (relleno opcional, snapshot, IDs estables) y al driver_plan custom de licencias existentes. Mocks de consultas de bandejas no simulan escrituras. Se conservaron verificaciones de empresa, cantidades, reintento identico y retiro del formulario tras confirmar. Nueva comprobacion de recuperacion de ficha y ausencia de advertencias de claves duplicadas.
+
+Suite completa: 52 archivos, 412 pruebas aprobadas, cero fallos y cero avisos de claves duplicadas. Compilacion final correcta; publicacion por verificar. Sin migraciones ni cambios en inventario/cuentas/cierres reales: base mantiene 38 migraciones y 50 tablas con RLS. QA visual autenticada movil/PC sigue pendiente por bloqueo de Computer Use al no poder verificar la URL de Chrome; no se presenta esta suite local como prueba visual ni recorrido real completo.

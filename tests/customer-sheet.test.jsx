@@ -16,7 +16,7 @@ function fixture(fail=false,{model=false,unavailable=false,noIndividual=false}={
     const call={table,filters:[]};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table],error:fail?{message:'Sin conexión'}:null}).then(resolve,reject)};return chain;
   })};
   render(<OwnerCustomerSheet client={client} tenantId="tenant-a" customer={{id:'client-a',name:'Cliente de prueba',address:'Calle 123',phone:'123'}} onClose={vi.fn()} onEdit={vi.fn()} onLock={onLock}/>);
-  return {client,calls,records};
+  return {client,calls,records,setFailure:value=>{fail=value;}};
 }
 it('explica catálogo sin unidades y registra existencias antes de permitir asignar, sin duplicarlas',async()=>{
   const {client,records}=fixture(false,{model:true,unavailable:true,noIndividual:true});await screen.findByText('No hay unidades de dispenser disponibles para asignar.');
@@ -78,10 +78,19 @@ it('asigna un dispenser del depósito conservando su identificación y el alquil
   expect(client.rpc).toHaveBeenCalledWith('inventory_save_dispenser',expect.objectContaining({p_id:'available',p_serial:'FC-1',p_ownership:'company',p_location:'customer',p_customer:'client-a',p_trip:null,p_mode:'rental',p_monthly:12500}));
 });
 it('un error de lectura no presenta los envases como cero ni habilita asignaciones',async()=>{
-  const {client}=fixture(true);await screen.findByRole('alert');
+  const {client,calls}=fixture(true);await screen.findByRole('alert');
+  expect(calls.some(c=>c.table==='customer_product_preferences')).toBe(false);
   expect(screen.queryByText('No hay envases registrados en su poder.')).toBeNull();
   expect(screen.queryByRole('button',{name:'Registrar bidones que ya tiene'})).toBeNull();
   expect(client.rpc).not.toHaveBeenCalled();
+});
+it('permite recuperar la ficha despues de un error antes de habilitar las cantidades',async()=>{
+  const {setFailure}=fixture(true);await screen.findByRole('alert');
+  expect(screen.queryByText('2 para devolver')).toBeNull();setFailure(false);
+  fireEvent.click(screen.getByRole('button',{name:'Actualizar ficha'}));
+  await screen.findByText('2 para devolver');
+  expect(screen.queryByText('No pudimos cargar la ficha. Revisá la conexión e intentá nuevamente.')).toBeNull();
+  expect(screen.getByRole('button',{name:'Registrar bidones que ya tiene'}).disabled).toBe(false);
 });
 it('el modelo con stock aparece disponible y asignarlo consume una unidad sin volver a registrar el equipo',async()=>{
   const {client,records}=fixture(false,{model:true});await screen.findByText('2 para devolver');

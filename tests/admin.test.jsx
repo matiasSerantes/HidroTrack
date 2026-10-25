@@ -33,7 +33,7 @@ it('guarda la licencia solo para la empresa seleccionada y vuelve a consultar el
  await screen.findByText('Licencia actualizada.');
  expect(client.from).toHaveBeenCalledWith('licenses');
  expect(chain.eq).toHaveBeenCalledWith('tenant_id','tenant-a');
- expect(chain.update).toHaveBeenCalledWith({kind:'permanent',status:'suspended',expires_at:null,driver_limit:2});
+ expect(chain.update).toHaveBeenCalledWith({kind:'permanent',status:'suspended',expires_at:null,driver_limit:2,driver_plan:'custom'});
  await waitFor(()=>expect(client.rpc.mock.calls.filter(([name])=>name==='admin_directory').length).toBe(2));
 });
 
