@@ -430,3 +430,20 @@ it('sin recorrido aceptado ni jefe propio no se puede crear leer o aprobar solic
 it('coordenadas incompletas y solicitud pendiente repetida se rechazan',async()=>{
  const v=await customerProposalFixture();await denied(()=>db.query("select public.assistant_propose_customer($1,$2,$3,'Otro','Otro','','',1,null)",[tenant,crypto.randomUUID(),v.trip]),/Coordenadas invalidas/);await denied(()=>db.query("select public.assistant_propose_customer($1,$2,$3,'Nuevo cliente','Direccion nueva','','')",[tenant,crypto.randomUUID(),v.trip]),/Ya enviaste/);
 });
+
+it('jefe abre y atiende reparto propio sin invitacion y deuda se aprueba sin autoaviso',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);const visit={...v,id:crypto.randomUUID()};
+ expect((await db.query('select public.owner_my_trips($1) as trips',[tenant])).rows[0].trips[0].id).toBe(v.trip);expect((await db.query('select public.owner_trip_invitations($1) as items',[tenant])).rows[0].items).toHaveLength(0);
+ expect((await preview(v.trip)).rows[0].result.trip.status).toBe('active');expect((await visitDetail(v)).customer.id).toBe(v.customer);
+ const receipt=await deliverVisit(visit,{r:0});expect(receipt.credit_status).toBe('approved');expect(await deliverVisit(visit,{r:0})).toEqual(receipt);
+ expect((await db.query('select status,decided_by from public.credit_requests')).rows[0]).toMatchObject({status:'approved',decided_by:owner});expect((await db.query('select * from public.owner_notifications')).rows).toHaveLength(0);
+ await collectAssistantDebt(visit,{amount:100});expect((await customerDebts(visit)).balance).toBe(0);
+});
+it('jefe registra ausencia en ruta propia y no abre operacion de una ruta ajena',async()=>{
+ const own=await costLoadFixture();await confirmCostLoad(own);await recordAssistantVisit(own);expect((await preview(own.trip)).rows[0].result.stops[0].outcome).toBe('absent');
+ const driverTrip=await assigned();await actor(owner);await denied(()=>preview(driverTrip),/Reparto no aceptado/);
+});
+it('suspender licencia o cerrar ruta propia retira acceso operativo del jefe',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);await db.exec(`reset role; update public.licenses set status='suspended' where tenant_id='${tenant}'`);await actor(owner);await denied(()=>visitDetail(v),/Reparto no aceptado/);
+ await db.exec(`reset role; update public.licenses set status='active' where tenant_id='${tenant}'; update public.inventory_trips set status='closed',submitted_at=now(),closed_at=now() where id='${v.trip}'`);await actor(owner);await denied(()=>preview(v.trip),/Reparto no aceptado/);expect((await db.query('select public.owner_my_trips($1) as trips',[tenant])).rows[0].trips).toHaveLength(0);
+});
