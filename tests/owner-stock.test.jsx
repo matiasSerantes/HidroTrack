@@ -198,7 +198,7 @@ describe('inventario conectado del jefe',()=>{
   it('ordena creación, inventario y retiro dentro del catálogo unificado',async()=>{
     fixture('catalog'); await screen.findByText('Inventario de productos y dispenser');
     expect(screen.getByRole('heading',{name:'Bidón 20'})).toBeTruthy();
-    expect(screen.getByText(/20/,{selector:'.stock-catalog-units'})).toBeTruthy();
+    expect(screen.getByText(/17/,{selector:'.stock-catalog-units'})).toBeTruthy();expect(screen.getByText('Total propio: 20 unidades')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'Agregar producto'}));expect(screen.getByLabelText('Unidad de venta (no cantidad)').value).toBe('unidad');
     expect(screen.getByLabelText('Movimiento')).toBeTruthy();
     expect(screen.queryByRole('heading',{name:'Camión y repartos'})).toBeNull();
@@ -251,3 +251,5 @@ describe('inventario conectado del jefe',()=>{
     await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_save_dispenser',expect.objectContaining({p_ownership:'customer',p_location:'customer',p_customer:'c1',p_monthly:0,p_mode:'customer_owned'})));
   });
 });
+
+it('catalogo destaca 598 disponibles y conserva 600 totales con 2 en clientes',async()=>{const {records}=fixture('catalog');records.inventory_owned_stock=[{product_id:'b20',total_owned:600,depot_ready:0,depot_empty:598,truck_ready:0,truck_empty:0,in_customers:2}];expect(await screen.findByText(/598/,{selector:'.stock-catalog-units'})).toBeTruthy();expect(screen.getByText('Total propio: 600 unidades')).toBeTruthy();expect(screen.getByText(/Asignados a clientes/).textContent).toContain('2');});
