@@ -38,7 +38,7 @@ it('guarda la licencia solo para la empresa seleccionada y vuelve a consultar el
 });
 
 it('impide mostrar el panel si falla la verificación del rol', async () => {
- const client = { rpc: vi.fn(async () => ({ error: new Error('offline') })), auth: { signOut: vi.fn() } };
+ const client = { rpc: vi.fn(async (name) => name==='email_access_status'?({data:{state:'verified'},error:null}):({ error: new Error('offline') })), auth: { signOut: vi.fn(),onAuthStateChange:()=>({data:{subscription:{unsubscribe:vi.fn()}}}) } };
  render(<AccountWorkspace client={client} userId="user"/>);
  await screen.findByRole('alert');
  expect(screen.queryByText('Nueva sodería')).toBeNull();

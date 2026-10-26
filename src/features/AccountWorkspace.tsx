@@ -1,3 +1,4 @@
+import {EmailVerificationGate} from './EmailVerificationGate';
 import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { OwnerWorkspace } from './OwnerWorkspace';
@@ -5,6 +6,9 @@ import { AdminWorkspace } from './AdminWorkspace';
 import {OwnerSignupGate} from './OwnerSignupGate';
 
 export function AccountWorkspace({ client, userId }: { client: SupabaseClient; userId: string }) {
+ return <EmailVerificationGate key={userId} client={client} userId={userId}><AccountWorkspaceContent client={client} userId={userId}/></EmailVerificationGate>;
+}
+function AccountWorkspaceContent({client,userId}:{client:SupabaseClient;userId:string}){
  const [admin, setAdmin] = useState<boolean | null>(null);
  const [error, setError] = useState(false);
  const [retry, setRetry] = useState(0);

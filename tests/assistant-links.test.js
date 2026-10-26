@@ -35,7 +35,8 @@ async function exchange(v,{id=crypto.randomUUID(),send=crypto.randomUUID(),state
 }
 beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
- create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
+ create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',raw_app_meta_data jsonb default '{}',created_at timestamptz not null default now(),email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
+ create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
  grant usage on schema auth,public to authenticated,anon;`);
  for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).filter(f=>f.endsWith('.sql')).sort())await db.exec(await readFile(new URL(`../supabase/migrations/${file}`,import.meta.url),'utf8'));
@@ -607,4 +608,40 @@ it('comprobante del asistente comparte detalle sin cliente alquiler responsable 
 });
 it('rendicion antigua sin detalle se aprueba sin reconstruir movimientos nuevos',async()=>{
  const v={...await deliveryFixture(),closeId:crypto.randomUUID()};await deliverVisit(v);await submitAssistantClose(v,await assistantCloseQuote(v));await db.exec('reset role');await db.query("update public.assistant_trip_close_snapshots set request=jsonb_set(request,'{expected}',(request->'expected')-'equipment_detail'),snapshot=snapshot-'equipment_detail' where tenant_id=$1 and id=$2",[tenant,v.closeId]);await actor(owner);await reviewAssistantClose(v.closeId);const h=(await db.query('select public.owner_assistant_close_inbox($1) as h',[tenant])).rows[0].h[0];expect(h.closure_state).toBe('approved');expect(h).not.toHaveProperty('equipment_detail');
+});
+
+async function provisional({age=0}={}){
+ await db.exec('reset role');await db.exec('update private.email_verification_policy set enabled=true');const user=crypto.randomUUID();await db.query("insert into auth.users(id,email,email_confirmed_at,created_at) values($1,'new@example.test',now(),now()-make_interval(hours=>$2))",[user,age]);await actor(user);return user;
+}
+it('nueva cuenta tiene 24 horas y vencimiento bloquea tablas y RPC sin borrar licencia',async()=>{
+ const user=await provisional();let state=(await db.query('select public.email_access_status() as s')).rows[0].s;expect(state.state).toBe('provisional');
+ const created=(await db.query("select public.owner_create_workspace('Nueva empresa') as t")).rows[0].t;await db.query("insert into public.customers(tenant_id,name,address) values($1,'Nuevo','Direccion')",[created]);
+ await db.exec('reset role');await db.query("update private.email_verifications set created_at=created_at-interval '25 hours',deadline=deadline-interval '25 hours' where user_id=$1",[user]);await actor(user);
+ expect((await db.query('select public.email_access_status() as s')).rows[0].s.state).toBe('expired');expect((await db.query('select * from public.customers')).rows).toHaveLength(0);
+ await denied(()=>db.query('select public.owner_signup_status()'),/24 horas/);await denied(()=>db.query("insert into public.customers(tenant_id,name,address) values($1,'No','No')",[created]),/policy/);
+ await db.exec('reset role');expect((await db.query('select * from public.licenses where tenant_id=$1',[created])).rows).toHaveLength(1);
+});
+it('solo prueba firmada de correo actual rehabilita acceso sin renovar empresa ni plazo',async()=>{
+ const user=await provisional();const created=(await db.query("select public.owner_create_workspace('Nueva') as t")).rows[0].t;
+ await db.exec('reset role');const before=(await db.query('select * from public.licenses where tenant_id=$1',[created])).rows[0];await db.query("update private.email_verifications set created_at=created_at-interval '25 hours',deadline=deadline-interval '25 hours' where user_id=$1",[user]);await actor(user);
+ const ts=Math.floor(Date.now()/1000);await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({email:'new@example.test',amr:[{method:'password',timestamp:ts}],user_metadata:{verified:true}})]);expect((await db.query('select public.email_access_status() as s')).rows[0].s.state).toBe('expired');
+ await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({email:'other@example.test',amr:[{method:'otp',timestamp:ts}]})]);expect((await db.query('select public.email_access_status() as s')).rows[0].s.state).toBe('expired');
+ await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({email:'new@example.test',amr:[{method:'otp',timestamp:ts}]})]);expect((await db.query('select public.email_access_status() as s')).rows[0].s.state).toBe('verified');expect((await db.query("select public.owner_create_workspace('Otra') as t")).rows[0].t).toBe(created);
+ await db.exec('reset role');expect((await db.query('select * from public.licenses where tenant_id=$1',[created])).rows[0]).toEqual(before);
+});
+it('cambiar correo no renueva las 24 horas y exige nueva prueba',async()=>{
+ const user=await provisional({age:25});await db.exec('reset role');const before=(await db.query('select deadline from private.email_verifications where user_id=$1',[user])).rows[0].deadline;await db.query("update auth.users set email='changed@example.test' where id=$1",[user]);expect((await db.query('select deadline from private.email_verifications where user_id=$1',[user])).rows[0].deadline).toEqual(before);await actor(user);expect((await db.query('select public.email_access_status() as s')).rows[0].s.state).toBe('expired');
+});
+it('todas las API definer exigen verificacion y tablas publicas tienen politica restrictiva',async()=>{
+ await db.exec('reset role');const missing=(await db.query("select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prosecdef and p.proname<>'email_access_status' and p.prorettype<>'trigger'::regtype and has_function_privilege('authenticated',p.oid,'EXECUTE') and p.prosrc not like '%perform private.require_email_access();%'")).rows;expect(missing).toEqual([]);
+ expect((await db.query("select tablename from pg_tables t where schemaname='public' and rowsecurity and not exists(select 1 from pg_policies p where p.schemaname=t.schemaname and p.tablename=t.tablename and p.policyname='email_verification_access' and p.permissive='RESTRICTIVE')")).rows).toEqual([]);
+});
+async function rollbackEmailStage(){const sql=await readFile(new URL('../supabase/tests/email_grace_rollback_before_activation.sql',import.meta.url),'utf8');return db.exec(sql.replace(/^begin;$/gm,'').replace(/^commit;$/gm,''));}
+it('reversion previa a activar restaura exactamente las funciones originales',async()=>{
+ await db.exec('reset role');const originals=(await db.query('select signature,definition from private.email_api_guard_backup order by signature')).rows;expect(originals.length).toBeGreaterThan(50);await rollbackEmailStage();
+ for(const f of originals)expect((await db.query('select pg_get_functiondef($1::regprocedure) as definition',[f.signature])).rows[0].definition).toBe(f.definition);
+ expect((await db.query("select * from pg_policies where policyname='email_verification_access'")).rows).toHaveLength(0);
+});
+it('reversion automatica se niega si hubo activacion o usuarios provisionales',async()=>{
+ await provisional();await db.exec('reset role');await denied(()=>rollbackEmailStage(),/No rollback automatico/);
 });
