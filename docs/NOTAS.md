@@ -813,3 +813,5 @@ Pedido: 600 bidones registrados y 2 asignados deben dar 598 en deposito y 2 en c
 
 
 2026-10-25 - Aclaracion del catalogo: numero principal pasa a unidades disponibles (deposito y camion), no total propio. Total propio queda separado y Asignados a clientes visible. Ejemplo verificado: 598 disponibles, 2 asignados, total 600. No restar clientes nuevamente de saldos del deposito, que ya los descuentan al transferir. 22 pruebas de OwnerStock aprobadas, mas 75 de base/planilla. Compilacion correcta. Aperturas historicas siguen sin modificarse automaticamente: no se identifico empresa ni origen para corregir datos existentes.
+
+Publicacion verificada tras 684034e: HTTP 200; AccountWorkspace-CPgKfcGH.js incluye asignacion existente, unidades disponibles y Total propio separado. Sin corregir datos historicos ni crear movimientos reales para probar.
