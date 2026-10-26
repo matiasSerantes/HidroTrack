@@ -10,7 +10,7 @@ it('pide GPS solo al tocar el botón y conserva coordenadas para guardar',()=>{
  render(<form><CustomerLocationPicker/></form>);expect(getCurrentPosition).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole('button',{name:'Usar posición actual'}));
  expect(readCustomerLocation(new FormData(document.querySelector('form')))).toEqual({lat:-34.61,lng:-58.38});
- expect(screen.getByRole('button',{name:'Ubicar en el mapa'})).toBeTruthy();
+ expect(screen.getByRole('button',{name:'Cerrar mapa'})).toBeTruthy();
 });
 it('informa permiso denegado sin reemplazar el punto anterior',()=>{
  vi.stubGlobal('navigator',{geolocation:{getCurrentPosition:vi.fn((_,error)=>error({code:1}))}});
