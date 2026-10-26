@@ -6,6 +6,10 @@ import {downloadOwnerClosePdf} from '../src/domain/ownerCloseReceipt';
 vi.mock('../src/domain/ownerCloseReceipt',()=>({downloadOwnerClosePdf:vi.fn()}));
 afterEach(()=>{cleanup();vi.clearAllMocks();});
 const snapshot={id:'c',closed_at:'2026-10-25T19:00:00Z',trip:{id:'r',name:'Ruta ficticia',date:'2026-10-25',status:'closed'},cash:100,transfer:20,sales:100,initial_load:[],stock:[]};
+it('ofrece acceso explicito a repartos finalizados y permite abrir su PDF',async()=>{
+ const client={rpc:vi.fn(async()=>({data:[snapshot],error:null}))};render(<OwnerCloseHistory client={client} tenantId="a" refreshKey={0}/>);
+ expect(screen.getByRole('heading',{name:'Repartos finalizados'})).toBeTruthy();expect(client.rpc).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Ver repartos finalizados y PDF'}));expect(await screen.findByRole('button',{name:'Descargar PDF del cierre'})).toBeTruthy();
+});
 it('revalida acceso y descarga el snapshot del servidor sin escribir movimientos',async()=>{
  const client={rpc:vi.fn(async()=>({data:[snapshot],error:null}))};render(<OwnerCloseHistory client={client} tenantId="a" open refreshKey={0}/>);fireEvent.click(await screen.findByRole('button',{name:'Descargar PDF del cierre'}));await waitFor(()=>expect(downloadOwnerClosePdf).toHaveBeenCalledWith(snapshot,'a'));expect(client.rpc.mock.calls).toEqual([['owner_self_close_history',{p_tenant:'a'}],['owner_self_close_history',{p_tenant:'a'}]]);
 });

@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { OwnerWorkspace } from '../src/features/OwnerWorkspace';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 'active', expires_at: null }, members = true } = {}) {
+function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 'active', expires_at: null }, members = true, balances = [], balanceError = null } = {}) {
   const calls = [];
   const records = [{ id: 'customer-a', name: 'María', address: 'Calle 123', phone: '' }];
   const client = {
@@ -18,13 +18,14 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
         eq: (key, value) => { call.filters.push([key, value]); return chain; },
         order: () => chain,
         limit: () => chain,
+        range: () => chain,
         insert: value => { call.operation = 'insert'; call.value = value; return chain; },
         update: value => { call.operation = 'update'; call.value = value; return chain; },
         single: () => {call.single=true;return chain;},
         maybeSingle: () => {call.single=true;return chain;},
         then: (resolve, reject) => {
-          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {user_id:'user-a',full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { ...records[0], ...call.value } : table==='customers' ? [...records] : [];
-          return Promise.resolve({ data, error: null }).then(resolve, reject);
+          const data = table === 'tenant_members' ? (members ? [{ tenant_id: 'tenant-a', user_id:'user-a', role }] : []) : table === 'licenses' ? license : table === 'tenants' ? { name: 'Reparto A' } : table==='user_profiles' ? call.single ? {user_id:'user-a',full_name:'Jefe de prueba'} : [{user_id:'user-a',full_name:'Jefe de prueba'}] : table==='products' ? [{id:'product-a',name:'Bidón 20',unit:'unidad',returnable:true,active:true,price:3500}] : call.operation === 'insert' ? { id: 'new', ...call.value } : call.operation === 'update' ? { ...records[0], ...call.value } : table==='customers' ? [...records] : table==='customer_sale_balances'?balances:[];
+          return Promise.resolve({ data, error: table==='customer_sale_balances'?balanceError:null }).then(resolve, reject);
         },
       };
       return chain;
@@ -173,4 +174,13 @@ describe('panel conectado del titular', () => {
     expect(update.value).toEqual({ active: false });
     expect(update.filters).toEqual([['tenant_id', 'tenant-a'], ['id', 'customer-a']]);
   });
+});
+
+it('muestra deuda directamente y permite buscar sin acentos y por direccion',async()=>{
+ const {client}=clientFixture({balances:[{id:'s1',customer_id:'customer-a',balance:3000},{id:'s2',customer_id:'customer-a',balance:1800}]});render(<OwnerWorkspace client={client} userId="user-a"/>);
+ await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
+ expect(await screen.findByText(/Debe.*4.800,00/)).toBeTruthy();fireEvent.change(screen.getByRole('searchbox'),{target:{value:'maria 123'}});expect(screen.getByRole('button',{name:'Planilla'})).toBeTruthy();fireEvent.change(screen.getByRole('searchbox'),{target:{value:'nadie'}});expect(screen.getByText(/No hay coincidencias/)).toBeTruthy();fireEvent.click(screen.getByRole('button',{name:'Limpiar búsqueda'}));expect(screen.getByRole('button',{name:'Planilla'})).toBeTruthy();
+});
+it('un error de saldos no indica que el cliente no debe',async()=>{
+ const {client}=clientFixture({balanceError:{message:'offline'}});render(<OwnerWorkspace client={client} userId="user-a"/>);await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));await screen.findByText('Saldo sin verificar');expect(screen.queryByText('Sin deuda pendiente')).toBeNull();
 });

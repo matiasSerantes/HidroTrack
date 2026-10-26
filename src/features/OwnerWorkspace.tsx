@@ -1,3 +1,6 @@
+import { matchesCustomer } from '../domain/customerSearch';
+import { currency } from '../domain/demo';
+import { useCustomerBalances } from './useCustomerBalances';
 import { AssistantWorkspace } from './AssistantWorkspace';
 import { OwnerAssistants } from './OwnerAssistants';
 import { OwnerPromotions } from './OwnerPromotions';
@@ -29,6 +32,8 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   const [search, setSearch] = useState('');
   const [stockLocked,setStockLocked]=useState(false);
   const [view,setView] = useState<OwnerView>('overview');
+  const {balances,failed:balancesFailed,refreshBalances}=useCustomerBalances(client,tenantId,view==='customers'&&!selectedCustomer&&!busy&&!stockLocked);
+  const visibleCustomers=workspace?.customers.filter(c=>matchesCustomer(c,search))||[];
   useEffect(() => {
     let active = true;
     setMemberships(null); setError('');
@@ -56,9 +61,17 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
         if (!license) throw new Error('Tu reparto todavía no tiene una licencia configurada. Contactá al administrador.');
         if (license.status !== 'active') throw new Error('La licencia de tu reparto está suspendida. Contactá al administrador.');
         if (license.kind === 'monthly' && (!license.expires_at || Date.parse(license.expires_at) <= Date.now())) throw new Error('La licencia de tu reparto venció. Contactá al administrador.');
+        async function loadCustomers(){
+          const rows:Customer[]=[];
+          for(let offset=0;;offset+=500){
+            const result=await client.from('customers').select('id, name, address, phone, latitude, longitude, created_at').eq('tenant_id',tenantId).eq('active',true).order('name').order('id').range(offset,offset+499);
+            if(result.error||!Array.isArray(result.data))throw new Error('No pudimos consultar todos los clientes.');
+            rows.push(...result.data);if(result.data.length<500)return {data:rows,error:null};
+          }
+        }
         const [tenantResult, customersResult, profileResult] = await Promise.all([
           client.from('tenants').select('name').eq('id', tenantId).single(),
-          client.from('customers').select('id, name, address, phone, latitude, longitude, created_at').eq('tenant_id', tenantId).eq('active', true).order('name'),
+          loadCustomers(),
           client.from('user_profiles').select('full_name').eq('user_id',userId).maybeSingle(),
         ]);
         if (tenantResult.error || customersResult.error || profileResult.error) throw new Error('No pudimos consultar los datos del reparto. Revisá la conexión y tu acceso.');
@@ -114,7 +127,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     <div className="hd-demo-strip owner-license-strip"><span>Cuenta de titular · {workspace.license.kind === 'permanent' ? 'Licencia permanente' : `Licencia vigente hasta ${new Date(workspace.license.expires_at!).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`}</span><button disabled={busy||stockLocked} onClick={() => setRefresh(value => value + 1)}>Actualizar datos</button></div>
     {view==='assistants' ? <OwnerAssistants key={tenantId} client={client} tenantId={tenantId} onLock={setStockLocked}/> : view==='overview' ? <OwnerOverview company={workspace.tenantName} customers={workspace.customers} go={navigate} addCustomer={()=>{setView('customers');setShowForm(true);}}/> : view==='promotions' ? <OwnerPromotions key={tenantId} client={client} tenantId={tenantId} userId={userId} onLock={setStockLocked} onConverted={()=>setRefresh(v=>v+1)}/> : view!=='customers' ? <OwnerStock section={view==='stock'?'inventory':view} key={tenantId} client={client} tenantId={tenantId} customers={workspace.customers} userId={userId} onLock={setStockLocked}/> : selectedCustomer&&!showForm?<OwnerCustomerSheet key={`${tenantId}.${selectedCustomer.id}`} client={client} tenantId={tenantId} customer={selectedCustomer} disabled={busy} onArchive={()=>void archive(selectedCustomer)} onLock={setStockLocked} onClose={()=>setSelectedCustomer(null)} onEdit={()=>{setEditing(selectedCustomer);setShowForm(true);}}/> : <section className="panel"><div className="section-heading"><div><h2>Clientes de tu reparto</h2><p className="muted">{workspace.customers.length} clientes activos</p></div><button className="primary" disabled={busy||stockLocked} onClick={() => {setEditing(null);setSelectedCustomer(null);setShowForm(value=>!value);}}><Plus size={16}/> Nuevo cliente</button></div>
     {showForm && <form key={editing?.id||'new'} className="customer-form" onSubmit={createCustomer}><h3>{editing?'Editar cliente':'Nuevo cliente'}</h3><label>Nombre completo<input name="name" defaultValue={editing?.name||''} required maxLength={100} autoFocus disabled={busy||stockLocked}/></label><label>Dirección<input name="address" defaultValue={editing?.address||''} required maxLength={200} disabled={busy||stockLocked}/></label><label>Teléfono<input name="phone" defaultValue={editing?.phone||''} type="tel" maxLength={40} disabled={busy||stockLocked}/></label><CustomerLocationPicker initial={editing?.latitude!=null&&editing.longitude!=null?{lat:editing.latitude,lng:editing.longitude}:undefined} disabled={busy||stockLocked}/><button className="primary" disabled={busy||stockLocked}>{busy ? 'Guardando…' : 'Guardar cliente'}</button><button type="button" disabled={busy||stockLocked} onClick={() => {setShowForm(false);setEditing(null);}}>Cancelar</button></form>}
-    <label>Buscar clientes<input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre o dirección"/></label><div className="table-wrap"><table className="owner-customers-table"><thead><tr><th>Cliente</th><th>Dirección</th><th>Teléfono</th><th/></tr></thead><tbody>{workspace.customers.filter(c => `${c.name} ${c.address}`.toLowerCase().includes(search.toLowerCase())).map(c => <tr key={c.id}><td><button className="customer-name-link" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}>{c.name}</button></td><td>{c.address}</td><td>{c.phone || '—'}</td><td><div className="customer-actions"><button className="primary" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}><FileText size={16}/>Planilla</button></div></td></tr>)}</tbody></table></div>{!workspace.customers.length && <p className="empty">Tu reparto todavía no tiene clientes. Agregá el primero para comenzar.</p>}</section>}</>}
+    <div className="customer-search-tools"><label>Buscar clientes<input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, dirección o teléfono" autoComplete="off"/></label>{search&&<button disabled={busy||stockLocked} onClick={()=>setSearch('')}>Limpiar búsqueda</button>}<button disabled={busy||stockLocked} onClick={refreshBalances}>Actualizar saldos</button></div><p role="status">{visibleCustomers.length} clientes encontrados</p>{balancesFailed&&<p className="stock-error" role="alert">No pudimos verificar los saldos. Actualizalos o abrí la planilla; no se muestran como cero.</p>}<div className="table-wrap"><table className="owner-customers-table"><thead><tr><th>Cliente</th><th>Dirección</th><th>Teléfono</th><th>Saldo pendiente</th><th/></tr></thead><tbody>{visibleCustomers.map(c => <tr key={c.id}><td><button className="customer-name-link" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}>{c.name}</button></td><td>{c.address}</td><td>{c.phone || '—'}</td><td><span className={balances&&Number(balances[c.id]||0)>0?'customer-debt-badge':'customer-balance-badge'}>{balances?(Number(balances[c.id]||0)>0?`Debe ${currency(balances[c.id])}`:'Sin deuda pendiente'):balancesFailed?'Saldo sin verificar':'Consultando saldo…'}</span></td><td><div className="customer-actions"><button className="primary" disabled={busy||stockLocked} onClick={()=>{setShowForm(false);setSelectedCustomer(c);}}><FileText size={16}/>Planilla</button></div></td></tr>)}</tbody></table></div>{workspace.customers.length>0&&!visibleCustomers.length&&<p className="empty">No hay coincidencias. Probá con una parte del nombre, la calle o el teléfono.</p>}{!workspace.customers.length && <p className="empty">Tu reparto todavía no tiene clientes. Agregá el primero para comenzar.</p>}</section>}</>}
     {notice && <p className="notice" role="status">{notice}</p>}
   </OwnerShell>;
 }
