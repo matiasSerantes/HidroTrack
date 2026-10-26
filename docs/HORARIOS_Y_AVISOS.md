@@ -32,6 +32,6 @@ Los avisos de fondo usan Web Push y un receptor instalado en el navegador, por e
 - Edge Function `visit-reminders` exige autenticacion propia de la tarea; solicitud sin credencial devuelve 401. Solo service_role puede reclamar/finalizar la cola.
 - Cron `hidrotrack-visit-reminders` activo cada minuto. Invocacion real de programador a Edge devuelve HTTP 200 y las ejecuciones automaticas figuran exitosas, sin destinatarios ni mensajes reales durante la comprobacion.
 - Suite completa: 469 pruebas y compilacion aprobadas. Pruebas locales cubren permisos, 15:00/15:30, no duplicacion por minuto, entrega/No llegue/revocacion/licencia, consentimiento movil y receptor tras cerrar/cambiar cuenta.
-- Pendiente verificar publicacion de recursos web. Recepcion real con telefono bloqueado requiere que el usuario active y pruebe en su dispositivo; no se pidio permiso ni se suscribio un telefono automaticamente para probar.
+- Publicacion de recursos web verificada por HTTP el 26/10/2026 (pantalla, manifest y sw.js con MIME JavaScript). Recepcion real con telefono bloqueado requiere que el usuario active y pruebe en su dispositivo; no se pidio permiso ni se suscribio un telefono automaticamente para probar.
 
 Fuentes: [programar Edge Functions](https://supabase.com/docs/guides/functions/schedule-functions), [Web Push en iOS](https://webkit.org/blog/13878/), [emisor Web Push](https://github.com/web-push-libs/web-push).
