@@ -63,8 +63,8 @@ it('registra envases anteriores del cliente en una sola apertura con varios art�
   fireEvent.change(screen.getByLabelText('Envases iniciales de Bid처n 20 litros'),{target:{value:'4'}});
   fireEvent.change(screen.getByLabelText('Envases iniciales de Bid처n 12 litros'),{target:{value:'2'}});
   fireEvent.click(screen.getByText('Guardar envases iniciales'));
-  await screen.findByText('Envases iniciales registrados en este cliente.');
-  expect(client.rpc).toHaveBeenCalledWith('inventory_owner_stock',expect.objectContaining({p_tenant:'tenant-a',p_kind:'opening_customer',p_customer:'client-a',p_items:[{product_id:'b20',quantity:4},{product_id:'b12',quantity:2}]}));
+  await screen.findByText('Envases asignados desde el dep처sito. El total propio no cambi처.');
+  expect(client.rpc).toHaveBeenCalledWith('inventory_assign_existing_containers',expect.objectContaining({p_tenant:'tenant-a',p_source:'depot_empty',p_customer:'client-a',p_items:[{product_id:'b20',quantity:4},{product_id:'b12',quantity:2}]}));
 });
 it('asigna un dispenser del dep처sito conservando su identificaci처n y el alquiler',async()=>{
   const {client}=fixture();await screen.findByText('2 para devolver');

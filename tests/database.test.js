@@ -16,7 +16,7 @@ beforeAll(async () => {
       $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth, public to authenticated, anon;
   `);
-  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock','20261020203608_promotions']) {
+  for (const name of ['20261017193404_foundation', '20261017222129_admin_portal', '20261019160747_inventory', '20261019162655_owned_inventory', '20261019163826_user_profiles','20261020130955_inventory_incidents','20261020130959_dispenser_model_assignments','20261020131002_product_archive_guard','20261020131006_admin_member_access','20261020131010_admin_access_history','20261020131730_commerce','20261020132835_route_workflow','20261020132839_customer_recovery','20261020132843_trip_closures','20261020133327_database_guards','20261020134314_rental_billing','20261020134546_dispenser_delivery_guard','20261020135912_fill_and_load','20261020141330_unified_catalog','20261020182832_catalog_initial_stock','20261020203608_promotions','20261026004710_customer_existing_containers']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}.sql`, import.meta.url), 'utf8'));
   }
 }, 30000);
@@ -571,6 +571,19 @@ describe('stock transaccional PostgreSQL', () => {
     await db.query('select public.inventory_submit_trip($1,$2)',[tenant,nextTrip]); await as(owner);
     await post('close',[],op(),nextTrip);
     expect((await db.query('select status from public.inventory_trips where id=$1',[nextTrip])).rows[0].status).toBe('closed');
+  });
+  it('asigna 2 de 600 vacios existentes sin aumentar total y reintenta sin duplicar',async()=>{
+    await db.query("select public.inventory_owner_stock($1,$2,'receive_empty',null,$3::jsonb,'Inicial')",[tenant,op(),JSON.stringify(items(600))]);
+    const id=op(),args=[tenant,id,customer,JSON.stringify(items(2)),'depot_empty'];
+    const assign=()=>db.query("select public.inventory_assign_existing_containers($1,$2,$3,$4::jsonb,$5,current_date,'Conteo')",args);
+    await assign();await assign();const b=(await db.query('select * from public.inventory_owned_stock')).rows[0];expect(Number(b.total_owned)).toBe(600);expect(Number(b.depot_empty)).toBe(598);expect(Number(b.in_customers)).toBe(2);
+    await rejected(()=>db.query("select public.inventory_assign_existing_containers($1,$2,$3,$4::jsonb,'depot_ready',current_date,'Conteo')",[tenant,id,customer,JSON.stringify(items(2))]),/otros datos/);
+    await as(driver);await rejected(assign,/Solo el jefe/);
+  });
+  it('asignacion sin saldo revierte apertura y permite reintentar tras cargar llenos',async()=>{
+    const id=op(),args=[tenant,id,customer,JSON.stringify(items(2))];const assign=()=>db.query("select public.inventory_assign_existing_containers($1,$2,$3,$4::jsonb,'depot_ready',current_date,'Conteo')",args);
+    await rejected(assign,/suficientes/);expect((await db.query('select * from public.inventory_operations where id=$1',[id])).rows).toHaveLength(0);
+    await post('receive',items(600));await assign();const b=(await db.query('select * from public.inventory_owned_stock')).rows[0];expect(Number(b.total_owned)).toBe(600);expect(Number(b.depot_ready)).toBe(598);expect(Number(b.in_customers)).toBe(2);
   });
   it('el parque propio se conserva entre cliente, camión, depósito y recarga', async () => {
     const ownerStock = (kind, quantity, id=op()) => db.query('select public.inventory_owner_stock($1,$2,$3,$4,$5::jsonb)',[tenant,id,kind,kind==='opening_customer'?customer:null,JSON.stringify(items(quantity))]);
