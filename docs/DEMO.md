@@ -438,3 +438,6 @@ Migracion 20261025170559_equipment_close_detail.sql aplicada por MCP: 39 migraci
 Pantalla de rendicion/historial y PDFs propio del jefe y compartido muestran movimientos sin sumarlos de nuevo al regreso. Comprobantes anteriores conservan aviso de no contener desglose, sin inventar eventos. Se mejora paginacion comun de PDF para que encabezados finales acompanen su contenido. Copias ficticias del jefe (dos paginas) y asistente (una pagina) parseadas y renderizadas sin cortes, incluido titulo Observaciones junto a su texto.
 
 Verificacion final: suite completa 53 archivos, 422 pruebas aprobadas. Incluye cambio bueno/roto, no duplicacion de reemplazo, serie/carga/regreso, snapshot congelado, proyeccion sin datos privados y aprobacion compatible de rendicion antigua. Compilacion final correcta; publicacion pendiente de verificar. Sin movimientos, cambios de dispenser o cierres reales para probar. QA manual autenticada movil/PC aun pendiente por bloqueo de control de Chrome.
+
+
+2026-10-25: Planilla real del jefe incorpora Cuenta corriente, Cargar deuda anterior (monto, fecha y referencia antes de movimientos), saldo y cargos/pagos acumulados. Usa apertura unica existente, no genera entrega ni cambia stock. Mejora integrada en funcion real; demo conserva sus saldos ficticios. No incluye todavia formulario de cobro en esta planilla.

@@ -1,3 +1,4 @@
+import { OwnerCustomerAccount } from './OwnerCustomerAccount';
 import { DispenserExchange, DispenserExchangeHistory } from './DispenserExchange';
 import { ExternalNavigation } from './ExternalNavigation';
 import { OwnerCustomerHabits } from './OwnerCustomerHabits';
@@ -21,7 +22,8 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
   const [showDispenserOpening,setShowDispenserOpening]=useState(false);
   const [habitsBusy,setHabitsBusy]=useState(false);
   const [extraBusy,setExtraBusy]=useState(false);
-  useEffect(()=>{onLock(busy||!!pending||habitsBusy||extraBusy);return()=>onLock(false);},[busy,pending,habitsBusy,extraBusy,onLock]);
+  const [accountBusy,setAccountBusy]=useState(false);
+  useEffect(()=>{onLock(busy||!!pending||habitsBusy||extraBusy||accountBusy);return()=>onLock(false);},[busy,pending,habitsBusy,extraBusy,accountBusy,onLock]);
   async function load():Promise<Snapshot>{
     const results=await Promise.all([
       client.from('products').select('*').eq('tenant_id',tenantId).order('name'),
@@ -38,7 +40,7 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
   }
   useEffect(()=>{let active=true;void load().then(d=>{if(active){setData(d);setError('');}}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[client,tenantId,customer.id,version]);
   async function refreshAvailability(){
-    if(busy||pending||disabled||habitsBusy||extraBusy)return;
+    if(busy||pending||disabled||habitsBusy||extraBusy||accountBusy)return;
     setBusy(true);setError('');setSelection('');
     try{setData(await load());}catch(e){setError((e as Error).message);setData(null);}finally{setBusy(false);}
   }
@@ -79,7 +81,7 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
     if(!data?.modelEnabled||!data.products.some(p=>p.id===product&&p.active&&isDispenserModel(p))||!Number.isInteger(quantity)||quantity<1||quantity>100000){setError('Elegí un modelo de dispenser y una cantidad entera mayor que cero.');return;}
     void execute({name:'inventory_record_stock',args:{p_tenant:tenantId,p_id:crypto.randomUUID(),p_kind:'receive',p_trip:null,p_customer:null,p_items:[{product_id:product,quantity}],p_note:String(f.get('note')||'Registro de unidades existentes desde la planilla del cliente'),p_date:f.get('date')},message:'Unidades de dispenser registradas. Ahora elegí Asignar dispenser para dejar una en este cliente.'});
   }
-  const locked=busy||!!pending||disabled||habitsBusy||extraBusy, assignedModels=data?.assignments.filter(a=>a.status==='active')||[], assigned=data?.assets.filter(a=>a.customer_id===customer.id&&a.location==='customer'&&!a.retired)||[];
+  const locked=busy||!!pending||disabled||habitsBusy||extraBusy||accountBusy, assignedModels=data?.assignments.filter(a=>a.status==='active')||[], assigned=data?.assets.filter(a=>a.customer_id===customer.id&&a.location==='customer'&&!a.retired)||[];
   const models=data?.products.filter(p=>p.active&&isDispenserModel(p))||[];
   const hasAvailable=!!data&&(data.assets.some(a=>a.ownership==='company'&&a.location==='depot'&&!a.retired)||models.some(p=>Number(data.balances.find(b=>b.product_id===p.id)?.depot_ready||0)>0||data.truck.some(b=>b.product_id===p.id&&Number(b.ready)>0&&data.trips.some(t=>t.id===b.trip_id&&t.status==='active'))));
   return <section className="panel owner-customer-sheet" aria-labelledby="customer-sheet-title"><div className="section-heading"><div><span className="hd-kicker">PLANILLA DEL CLIENTE</span><h2 id="customer-sheet-title">{customer.name}</h2><p>{customer.address}{customer.phone?` · ${customer.phone}`:''}</p></div><div className="customer-actions"><button disabled={locked} onClick={onEdit}>Editar datos</button><button disabled={locked} onClick={onClose}>Volver a clientes</button></div></div>
@@ -97,8 +99,9 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
       {showAsset&&<form onSubmit={assign}><fieldset disabled={locked}><label>Dispenser disponible<select name="asset" disabled={!hasAvailable} value={selection} onChange={e=>setSelection(e.target.value)} required><option value="">Elegí un dispenser disponible</option><optgroup label="Stock por modelo">{data.products.filter(p=>p.active&&isDispenserModel(p)).flatMap(p=>{const depot=Number(data.balances.find(b=>b.product_id===p.id)?.depot_ready||0);return [...(depot>0?[<option disabled={!data.modelEnabled} key={`${p.id}.depot`} value={`model:${p.id}:depot`}>{p.name} · {depot} disponibles en depósito</option>]:[]),...data.truck.filter(b=>b.product_id===p.id&&Number(b.ready)>0&&data.trips.some(t=>t.id===b.trip_id&&t.status==='active')).map(b=><option disabled={!data.modelEnabled} key={`${p.id}.${b.trip_id}`} value={`model:${p.id}:${b.trip_id}`}>{p.name} · {Number(b.ready)} disponibles en {data.trips.find(t=>t.id===b.trip_id)?.name}</option>)];})}</optgroup><optgroup label="Equipos individualizados">{data.assets.filter(a=>a.ownership==='company'&&a.location==='depot'&&!a.retired).map(a=><option key={a.id} value={a.id}>{a.name} · {a.serial||a.id.slice(0,8)}</option>)}</optgroup></select></label><p>El stock disponible por modelo aparece aquí sin volver a cargar cada equipo. Asignarlo descuenta una unidad disponible; devolverlo la libera.</p>{!data.modelEnabled&&<p className="notice">La asignación desde stock por modelo necesita aplicar la actualización de base. Los equipos individualizados siguen disponibles.</p>}{selection.startsWith('model:')&&<label>Fecha de asignación<input name="date" type="date" max={stockToday()} defaultValue={stockToday()} required/></label>}<label>Modalidad del dispenser<select value={mode} onChange={e=>setMode(e.target.value)}><option value="loan">Préstamo gratuito</option><option value="rental">Alquiler</option></select></label>{mode==='rental'&&<label>Cuota mensual ($)<input name="monthly" required inputMode="decimal"/></label>}<button className="primary" disabled={!selection||!hasAvailable}>Guardar dispenser del cliente</button></fieldset></form>}</section></div>
       <DispenserExchangeHistory client={client} tenantId={tenantId} customerId={customer.id} products={data.products} version={data.assignments.map(a=>a.last_operation||a.id).join(',')}/><section><h3>Movimientos del cliente</h3>{data.operations.map(o=><article className="customer-held-row" key={o.id}><div><strong>{o.kind==='opening_customer'?'Inventario inicial':o.kind==='delivery'?'Entrega / devolución':o.kind==='dispenser_assign'?'Dispenser asignado':o.kind==='dispenser_return'?'Devolución de dispenser':'Movimiento de inventario'}</strong><small>{new Date(o.created_at).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})} · {o.note||'Sin observaciones'}</small>{o.items?.map(i=><small key={i.product_id}>{data.products.find(p=>p.id===i.product_id)?.name||'Artículo'}: {i.quantity}</small>)}</div></article>)}{!data.operations.length&&<p>Todavía no hay movimientos registrados.</p>}</section>
     </>}
-    {data&&<OwnerCustomerHabits client={client} tenantId={tenantId} customerId={customer.id} createdAt={customer.created_at} disabled={busy||!!pending||disabled||extraBusy} onLock={setHabitsBusy}/>}
-    {data&&<ExtraVisitRequests client={client} tenantId={tenantId} customerId={customer.id} products={data.products} trips={data.trips} disabled={busy||!!pending||disabled||habitsBusy} onLock={setExtraBusy}/>}
+    {data&&<OwnerCustomerAccount key={`${tenantId}.${customer.id}`} client={client} tenantId={tenantId} customerId={customer.id} disabled={busy||!!pending||disabled||habitsBusy||extraBusy} onLock={setAccountBusy}/>}
+    {data&&<OwnerCustomerHabits client={client} tenantId={tenantId} customerId={customer.id} createdAt={customer.created_at} disabled={busy||!!pending||disabled||extraBusy||accountBusy} onLock={setHabitsBusy}/>}
+    {data&&<ExtraVisitRequests client={client} tenantId={tenantId} customerId={customer.id} products={data.products} trips={data.trips} disabled={busy||!!pending||disabled||habitsBusy||accountBusy} onLock={setExtraBusy}/>}
     {onArchive&&<section className="customer-archive-section"><h3>Administración del cliente</h3><p>Archivar lo retira de los clientes activos. Conserva su historial, envases y equipos registrados.</p><div className="customer-actions"><button className="customer-delete" disabled={locked} onClick={onArchive}>Archivar cliente</button></div></section>}
   </section>;
 }

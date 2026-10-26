@@ -774,3 +774,19 @@ Pantalla de rendicion/historial y PDFs propio del jefe y compartido muestran mov
 Verificacion final: suite completa 53 archivos, 422 pruebas aprobadas. Incluye cambio bueno/roto, no duplicacion de reemplazo, serie/carga/regreso, snapshot congelado, proyeccion sin datos privados y aprobacion compatible de rendicion antigua. Compilacion final correcta; publicacion pendiente de verificar. Sin movimientos, cambios de dispenser o cierres reales para probar. QA manual autenticada movil/PC aun pendiente por bloqueo de control de Chrome.
 
 Publicacion verificada el 25/10/2026 tras push 1b179c2: HTTP 200, AccountWorkspace-B_Ww8umc.js sirve Movimientos de dispenser y sharedCloseReceiptPdf-ohc0em3M.js usa equipment_detail. Sin iniciar sesion ni consultar/cambiar dispenser o cierres reales para comprobar. Suite 422/422 y build correctos. QA manual autenticada movil/PC pendiente.
+
+## 2026-10-25 - Registro comprensible y confirmacion visible
+
+Usuario reporta que alta de jefe no deja claro si creo cuenta; captura muestra validacion compuesta y no confirmacion. Sustituir error generico por validacion por campo, foco y ayudas de longitud/coincidencia; permitir mostrar contraseñas. Conservar minimo 12 caracteres. Tras respuesta de Auth, mostrar estado separado con proximo paso confirmar correo/ingresar/recuperar y conservar email para ingreso. No afirmar alta nueva cuando Auth oculta correo duplicado; errores no dejan exito falso ni borran nombre/empresa/email. No crear cuentas ni enviar correos reales para probar.
+
+
+## 2026-10-25 - Deuda anterior visible en planilla
+Pedido: el jefe necesita cargar la deuda que sus clientes ya tenian antes de HidroTrack, con monto, fecha y referencia, y consultar saldo y movimientos. Integrar con cuenta corriente existente, sin inventar ventas ni duplicar aperturas. Estado: en implementacion.
+
+Pendientes confirmados de registro: acceso inmediato durante 24 horas para validar correo; bloqueo temporal posterior hasta validarlo, sin aprobacion manual ni reiniciar licencia. Revisar por separado eliminacion solicitada de cuenta antigua de prueba conservando alcance y dependencias.
+
+
+
+## 2026-10-25 - Cuenta corriente en planilla real
+Implementado bloque Cuenta corriente del jefe: saldo pendiente en naranja suave o sin deuda, apertura anterior con monto decimal, fecha y referencia, y cargos con importe/pagado/pendiente. Lee vista de saldos y detalles por empresa/cliente con paginacion; error de lectura no muestra cero ni habilita apertura. RPC existente commerce_open_customer_balance conserva autorizacion exclusiva del jefe, fecha, auditoria y apertura unica previa a movimientos. Respuesta incierta conserva UUID e importe para reintentar sin duplicar; bloquea navegacion y otras operaciones mientras se confirma.
+MCP confirma RPC y campos en produccion. No modifica esquema ni importa deudas reales. Pruebas relacionadas: 78/78, build correcto. Publicacion pendiente de verificar. Registro con validacion de correo en 24 horas y retiro de cuenta antigua siguen pendientes; cambios locales de acceso se conservan separados de este incremento.
