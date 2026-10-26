@@ -1,3 +1,4 @@
+import {signOutWithPushCleanup} from '../lib/pushSession';
 import {useEffect,useState,type ReactNode,type FormEvent} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {Droplets} from 'lucide-react';
@@ -19,5 +20,5 @@ export function OwnerSignupGate({client,userId,children}:{client:SupabaseClient;
  {pendingCompany&&<><p>El alta necesita confirmación. El reintento conserva la misma empresa y no renueva licencias.</p><button className="recovery-submit" disabled={busy} onClick={()=>void create(pendingCompany)}>Reintentar alta de empresa</button></>}
  {status?.state==='waiting'&&<><h2>Empresa creada · Activación pendiente</h2><p>{status.company}</p><p>El administrador debe activar la licencia. Tu empresa está separada de las de otros jefes; todavía no podés operar repartos.</p></>}
  {status?.state==='blocked'&&<p>El acceso de jefe de esta cuenta está deshabilitado. Contactá al administrador; crear otra alta no reactiva la licencia.</p>}
- <div className="access-options"><button className="secondary wide" disabled={busy||pendingCompany!==null} onClick={()=>setRetry(v=>v+1)}>Actualizar estado</button><button className="secondary wide" disabled={busy||pendingCompany!==null} onClick={()=>void client.auth.signOut()}>Cerrar sesión</button></div></main></div>;
+ <div className="access-options"><button className="secondary wide" disabled={busy||pendingCompany!==null} onClick={()=>setRetry(v=>v+1)}>Actualizar estado</button><button className="secondary wide" disabled={busy||pendingCompany!==null} onClick={()=>void signOutWithPushCleanup(client)}>Cerrar sesión</button></div></main></div>;
 }

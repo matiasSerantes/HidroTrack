@@ -1,3 +1,4 @@
+import {CustomerVisitWindow} from './CustomerVisitWindow';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isDispenserModel } from './OwnerStockIncident';
@@ -8,7 +9,8 @@ type Product={id:string;name:string;family?:string;active:boolean};
 type Preference={product_id:string;quantity:number};
 export function OwnerCustomerHabits({client,tenantId,customerId,createdAt,disabled,onLock}:{client:SupabaseClient;tenantId:string;customerId:string;createdAt?:string;disabled:boolean;onLock:(value:boolean)=>void}){
  const [days,setDays]=useState<number[]>([]),[preferences,setPreferences]=useState<Preference[]>([]),[products,setProducts]=useState<Product[]>([]),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[retry,setRetry]=useState(0),[product,setProduct]=useState(''),[quantity,setQuantity]=useState('');
- useEffect(()=>{onLock(busy);return()=>onLock(false);},[busy,onLock]);
+ const [windowBusy,setWindowBusy]=useState(false);
+ useEffect(()=>{onLock(busy||windowBusy);return()=>onLock(false);},[busy,windowBusy,onLock]);
  useEffect(()=>{let active=true;setReady(false);setProduct('');setQuantity('');void (async()=>{
   try{
    const [schedule,usual,catalog]=await Promise.all([
@@ -20,7 +22,7 @@ export function OwnerCustomerHabits({client,tenantId,customerId,createdAt,disabl
    if(active){setDays((schedule.data??[]).map(d=>d.weekday));setPreferences(usual.data??[]);setProducts(catalog.data??[]);setReady(true);setError('');}
   }catch{if(active)setError('No pudimos verificar los días y cantidades. Actualizá antes de editar.');}
  })();return()=>{active=false;};},[client,tenantId,customerId,retry]);
- const locked=disabled||busy||!ready;
+ const locked=disabled||busy||windowBusy||!ready;
  async function toggleDay(day:number){
   if(locked)return;const removing=days.includes(day);setBusy(true);setMessage('');setError('');
   try{
@@ -44,7 +46,7 @@ export function OwnerCustomerHabits({client,tenantId,customerId,createdAt,disabl
  return <section className="customer-habits"><div className="section-heading"><div><h3>Visitas y pedido habitual</h3>{createdAt&&<p>Cliente desde {new Date(createdAt).toLocaleDateString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})}</p>}</div><button type="button" disabled={busy||disabled} onClick={()=>{setMessage('');setRetry(v=>v+1);}}>Actualizar hábitos</button></div>
   {error&&<p className="notice" role="alert">{error}</p>}{message&&<p className="notice" role="status">{message}</p>}
   {!ready?<p>Consultando los hábitos del cliente…</p>:<><p>¿Qué días lo visitás? Tocá cada día para agregarlo o quitarlo; se guarda al momento.</p><div className="customer-weekdays">{weekdays.map((name,index)=><button key={name} type="button" aria-pressed={days.includes(index+1)} className={days.includes(index+1)?'selected':''} disabled={locked} onClick={()=>void toggleDay(index+1)}>{name}</button>)}</div>{!days.length&&<p>Sin día habitual definido.</p>}
-   <h4>Lo que suele pedir</h4>{preferences.length?preferences.map(p=><p className="customer-usual-row" key={p.product_id}><strong>{products.find(item=>item.id===p.product_id)?.name||'Producto anterior'}</strong><span>{p.quantity} unidades por visita</span></p>):<p>Todavía no hay cantidades habituales registradas.</p>}
+   <CustomerVisitWindow client={client} tenantId={tenantId} customerId={customerId} disabled={disabled||busy} onLock={setWindowBusy}/><h4>Lo que suele pedir</h4>{preferences.length?preferences.map(p=><p className="customer-usual-row" key={p.product_id}><strong>{products.find(item=>item.id===p.product_id)?.name||'Producto anterior'}</strong><span>{p.quantity} unidades por visita</span></p>):<p>Todavía no hay cantidades habituales registradas.</p>}
    <form onSubmit={saveQuantity}><fieldset disabled={locked}><div className="customer-habits-fields"><label>Producto habitual<select required value={product} onChange={e=>{setProduct(e.target.value);const saved=preferences.find(p=>p.product_id===e.target.value);setQuantity(saved?String(saved.quantity):'');}}><option value="">Elegí un producto</option>{products.filter(p=>p.active&&!isDispenserModel(p)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>Unidades por visita<input type="number" inputMode="numeric" required min="0" max="100000" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)}/></label></div><p>Es una referencia para preparar el reparto. Cero quita esa cantidad habitual; no cambia lo que el cliente tiene para devolver.</p><button className="primary">Guardar cantidad habitual</button></fieldset></form>
   </>}
  </section>;

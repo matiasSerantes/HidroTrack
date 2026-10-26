@@ -608,3 +608,28 @@ it('comprobante del asistente comparte detalle sin cliente alquiler responsable 
 it('rendicion antigua sin detalle se aprueba sin reconstruir movimientos nuevos',async()=>{
  const v={...await deliveryFixture(),closeId:crypto.randomUUID()};await deliverVisit(v);await submitAssistantClose(v,await assistantCloseQuote(v));await db.exec('reset role');await db.query("update public.assistant_trip_close_snapshots set request=jsonb_set(request,'{expected}',(request->'expected')-'equipment_detail'),snapshot=snapshot-'equipment_detail' where tenant_id=$1 and id=$2",[tenant,v.closeId]);await actor(owner);await reviewAssistantClose(v.closeId);const h=(await db.query('select public.owner_assistant_close_inbox($1) as h',[tenant])).rows[0].h[0];expect(h.closure_state).toBe('approved');expect(h).not.toHaveProperty('equipment_detail');
 });
+
+async function windowFixture(){const v=await deliveryFixture();await actor(owner);await db.query("select public.customer_set_visit_window($1,$2,'16:00','17:00')",[tenant,v.customer]);await db.exec('reset role');await db.exec("update private.web_push_config set enabled=true,public_key=repeat('A',87)");await actor(driver);await db.query('select public.push_subscribe($1::jsonb)',[JSON.stringify({endpoint:'https://fcm.googleapis.com/fcm/send/ficticio',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}})]);return v;}
+async function claimAt(time){await db.exec('reset role');return (await db.query("select public.push_claim_visit_notifications(20,(current_date+$1::time) at time zone 'America/Argentina/Buenos_Aires') as jobs",[time])).rows[0].jobs;}
+it('horario se muestra en ruta aceptada y asistente no puede editar horarios',async()=>{
+ const v=await windowFixture();const route=(await preview(v.trip)).rows[0].result;expect(route.stops[0]).toMatchObject({visit_start:'16:00',visit_end:'17:00',reminder_dismissed:false});await denied(()=>db.query("select public.customer_set_visit_window($1,$2,'18:00','19:00')",[tenant,v.customer]),/Solo el jefe/);await actor(owner);await denied(()=>db.query("select public.customer_set_visit_window($1,$2,'17:00','16:00')",[tenant,v.customer]),/horario/);
+});
+it('cron genera aviso a las 15, luego 15:30 sin duplicar por minuto y solo para destinatario',async()=>{
+ await windowFixture();expect(await claimAt('14:59')).toHaveLength(0);const first=await claimAt('15:00');expect(first).toHaveLength(1);expect(first[0].user_id).toBe(driver);expect(await claimAt('15:01')).toHaveLength(0);await db.query("select public.push_finish_job($1,$2,'sent')",[first[0].id,first[0].claim_token]);expect(await claimAt('15:10')).toHaveLength(0);expect(await claimAt('15:30')).toHaveLength(1);
+});
+it('no llegue detiene siguientes avisos sin crear entrega o cambiar estado de visita',async()=>{
+ const v=await windowFixture();await db.query('select public.route_dismiss_time_reminder($1,$2,$3)',[tenant,v.trip,v.customer]);await db.query('select public.route_dismiss_time_reminder($1,$2,$3)',[tenant,v.trip,v.customer]);expect(await claimAt('15:30')).toHaveLength(0);await actor(driver);const route=(await preview(v.trip)).rows[0].result;expect(route.stops[0]).toMatchObject({reminder_dismissed:true,outcome:'pending'});expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+});
+it('entrega detiene avisos, endpoints internos no accesibles por usuario',async()=>{
+ const v=await windowFixture();await deliverVisit(v);expect(await claimAt('15:00')).toHaveLength(0);await actor(driver);await denied(()=>db.query('select public.push_claim_visit_notifications()'),/permission denied/);await denied(()=>db.query('select * from private.web_push_subscriptions'),/permission denied/);
+});
+it('revocacion impide avisos aunque dispositivo siga suscripto',async()=>{
+ const v=await windowFixture();await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,v.trip,crypto.randomUUID()]);expect(await claimAt('15:00')).toHaveLength(0);
+});
+it('suscripcion rechaza destinos arbitrarios y otro usuario no puede apropiarse del celular',async()=>{
+ await windowFixture();await actor(second);await denied(()=>db.query('select public.push_subscribe($1::jsonb)',[JSON.stringify({endpoint:'https://fcm.googleapis.com/fcm/send/ficticio',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}})]),/otra cuenta/);await denied(()=>db.query('select public.push_subscribe($1::jsonb)',[JSON.stringify({endpoint:'https://127.0.0.1/privado',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}})]),/no valida/);
+});
+
+it('licencia suspendida impide avisos aunque dispositivo siga suscripto',async()=>{
+ await windowFixture();await db.exec('reset role');await db.query("update public.licenses set status='suspended' where tenant_id=$1",[tenant]);expect(await claimAt('15:00')).toHaveLength(0);
+});

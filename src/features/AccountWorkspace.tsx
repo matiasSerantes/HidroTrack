@@ -1,3 +1,4 @@
+import {signOutWithPushCleanup} from '../lib/pushSession';
 import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { OwnerWorkspace } from './OwnerWorkspace';
@@ -16,7 +17,7 @@ export function AccountWorkspace({ client, userId }: { client: SupabaseClient; u
   }, () => { if (active) setError(true); });
   return () => { active = false; };
  }, [client, userId, retry]);
- if (error) return <main><p role="alert">No pudimos verificar tu acceso.</p><button onClick={() => setRetry(v => v + 1)}>Reintentar</button><button onClick={() => void client.auth.signOut()}>Cerrar sesión</button></main>;
+ if (error) return <main><p role="alert">No pudimos verificar tu acceso.</p><button onClick={() => setRetry(v => v + 1)}>Reintentar</button><button onClick={() => void signOutWithPushCleanup(client)}>Cerrar sesión</button></main>;
  if (admin === null) return <main><p role="status">Verificando tu acceso…</p></main>;
  return admin ? <AdminWorkspace client={client}/> : <OwnerSignupGate key={userId} client={client} userId={userId}><OwnerWorkspace client={client} userId={userId}/></OwnerSignupGate>;
 }

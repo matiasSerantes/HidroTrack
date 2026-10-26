@@ -1,3 +1,4 @@
+import {syncPushSession} from './lib/pushSession';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Droplets, Truck, ArrowUpRight } from 'lucide-react';
@@ -24,10 +25,10 @@ function MainApp() {
     const subscription = supabase.auth.onAuthStateChange((event, value) => {
       if(active&&event==='PASSWORD_RECOVERY')setRecovering(true);
       receivedAuthEvent = true;
-      if (active) { setSession(value); setCheckingSession(false); }
+      if (active) { syncPushSession(value?.user.id??null);setSession(value); setCheckingSession(false); }
     });
     void supabase.auth.getSession().then(({ data, error }) => {
-      if (active) { if (!error && !receivedAuthEvent) setSession(data.session); setCheckingSession(false); }
+      if (active) { if (!error && !receivedAuthEvent){syncPushSession(data.session?.user.id??null);setSession(data.session);} setCheckingSession(false); }
     }).catch(() => { if (active) setCheckingSession(false); });
     return () => { active = false; subscription.data.subscription.unsubscribe(); };
   }, []);

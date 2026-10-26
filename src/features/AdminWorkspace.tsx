@@ -1,3 +1,4 @@
+import {signOutWithPushCleanup} from '../lib/pushSession';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Droplets, LogOut, Plus, RefreshCw, LayoutDashboard, Users, ShieldCheck, Search } from 'lucide-react';
@@ -111,7 +112,7 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
   if (demo) { onExit?.(); return; }
   if (!client) return;
   setBusy(true);
-  try { const { error } = await client.auth.signOut(); if (error) throw error; }
+  try { const { error } = await signOutWithPushCleanup(client); if (error) throw error; }
   catch { setNotice('No pudimos cerrar la sesión. Reintentá.'); setBusy(false); }
  }
  return <div className="admin-shell"><aside className="admin-sidebar"><a className="admin-brand" href="/"><Droplets size={27}/> HidroTrack<span>ADMINISTRACIÓN</span></a><nav aria-label="Administración de plataforma">{([['overview','Resumen',LayoutDashboard],['users','Usuarios',Users],['licenses','Empresas y licencias',ShieldCheck]] as const).map(([id,label,Icon])=><button key={id} disabled={busy} aria-current={view===id?'page':undefined} onClick={()=>{setView(id);setSearch('');setForm(null);setEditing(null);}}><Icon size={19}/>{label}</button>)}</nav><p>Gestioná el acceso a la plataforma desde tu cuenta de administrador.</p></aside><main className="connected-workspace admin-workspace"><header><div><span className="eyebrow">HIDROTRACK · ADMINISTRACIÓN</span><h1>{view==='overview'?'Tu panel de administración':view==='users'?'Usuarios de la plataforma':'Empresas y licencias'}</h1><p className="muted">Administrá soderías, cuentas y licencias.</p></div><button onClick={signOut} disabled={busy}><LogOut size={16}/> {demo?'Salir de la vista previa':'Cerrar sesión'}</button></header>

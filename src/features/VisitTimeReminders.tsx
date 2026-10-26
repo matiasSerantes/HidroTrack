@@ -1,0 +1,13 @@
+import {useEffect,useRef,useState} from 'react';
+import type {SupabaseClient} from '@supabase/supabase-js';
+import type {TripStop} from './AssistantTripView';
+import {dueVisitReminders} from '../domain/visitReminders';
+export function VisitTimeReminders({client,tenantId,tripId,date,serverNow,stops,disabled,onSelect,onLock,onChanged}:{client:SupabaseClient;tenantId:string;tripId:string;date:string;serverNow?:string;stops:TripStop[];disabled:boolean;onSelect:(id:string)=>void;onLock:(v:boolean)=>void;onChanged:()=>void}){
+ const baseline=useRef({server:Date.parse(serverNow||'')||Date.now(),local:Date.now()});useEffect(()=>{baseline.current={server:Date.parse(serverNow||'')||Date.now(),local:Date.now()};},[serverNow]);
+ const [now,setNow]=useState(Date.now()),[busy,setBusy]=useState(false),[pending,setPending]=useState<string|null>(null),[error,setError]=useState('');const inFlight=useRef(false);
+ useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),15000);return()=>window.clearInterval(timer);},[]);useEffect(()=>{onLock(busy||pending!==null);return()=>onLock(false);},[busy,pending,onLock]);
+ const due=dueVisitReminders(stops,baseline.current.server+now-baseline.current.local,date);
+ async function dismiss(id:string){if(disabled||inFlight.current)return;inFlight.current=true;setBusy(true);setPending(id);setError('');try{const r=await client.rpc('route_dismiss_time_reminder',{p_tenant:tenantId,p_trip:tripId,p_customer:id});if(r.error){if(r.error.code)setPending(null);throw r.error;}if(r.data?.dismissed!==true)throw new Error();setPending(null);onChanged();}catch{setError('No se confirmó la respuesta. Reintentá para detener los avisos de esa parada.');}finally{setBusy(false);inFlight.current=false;}}
+ if(!due.length&&!pending)return null;
+ return <section className="visit-time-reminders" aria-label="Recordatorios de horario"><h4>Recordá los horarios de tus clientes</h4>{error&&<p role="alert">{error}</p>}{due.map(s=><article key={`${s.id}.${s.slot}`} role="status"><strong>{s.name}: te espera de {s.visit_start} a {s.visit_end}</strong><p>Recordatorio cada 30 minutos desde una hora antes. Se detiene al registrar la entrega o marcar que no llegaste.</p><button className="hd-btn primary" disabled={disabled||busy||pending!==null} onClick={()=>onSelect(s.id)}>Atender a {s.name}</button><button className="hd-btn" disabled={disabled||busy||pending!==null} onClick={()=>void dismiss(s.id)}>No llegué a horario · {s.name}</button></article>)}{pending&&<button className="hd-btn primary" disabled={disabled||busy} onClick={()=>void dismiss(pending)}>Reintentar detener aviso</button>}<p>«No llegué» detiene recordatorios, pero deja la visita pendiente para que decidas cuándo volver.</p></section>;
+}

@@ -1,3 +1,4 @@
+import {signOutWithPushCleanup} from '../lib/pushSession';
 import { matchesCustomer } from '../domain/customerSearch';
 import { currency } from '../domain/demo';
 import { useCustomerBalances } from './useCustomerBalances';
@@ -32,7 +33,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   const [search, setSearch] = useState('');
   const [stockLocked,setStockLocked]=useState(false);
   const [locationBusy,setLocationBusy]=useState(false);
-  const [view,setView] = useState<OwnerView>('overview');
+  const [view,setView] = useState<OwnerView>(()=>new URLSearchParams(window.location.search).get('recordatorio')==='1'?'trips':'overview');
   const {balances,failed:balancesFailed,refreshBalances}=useCustomerBalances(client,tenantId,view==='customers'&&!selectedCustomer&&!busy&&!stockLocked);
   const visibleCustomers=workspace?.customers.filter(c=>matchesCustomer(c,search))||[];
   useEffect(() => {
@@ -113,7 +114,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   async function signOut() {
     setBusy(true);
     try {
-      const result = await client.auth.signOut();
+      const result = await signOutWithPushCleanup(client);
       if (result.error) throw result.error;
     } catch { setNotice('No pudimos cerrar la sesión. Intentá nuevamente.'); setBusy(false); }
   }

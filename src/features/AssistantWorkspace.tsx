@@ -1,3 +1,4 @@
+import {signOutWithPushCleanup} from '../lib/pushSession';
 import {AssistantReceiptHistory} from './SharedCloseReceipts';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -41,7 +42,7 @@ export function AssistantWorkspace({client,userId}:{client:SupabaseClient;userId
       form.reset();setShowPassword(false);setNotice('Contraseña actualizada en tu cuenta. Usá la nueva en el próximo ingreso.');
     }catch(e){form.reset();setError(e instanceof Error?e.message:'No se recibió confirmación del cambio.');}finally{setBusy(false);}
   }
-  async function signOut(){if(busy)return;setBusy(true);setError('');try{const result=await client.auth.signOut();if(result.error)throw result.error;}catch{setError('No se pudo cerrar sesión. Intentá nuevamente.');setBusy(false);}}
+  async function signOut(){if(busy)return;setBusy(true);setError('');try{const result=await signOutWithPushCleanup(client);if(result.error)throw result.error;}catch{setError('No se pudo cerrar sesión. Intentá nuevamente.');setBusy(false);}}
   return <div className="hd assistant-real"><main><header><span className="hd-tag mint">MI CUENTA · ACCESO REAL</span><button className="hd-btn" disabled={busy} onClick={()=>void signOut()}>Cerrar sesión</button></header><section className="assistant-wait-card"><h1>Tu espacio de asistente</h1><p>Tu cuenta es independiente de los jefes. Acá administrás tus datos personales.</p><div className="assistant-wait-status"><h2>Cuenta independiente</h2><p>Revisá tus invitaciones. Solo al aceptar podrás abrir el resumen del recorrido asignado.</p></div></section>
     {error&&<p className="assistant-real-error" role="alert">{error}</p>}{notice&&<p className="assistant-real-notice" role="status">{notice}</p>}
     {verified&&<AssistantTripInvitations key={`trips-${userId}`} client={client} userId={userId}/>}
