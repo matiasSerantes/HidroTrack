@@ -5,6 +5,17 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { googleNavigation, navigationLegs, pendingNavigationTargets, wazeNavigation } from '../src/domain/externalNavigation';
 import { ExternalNavigation } from '../src/features/ExternalNavigation';
 afterEach(cleanup);
+it('ofrece Waze para cada parada sin enviar multiples destinos ni completar visitas',()=>{
+ render(<ExternalNavigation route={[target(3),target(1)]}/>);
+ fireEvent.click(screen.getByRole('button',{name:/Abrir navegación/}));fireEvent.click(screen.getByRole('button',{name:/Ver opciones del recorrido/}));
+ const links=screen.getAllByRole('link',{name:/parada \d en Waze/});expect(links).toHaveLength(2);
+ links.forEach((link,i)=>{const url=new URL(link.href);expect(url.origin).toBe('https://waze.com');expect(url.searchParams.get('ll')).toBe(`${[target(3),target(1)][i].geo.lat},${[target(3),target(1)][i].geo.lng}`);expect(url.searchParams.get('navigate')).toBe('yes');expect(url.searchParams.get('utm_source')).toBe('hidrotrack');expect(url.searchParams.has('waypoints')).toBe(false);expect(link.getAttribute('target')).toBeNull();});
+});
+it('un destino sin datos no oculta los enlaces Waze de las otras paradas',()=>{
+ render(<ExternalNavigation route={[{id:'bad',name:'Sin punto',address:''},target(2)]}/>);
+ fireEvent.click(screen.getByRole('button',{name:/Abrir navegación/}));fireEvent.click(screen.getByRole('button',{name:/Ver opciones del recorrido/}));
+ expect(screen.getByRole('link',{name:/Ir parada 2 en Waze/})).toBeTruthy();expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+});
 const target=(n)=>({id:String(n),name:`Parada ${n}`,address:`Calle ${n}`,locality:'Localidad demo',geo:{lat:-34.6-n/1000,lng:-58.4}});
 it('abre destino preciso sin publicar nombre, cuenta, GPS ni origen simulado',()=>{
   const p=target(1),url=new URL(googleNavigation([p]));
@@ -42,6 +53,6 @@ it('botón permite elegir parada o todas y avisa que demo no usa origen ficticio
   expect(screen.queryByRole('link')).toBeNull();fireEvent.click(screen.getByRole('button',{name:/Abrir navegación/}));
   expect(screen.getByText(/La app usará tu ubicación real/)).toBeTruthy();
   const link=screen.getByRole('link',{name:/Ir a esta parada en Google Maps/});expect(new URL(link.href).searchParams.get('destination')).toContain(String(target(2).geo.lat));expect(link.rel).toContain('noopener');
-  fireEvent.click(screen.getByRole('button',{name:/Ver recorrido pendiente/}));
+  fireEvent.click(screen.getByRole('button',{name:/Ver opciones del recorrido/}));
   expect(screen.getByRole('link',{name:/Abrir recorrido completo \(3 paradas\)/})).toBeTruthy();
 });

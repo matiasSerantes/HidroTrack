@@ -798,3 +798,8 @@ Se reporta que no pudo mover un punto a otro mapa/recorrido. Revisar diferencia 
 
 Diagnostico: mapa real usa marcadores seleccionables sin arrastre. No existe control general para pasar paradas pendientes entre repartos; solo OwnerFollowupInbox para ausencias, con restricciones de fecha/estado. Consulta limitada de logs de errores de traslado sin coincidencias; no demuestra que no hubiera fallo. Falta confirmar accion y mensaje del usuario antes de cambiar flujo o mover datos. Sin modificaciones remotas ni pruebas de recorridos reales.
 
+
+## 2026-10-25 - Aclaracion: abrir recorrido en Waze
+Usuario aclara que no era traslado entre repartos: intento abrir navegacion en Waze. Revisar enlaces externos, distinguir recorrido Google Maps de destino individual Waze. Implementar lista Waze parada por parada, sin prometer exportar recorrido completo ni marcar visitas al abrir enlace. Sin cambios de clientes o recorridos reales.
+
+2026-10-25 - Waze en recorrido: se aclara que el reporte era abrir navegacion externa, no trasladar paradas. Opciones del recorrido ahora separa Waze una parada por vez de Google Maps varias paradas; cada pendiente tiene enlace Waze en orden, con coordenadas o busqueda de direccion si no hay punto exacto. Enlace HTTPS oficial waze.com/ul con utm_source=hidrotrack y navegacion en misma pestana para entrega al sistema del celular. No envia multiples destinos, no registra visita ni modifica recorridos. Una parada sin ubicacion no oculta otras validas. Compartido entre demo y real. Documentacion: https://developers.google.com/waze/deeplinks . 8 pruebas y build correctos; apertura nativa en Android/iOS pendiente de validar con usuario. No se afirma reproducir el error del celular. Publicacion pendiente de verificar.

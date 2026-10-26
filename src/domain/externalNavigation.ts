@@ -21,10 +21,10 @@ export function googleNavigation(targets:NavigationTarget[]){
   return url.href;
 }
 export function wazeNavigation(target:NavigationTarget){
-  const value=destination(target),url=new URL('https://www.waze.com/ul');
+  const value=destination(target),url=new URL('https://waze.com/ul');
   const p=target.geo;
   const precise=p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&Math.abs(p.lat)<=90&&Math.abs(p.lng)<=180;
-  url.searchParams.set(precise?'ll':'q',value);if(precise)url.searchParams.set('navigate','yes');
+  url.searchParams.set('utm_source','hidrotrack');url.searchParams.set(precise?'ll':'q',value);if(precise)url.searchParams.set('navigate','yes');
   return {href:url.href,precise:Boolean(precise)};
 }
 export function navigationLegs(targets:NavigationTarget[]){
