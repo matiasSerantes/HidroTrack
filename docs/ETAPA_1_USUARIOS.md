@@ -57,3 +57,9 @@ Consulta de solo lectura a /auth/v1/settings confirma email habilitado, registro
 Pruebas dirigidas 16/16, suite completa 446/446 y build correctos. Sin crear cuentas ni enviar correos reales para probar. Publicacion pendiente de verificar. Cubre causa del reporte de validacion generica del registro.
 
 Publicacion del registro verificada el 26/10/2026 tras 602610c: HTTP 200, index-DE7AkqCg.js contiene access-complete y access-password-toggle. No se crean cuentas ni envian correos para verificar. QA manual pendiente. Gracia de 24 horas aun no habilitada.
+
+## 2026-10-26 - Cartel de validacion y reenvio en flujo normal
+Main: al crear cuenta sin sesion, cartel celeste Revis? tu correo y valid? tu cuenta con correo ingresado y pasos claros. Alta nueva confirmada por Auth indica envio automatico del enlace; respuesta oculta de duplicado mantiene mensaje neutral sin afirmar nueva cuenta. No se agrega un segundo envio automatico: signUp ya lo solicita a Supabase.
+Boton Reenviar correo de validacion usa auth.resend type signup con el mismo correo y destino de alta jefe, sin repetir signUp ni cambiar clave. Respuesta incierta no afirma envio exitoso; estado de carga bloquea otras acciones. Si login devuelve email_not_confirmed, abre cartel de validacion pendiente con reenvio en lugar de error generico.
+Lectura de configuracion Auth confirma proveedor email y signup habilitados, confirmacion previa activa y SMTP personalizado configurado. Sin cambios de configuracion ni envio de correos/cuentas reales para probar. La gracia 24 horas sigue en rama separada pendiente de autorizacion especifica, sin aplicar su migracion ni fusionarla.
+Verificacion: suite completa 450/450 y build aprobados. Publicacion pendiente de verificar. Prueba manual de recepcion de correo sigue pendiente de usuario; no se afirma entrega basandose solo en configuracion.
