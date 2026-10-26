@@ -792,3 +792,9 @@ Implementado bloque Cuenta corriente del jefe: saldo pendiente en naranja suave 
 MCP confirma RPC y campos en produccion. No modifica esquema ni importa deudas reales. Pruebas relacionadas: 78/78, build correcto. Publicacion pendiente de verificar. Registro con validacion de correo en 24 horas y retiro de cuenta antigua siguen pendientes; cambios locales de acceso se conservan separados de este incremento.
 
 Publicacion verificada tras bccc0c5: HTTP 200 y AccountWorkspace-BV_fRdMI.js incluye commerce_open_customer_balance. Sin iniciar sesion ni cargar deuda real para comprobar. QA visual autenticada movil/PC pendiente.
+
+## 2026-10-25 - Traslado de punto entre recorridos reportado
+Se reporta que no pudo mover un punto a otro mapa/recorrido. Revisar diferencia entre traslado de cliente, orden y ubicacion geografica. No mover paradas reales sin identificar origen y destino. Estado: diagnostico; aclaracion solicitada.
+
+Diagnostico: mapa real usa marcadores seleccionables sin arrastre. No existe control general para pasar paradas pendientes entre repartos; solo OwnerFollowupInbox para ausencias, con restricciones de fecha/estado. Consulta limitada de logs de errores de traslado sin coincidencias; no demuestra que no hubiera fallo. Falta confirmar accion y mensaje del usuario antes de cambiar flujo o mover datos. Sin modificaciones remotas ni pruebas de recorridos reales.
+
