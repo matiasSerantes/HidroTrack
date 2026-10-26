@@ -78,7 +78,7 @@ describe('panel conectado del titular', () => {
     await waitFor(()=>expect(screen.getByRole('button',{name:'Ver catálogo'}).disabled).toBe(true));
     client.rpc.mockResolvedValue({data:'ok',error:null});
     fireEvent.click(screen.getByText('Reintentar misma operación'));
-    await screen.findByText('Envases iniciales registrados en este cliente.');
+    await screen.findByText('Envases asignados desde el depósito. El total propio no cambió.');
     expect(client.rpc.mock.calls[0]).toEqual(client.rpc.mock.calls[1]);
   });
   it('ofrece inicio, menú lateral y navegación móvil con las secciones conectadas',async()=>{

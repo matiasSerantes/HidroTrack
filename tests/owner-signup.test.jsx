@@ -5,7 +5,7 @@ import {AccountAccess} from '../src/features/AccountAccess';
 import {OwnerSignupGate} from '../src/features/OwnerSignupGate';
 afterEach(()=>{cleanup();window.history.replaceState(null,'','/');});
 it('enlace de jefe muestra empresa y crea solo la cuenta Auth con intencion sin licencias del cliente',async()=>{
- window.history.replaceState(null,'','/?registro=jefe');const client={auth:{signUp:vi.fn(async()=>({data:{session:null},error:null}))}};
+ window.history.replaceState(null,'','/?registro=jefe');const client={auth:{signUp:vi.fn(async()=>({data:{session:null,user:{id:'new-user',identities:[{id:'email-identity'}]}},error:null}))}};
  render(<AccountAccess client={client} onSession={()=>{}}/>);expect(screen.getByRole('heading',{name:'Crear mi cuenta de jefe'})).toBeTruthy();fireEvent.change(screen.getByLabelText('Mi nombre'),{target:{value:'Jefe ficticio'}});fireEvent.change(screen.getByLabelText('Nombre de mi empresa'),{target:{value:'Empresa ficticia'}});fireEvent.change(screen.getByLabelText('Correo electrónico'),{target:{value:'jefe@example.test'}});fireEvent.change(screen.getByLabelText('Contraseña'),{target:{value:'ClaveFicticia123!'}});fireEvent.change(screen.getByLabelText('Repetir contraseña'),{target:{value:'ClaveFicticia123!'}});fireEvent.click(screen.getByRole('button',{name:'Crear cuenta de jefe'}));await screen.findByText(/Revisá tu correo/);
  expect(client.auth.signUp.mock.calls[0][0].options.data).toEqual({full_name:'Jefe ficticio',signup_kind:'owner',company_name:'Empresa ficticia'});expect(client.auth.signUp.mock.calls[0][0].options.emailRedirectTo).toContain('registro=jefe');
 });
