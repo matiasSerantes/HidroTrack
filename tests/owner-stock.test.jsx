@@ -208,7 +208,8 @@ describe('inventario conectado del jefe',()=>{
     const {client}=fixture('trips'); await screen.findByText('1. Preparar reparto');
     fireEvent.change(screen.getByLabelText('Nombre del reparto'),{target:{value:'Ruta propia'}});
     fireEvent.change(screen.getByLabelText('Repartidor asignado'),{target:{value:'owner'}});
-    fireEvent.click(screen.getByLabelText('María'));
+    fireEvent.click(screen.getByLabelText(/Mostrar tambi/));
+    fireEvent.click(await screen.findByLabelText(/María/));
     fireEvent.click(screen.getByText('Guardar reparto'));
     await screen.findByText(/Reparto preparado/);
     expect(client.rpc).toHaveBeenCalledWith('inventory_create_trip',expect.objectContaining({p_tenant:'tenant-a',p_driver:'owner',p_customers:['c1'],p_name:'Ruta propia'}));

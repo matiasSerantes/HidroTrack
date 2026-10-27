@@ -35,3 +35,6 @@ Los avisos de fondo usan Web Push y un receptor instalado en el navegador, por e
 - Publicacion de recursos web verificada por HTTP el 26/10/2026 (pantalla, manifest y sw.js con MIME JavaScript). Recepcion real con telefono bloqueado requiere que el usuario active y pruebe en su dispositivo; no se pidio permiso ni se suscribio un telefono automaticamente para probar.
 
 Fuentes: [programar Edge Functions](https://supabase.com/docs/guides/functions/schedule-functions), [Web Push en iOS](https://webkit.org/blog/13878/), [emisor Web Push](https://github.com/web-push-libs/web-push).
+
+## Preparar por dia
+En Repartos y camion, elegir Fecha del reparto. La lista muestra los clientes con ese dia habitual, primero los horarios de inicio tempranos y al final quienes no tienen franja. Marcar los clientes y Guardar reparto. Para una visita excepcional activar Mostrar tambien clientes de otros dias o sin dia asignado. Cambiar fecha borra la seleccion anterior; cambiar solo el filtro conserva seleccionados y avisa si alguno queda oculto. La lista ordenada es una ayuda de preparacion, no optimiza calles ni garantiza el orden final del recorrido.
