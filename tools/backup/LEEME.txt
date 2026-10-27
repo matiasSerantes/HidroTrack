@@ -1,0 +1,27 @@
+HIDROTRACK - BACKUP LOCAL PARA WINDOWS 10/11 X64
+
+1. Copiar y EXTRAER toda esta carpeta en la otra PC (no abrir dentro del ZIP/RAR).
+2. Hacer doble clic en "Abrir backup.cmd" con Internet disponible.
+3. La primera vez prepara Python, cifrado y clientes PostgreSQL. Puede tardar
+   varios minutos y descargar unos 400 MB. No cerrar la consola.
+   Windows puede pedir permiso si necesita instalar Microsoft Visual C++.
+4. Se abre la ventana del backup. Completar host, puerto y usuario de la
+   conexion Session pooler de Supabase. El archivo pg_dump ya queda elegido.
+5. Ingresar contrasena de la base y clave para cifrar la copia (repetirla).
+6. Elegir carpeta de copias fuera de la carpeta del programa. Crear copia.
+7. Esperar el mensaje de completado y conservar archivo .htbackup y su clave.
+
+Cada noche volver a abrir el mismo "Abrir backup.cmd".
+No instala una tarea nocturna: la ejecucion es manual.
+No guarda contrasenas y no restaura ni modifica la base al instalar/respaldar.
+Las herramientas quedan en %LOCALAPPDATA%\HidroTrack-Backup para este usuario.
+No modifica el PATH ni instala un servidor PostgreSQL.
+
+Las copias contienen informacion sensible y se cifran. La clave de la copia
+es imprescindible para recuperar desde otra PC. Guardarla por separado.
+Fotos/archivos de Storage y secretos/configuracion de Supabase no se incluyen.
+Conservar otra copia del archivo cifrado en un disco/ubicacion independiente.
+
+Si algo falla, volver a abrir el iniciador. No indica exito si falta un paso.
+Primera copia real y restauracion aislada deben comprobarse antes de confiar
+en el procedimiento. Revisar Guia de backup.md incluida en el ZIP.

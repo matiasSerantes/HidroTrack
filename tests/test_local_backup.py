@@ -55,7 +55,8 @@ class BackupTests(unittest.TestCase):
                     Path(args[args.index('--file') + 1]).write_bytes(b'PGDMP fictional export')
                 else:
                     self.assertIn('--list', args)
-            with patch.object(app, 'run_client', side_effect=fake_client) as runner:
+            # A standalone folder on another PC must not incorrectly treat C:\Users as the repo.
+            with patch.object(app, '__file__', str(folder / 'portable' / 'backup_app.py')), patch.object(app, 'run_client', side_effect=fake_client) as runner:
                 result = app.create_backup(settings, 'fake-db-password', 'fictional-password')
                 self.assertEqual(runner.call_count, 2)
             self.assertTrue(result.exists())

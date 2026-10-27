@@ -112,7 +112,11 @@ def create_backup(settings: dict, db_password: str, backup_password: str) -> Pat
         raise ValueError('Ingresá la contraseña de base y una clave de copia de al menos 12 caracteres.')
     output = Path(settings['output']).expanduser().resolve()
     # Never put business data or archives anywhere inside this checkout.
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parent
+    for ancestor in Path(__file__).resolve().parents:
+        if (ancestor / 'AGENTS.md').is_file() and (ancestor / 'package.json').is_file():
+            repo = ancestor
+            break
     if output == repo or repo in output.parents:
         raise ValueError('Elegí una carpeta fuera del proyecto para guardar las copias.')
     output.mkdir(parents=True, exist_ok=True)
@@ -160,8 +164,10 @@ def main():
         config = json.loads(CONFIG.read_text(encoding='utf-8'))
     except (OSError, ValueError):
         config = {}
-    defaults = {'host':'', 'port':'5432', 'user':'', 'pg_dump':shutil.which('pg_dump') or '',
+    defaults = {'host':'', 'port':'5432', 'user':'', 'pg_dump':os.environ.get('HIDROTRACK_PG_DUMP') or shutil.which('pg_dump') or '',
                 'output':str(Path.home() / 'HidroTrack-Backups')}
+    if config.get('pg_dump') and not Path(config['pg_dump']).is_file():
+        config.pop('pg_dump')  # A copied configuration must not keep another PC's obsolete executable path.
     variables = {key:tk.StringVar(value=config.get(key, default)) for key, default in defaults.items()}
     fields = ttk.Frame(frame)
     fields.pack(fill='x')

@@ -2,13 +2,17 @@
 
 Herramienta local: `tools/backup/Abrir backup.cmd`. Es independiente de la web y no modifica la base. No instala una tarea nocturna: hay que abrirla cada noche. PC encendida, Internet y conexión PostgreSQL disponibles.
 
-## Preparación única
+## Preparacion automatica en otra PC
 
-1. Python ya está disponible en esta PC. La ventana usa Tkinter y `cryptography`. Si falta la biblioteca, desde la raíz del proyecto ejecutar `python -m pip install -r tools/backup/requirements.txt`. No necesita Node ni arrancar la web.
-2. Instalar las herramientas cliente de PostgreSQL desde [la distribución oficial para Windows](https://www.postgresql.org/download/windows/). Se necesitan `pg_dump.exe` y `pg_restore.exe` de la misma instalación. Usar una versión igual o más nueva que la versión principal del servidor. No hace falta crear una base local para exportar.
-3. En Supabase, proyecto HidroTrack → **Connect → Session pooler**, copiar host, puerto y usuario. Usar conexión de sesión, habitualmente puerto **5432**, no el pooler transaccional 6543. No confundir estos datos con la URL de la web/API ni con la clave pública de Supabase.
-4. Tener la **contraseña de PostgreSQL** de ese proyecto. No es la contraseña de Darío ni el token del MCP. Ingresarla únicamente en la ventana; no pegarla en Git, notas o capturas. No restablecerla si no es necesario: afectaría otras conexiones que la utilicen.
-5. Abrir el `.cmd`, completar datos, elegir `pg_dump.exe` y una carpeta **fuera del proyecto**, preferiblemente en un disco con cifrado del sistema. Se recuerda únicamente esta configuración no secreta en `config.local.json`, ignorado por Git.
+1. Llevar el ZIP HidroTrack-Backup-Autoinstalable a una PC **Windows 10/11 x64**. Extraer toda la carpeta en una ubicacion con permiso de escritura; no ejecutar dentro del ZIP/RAR ni copiar solamente el .cmd.
+2. Abrir **Abrir backup.cmd**. Descarga Python 3.14 desde python.org, verifica firma de Python Software Foundation, instala por usuario con Tkinter/pip y crea un entorno privado para cryptography desde PyPI. No cambia PATH ni depende del Python de otra aplicacion.
+3. Descarga el ZIP oficial de clientes PostgreSQL 18 publicado por EDB (enlace resuelto y limitado a su dominio oficial). Extrae solo pg_dump, pg_restore y DLLs de su carpeta bin; no instala ni inicia un servidor PostgreSQL. Primera descarga aproximadamente 400 MB. Las siguientes aperturas reutilizan las herramientas en `%LOCALAPPDATA%\HidroTrack-Backup`.
+4. Si los clientes no arrancan por falta de runtime, descarga Visual C++ desde Microsoft, verifica su firma y pide elevacion mediante el permiso normal de Windows. Si se cancela o falla, no abre el backup como si estuviera listo. La preparacion requiere Internet, espacio y permisos de instalacion permitidos en esa PC.
+5. Se abre la ventana con pg_dump ya elegido. En Supabase, proyecto HidroTrack ? **Connect ? Session pooler**, copiar host, puerto y usuario. Usar conexion de sesion, habitualmente puerto **5432**, no el pooler transaccional 6543. No confundir con URL de la web/API ni clave publica.
+6. Tener la **contrasena PostgreSQL** de ese proyecto. No es la de Dario ni el token MCP. Ingresarla unicamente en la ventana. No resetearla si no es necesario: afectaria otras conexiones.
+7. Elegir carpeta **fuera de la carpeta del programa/proyecto**, preferiblemente en disco con cifrado del sistema. Solo se recuerda configuracion no secreta en config.local.json; las claves no se guardan.
+
+El paquete solo incluye codigo, requisitos e instrucciones: sin configuracion personal, copias, claves ni herramientas ya instaladas. La instalacion x64 no cubre ARM/Windows 32 bits. No crea una tarea programada. Puede revisarse el origen de descargas sin instalar con `powershell -NoProfile -File tools/backup/preparar-y-abrir.ps1 -CheckOnly` desde el repositorio.
 
 ## Cada noche
 
@@ -48,3 +52,5 @@ La exportación y la verificación requieren archivos temporales sin cifrar en l
 Herramienta preparada y comprobada con datos ficticios, cifrado/descifrado y fallos simulados. **Primera copia de producción y ensayo de restauración pendientes**: aún faltan los clientes PostgreSQL y configurar la conexión. No se cambió el plan de Supabase ni se verificaron sus respaldos administrados.
 
 Fuentes: [backups de Supabase](https://supabase.com/docs/guides/platform/backups), [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html), [pg_restore](https://www.postgresql.org/docs/current/app-pgrestore.html).
+
+26/10/2026: iniciador automatico verificado en modo consulta sin instalaciones ni base real: enlaces oficiales Python 3.14.10 y PostgreSQL 18.6 x64 disponibles. Pruebas de cifrado/backup ficticio y traslado de carpeta aprobadas. Instalacion integral en Windows limpio y permisos/UAC pendientes de comprobar en la PC destino.

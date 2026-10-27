@@ -14,3 +14,4 @@ HidroTrack-fuentes.zip
 *.dump
 *.partial
 __pycache__/
+/HidroTrack-Backup-*.zip

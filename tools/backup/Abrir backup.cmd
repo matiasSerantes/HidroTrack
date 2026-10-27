@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python backup_app.py
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0preparar-y-abrir.ps1"
 if errorlevel 1 pause
