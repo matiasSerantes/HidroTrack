@@ -28,7 +28,7 @@ El programador revisa cada minuto. A partir de las 20:00 de Argentina genera un 
 
 No envia avisos a las 19:59 ni recupera avisos despues de las 21. Reintentos limitados con lease y deduplicacion; errores 404/410 desactivan la suscripcion caducada. El telefono necesita Internet y puede demorar/silenciar segun sistema/ahorro de bateria. El mismo dispositivo descarta mensajes vencidos, de otra cuenta y duplicados del mismo dia. Al tocar abre la empresa y fecha correctas, validadas contra la membresia propietaria; no crea un reparto automaticamente.
 
-Cola y emisor diarios independientes de los recordatorios de franjas existentes. No se cambio el cron ni el emisor de horarios. Activacion final del servicio diario pendiente de verificar publicacion del receptor; ninguna preferencia de usuario se activa automaticamente.
+Cola y emisor diarios independientes de los recordatorios de franjas existentes. No se cambio el cron ni el emisor de horarios. Servicio diario habilitado en produccion tras verificar receptor y web publicados; ninguna preferencia de usuario se activa automaticamente.
 
 ## Activacion de plantillas y orden persistido
 
@@ -40,4 +40,10 @@ Aplicadas tambien `20261027194519_planning_reminders.sql` y `20261027194537_plan
 
 Pruebas locales de servidor cubren aislamiento de propietarios/asistentes, guardado idempotente, ausencia de movimientos de stock/caja, orden de paradas, reintento y captura desde reparto. Pruebas UI cubren fechas Argentina/cambio de mes, filtrado de clientes inactivos al cargar, reordenamiento, no simular plantillas sin contrato y reintento con mismo ID tras mala conexion. QA visual telefono/PC y prueba conectada pendientes.
 
-27/10/2026 - Verificacion: suite completa 499/499 y build aprobados. Prueba real de emisor autenticado HTTP 200, contadores cero; sin credencial HTTP 401. Plantillas con RLS y sin INSERT directo anon/authenticated. Activacion final del envio diario y publicacion pendientes en esta entrada; recepcion fisica requiere consentimiento y prueba en telefono.
+27/10/2026 - Verificacion: suite completa 499/499 y build aprobados. Prueba real de emisor autenticado HTTP 200, contadores cero; sin credencial HTTP 401. Plantillas con RLS y sin INSERT directo anon/authenticated. Publicacion y activacion global verificadas; recepcion fisica requiere consentimiento y prueba en telefono.
+
+## Estado final de este incremento (27/10/2026)
+
+Plantillas y orden activos; servicio diario activo, cron correcto cada minuto, limitado a 20:00-21:00 de Argentina por el despachador y por la cola. 45 migraciones instaladas y 53 tablas publicas con RLS. Receptor/controles publicados en AccountWorkspace-uDfJwI5m.js y sw.js. Prueba de cola fuera de horario devuelve cero, ultima ejecucion cron succeeded. Ninguna preferencia se activo ni se enviaron mensajes reales para probar. La recepcion con telefono bloqueado y QA visual autenticada en movil/PC quedan por comprobar con el usuario.
+
+Para deshabilitar el servicio entero en una incidencia, soporte puede poner private.planning_push_config.enabled=false mediante MCP; no cambia preferencias, datos de negocio ni los avisos de horarios. Un despliegue nuevo del esquema lo deja apagado por defecto hasta que se verifique el emisor/receptor y se habilite expresamente.
