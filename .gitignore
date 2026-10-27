@@ -9,3 +9,8 @@ tmp/pdfs/
 *.tsbuildinfo
 HidroTrack-fuentes.zip
 /CREDENCIALES_PRUEBA.local.md
+/tools/backup/config.local.json
+*.htbackup
+*.dump
+*.partial
+__pycache__/
