@@ -49,6 +49,28 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+it('plantilla conserva orden, no crea ventas ni carga y niega otro jefe/asistente',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ const secondCustomer=(await db.query("insert into public.customers(tenant_id,name,address) values($1,'Cliente C','Direccion C') returning id",[tenant])).rows[0].id;
+ const id=crypto.randomUUID();await db.query("select public.owner_save_route_template($1,$2,'Lunes',$3)",[tenant,id,[secondCustomer,c]]);
+ await db.query("select public.owner_save_route_template($1,$2,'Lunes',$3)",[tenant,id,[secondCustomer,c]]);
+ expect((await db.query('select public.owner_route_templates($1) as value',[tenant])).rows[0].value[0].customers).toEqual([secondCustomer,c]);
+ expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_route_templates($1)',[tenant]),/Solo el jefe/);
+ await actor(driver);expect((await db.query('select * from public.route_templates')).rows).toHaveLength(0);
+});
+it('nuevo reparto conserva orden elegido y reintento no reordena un reparto existente',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ const c2=(await db.query("insert into public.customers(tenant_id,name,address) values($1,'Cliente C','Direccion C') returning id",[tenant])).rows[0].id;
+ const trip=crypto.randomUUID(),ids=[c2,c];await db.query("select public.owner_create_ordered_trip($1,$2,$3,'Orden manual',current_date,$4)",[tenant,trip,owner,ids]);
+ expect((await db.query('select customer_id from public.route_stops where trip_id=$1 order by position',[trip])).rows.map(r=>r.customer_id)).toEqual(ids);
+ await db.exec('reset role');await db.query('update public.route_stops set position=position+10 where trip_id=$1',[trip]);await actor(owner);
+ await db.query("select public.owner_create_ordered_trip($1,$2,$3,'Orden manual',current_date,$4)",[tenant,trip,owner,ids]);
+ expect((await db.query('select min(position) as pos from public.route_stops where trip_id=$1',[trip])).rows[0].pos).toBe(11);
+ await denied(()=>db.query("select public.owner_create_ordered_trip($1,$2,$3,'Orden manual',current_date,$4)",[tenant,trip,owner,[c,c2]]),/otro orden/);
+ const template=crypto.randomUUID();await db.query("select public.owner_template_from_trip($1,$2,$3,'Repetir')",[tenant,template,trip]);
+ expect((await db.query('select public.owner_route_templates($1) as value',[tenant])).rows[0].value[0].customers).toEqual(ids);
+});
 it('preserva identidad y vinculo con otro jefe al quitar de una lista',async()=>{
  await actor(owner);await link(tenant,driver);await actor(otherOwner);await link(other,driver);
  await actor(driver);expect((await db.query('select public.assistant_my_chiefs() as chiefs')).rows[0].chiefs).toHaveLength(2);
