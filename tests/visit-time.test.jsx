@@ -16,7 +16,7 @@ it('recordatorio empieza una hora antes y cambia de bloque cada media hora',()=>
 });
 it('guarda franja del cliente y rechaza final anterior al inicio',async()=>{
  const chain={select:()=>chain,eq:()=>chain,maybeSingle:async()=>({data:null,error:null})},client={from:()=>chain,rpc:vi.fn(async()=>({data:{saved:true},error:null}))};
- render(<CustomerVisitWindow client={client} tenantId="t" customerId="c" disabled={false} onLock={()=>{}}/>);const start=await screen.findByLabelText('Te espera desde');fireEvent.change(start,{target:{value:'16:00'}});fireEvent.change(screen.getByLabelText('Te espera hasta'),{target:{value:'15:00'}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));await screen.findByRole('alert');expect(client.rpc).not.toHaveBeenCalled();fireEvent.change(screen.getByLabelText('Te espera hasta'),{target:{value:'17:00'}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));await screen.findByText('Horario guardado: 16:00 a 17:00.');expect(client.rpc).toHaveBeenCalledWith('customer_set_visit_window',{p_tenant:'t',p_customer:'c',p_start:'16:00',p_end:'17:00'});
+ render(<CustomerVisitWindow client={client} tenantId="t" customerId="c" disabled={false} onLock={()=>{}}/>);const start=await screen.findByLabelText('Te espera desde');fireEvent.change(start,{target:{value:'16'}});fireEvent.change(screen.getByLabelText('Te espera hasta'),{target:{value:'15'}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));await screen.findByRole('alert');expect(client.rpc).not.toHaveBeenCalled();fireEvent.change(screen.getByLabelText('Te espera hasta'),{target:{value:'17'}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));await screen.findByText('Horario guardado: 16:00 a 17:00.');expect(client.rpc).toHaveBeenCalledWith('customer_set_visit_window',{p_tenant:'t',p_customer:'c',p_start:'16:00',p_end:'17:00'});
 });
 it('no llegue detiene avisos sin afirmar entrega',async()=>{
  const client={rpc:vi.fn(async()=>({data:{dismissed:true},error:null}))},changed=vi.fn();render(<VisitTimeReminders client={client} tenantId="t" tripId="r" date="2026-10-26" serverNow="2026-10-26T18:00:00Z" stops={[stop]} disabled={false} onSelect={()=>{}} onLock={()=>{}} onChanged={changed}/>);fireEvent.click(screen.getByRole('button',{name:'No llegué a horario · Cliente ficticio'}));await waitFor(()=>expect(changed).toHaveBeenCalledTimes(1));expect(client.rpc).toHaveBeenCalledExactlyOnceWith('route_dismiss_time_reminder',{p_tenant:'t',p_trip:'r',p_customer:'c'});
@@ -27,4 +27,17 @@ it('PC no solicita permiso ni consulta suscripcion movil',()=>{
 it('celular pide permiso solo al tocar y respeta rechazo',async()=>{
  const permission=vi.fn(async()=> 'denied');vi.stubGlobal('Notification',{requestPermission:permission});vi.stubGlobal('PushManager',function(){});vi.stubGlobal('navigator',{userAgent:'Android Mobile',platform:'Linux',maxTouchPoints:1,serviceWorker:{getRegistration:vi.fn(async()=>undefined)}});
  const client={rpc:vi.fn(async()=>({data:{enabled:true,public_key:'A'.repeat(87)},error:null}))};render(<PushNotificationConsent client={client}/>);const button=await screen.findByRole('button',{name:'Activar recordatorios en este celular'});expect(permission).not.toHaveBeenCalled();fireEvent.click(button);await screen.findByText(/No activamos avisos/);expect(permission).toHaveBeenCalledTimes(1);expect(client.rpc.mock.calls.every(([name])=>name==='push_get_settings')).toBe(true);
+});
+
+it('guarda 08:30 a 18:30 sin convertir tarde en madrugada y permite quitarlo',async()=>{
+ const chain={select:()=>chain,eq:()=>chain,maybeSingle:async()=>({data:{start_time:'08:30:00',end_time:'18:30:00'},error:null})},client={from:()=>chain,rpc:vi.fn(async()=>({data:{saved:true},error:null}))};
+ render(<CustomerVisitWindow client={client} tenantId="t" customerId="c" disabled={false} onLock={()=>{}}/>);
+ const start=await screen.findByLabelText('Te espera desde'),end=screen.getByLabelText('Te espera hasta');
+ expect(start.value).toBe('08');expect(end.value).toBe('18');
+ expect(screen.getByLabelText('Minutos \u00b7 Te espera hasta').value).toBe('30');
+ fireEvent.change(end,{target:{value:'06'}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));expect(client.rpc).not.toHaveBeenCalled();
+ fireEvent.change(end,{target:{value:'18'}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));
+ await screen.findByText('Horario guardado: 08:30 a 18:30.');expect(client.rpc).toHaveBeenLastCalledWith('customer_set_visit_window',{p_tenant:'t',p_customer:'c',p_start:'08:30',p_end:'18:30'});
+ fireEvent.change(start,{target:{value:''}});fireEvent.change(end,{target:{value:''}});fireEvent.click(screen.getByRole('button',{name:'Guardar horario de visita'}));
+ await screen.findByText('Horario quitado.');expect(client.rpc).toHaveBeenLastCalledWith('customer_set_visit_window',{p_tenant:'t',p_customer:'c',p_start:null,p_end:null});
 });

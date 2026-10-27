@@ -901,3 +901,13 @@ Suite completa 469/469 y build aprobados. Guia en docs/HORARIOS_Y_AVISOS.md. Pub
 
 ## 2026-10-26 - Navegacion externa validada por usuario
 Usuario confirma que Waze y Google Maps toman correctamente los destinos en la prueba real realizada por el repartidor. Se registra como validacion manual reportada por usuario, no como prueba ejecutada por el agente ni como garantia de todos los dispositivos. No valida por si sola la optimizacion del recorrido ni la recepcion de recordatorios push, que son funciones separadas. Sin cambios de codigo ni datos reales.
+
+## 2026-10-26 - Avisos de cambios y clientes de la cuadra
+Pedido: avisar al chofer si jefe quita parada o edita cliente del reparto. Reutilizar consentimiento Web Push, avisos internos y control de aceptacion/permiso; no enviar datos de otros repartos ni duplicar al refrescar. Agregar vista de clientes de la misma calle/altura de la parada, accesible al tocarla; sugerencia por GPS solo con deteccion activada y precision suficiente, sin afirmar llegada exacta automaticamente. Mostrar nombre y altura; limitar asistentes a clientes de su reparto aceptado. Estado: en implementacion.
+
+
+## 2026-10-26 - Corregir selector horario de 24 horas
+Dos audios locales transcritos: al ingresar 08:30 a 18:30 el selector del telefono confunde 18 con 06 AM. Sustituir control nativo dependiente de configuracion regional por hora 00-23 y minutos explicitos, vista previa de franja y validacion. No convertir horarios ya guardados ni suponer cuales eran incorrectos; conservar contrato HH:mm de base y avisos. Estado: en implementacion. Avisos de cambios/cuadra siguen pendientes del incremento anterior.
+
+26/10/2026 - Correccion de horarios: selector explicito de 24 horas (hora 00-23 y minutos 00-59), independiente del formato AM/PM del telefono. Vista previa antes de guardar; 08:30 a 18:30 conserva ambos valores al guardar y releer. Sin migracion ni cambios automaticos a franjas existentes: revisar y guardar nuevamente si se habian cargado como 06:30 por error. Mejora integrada en funcion real existente; sin simular persistencia en demo.
+Verificacion de correccion 24h: 6 pruebas de horarios aprobadas y build correcto. Audios procesados localmente sin subir archivos a terceros; no se versionan audios/transcripcion ni se modifican horarios reales. Pendiente confirmar publicacion y prueba en telefono.

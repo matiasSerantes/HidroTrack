@@ -477,3 +477,5 @@ Suite completa 469/469 y build aprobados. Guia en docs/HORARIOS_Y_AVISOS.md. Pub
 
 ## 2026-10-26 - Navegacion externa validada por usuario
 Usuario confirma que Waze y Google Maps toman correctamente los destinos en la prueba real realizada por el repartidor. Se registra como validacion manual reportada por usuario, no como prueba ejecutada por el agente ni como garantia de todos los dispositivos. No valida por si sola la optimizacion del recorrido ni la recepcion de recordatorios push, que son funciones separadas. Sin cambios de codigo ni datos reales.
+
+26/10/2026 - Correccion de horarios: selector explicito de 24 horas (hora 00-23 y minutos 00-59), independiente del formato AM/PM del telefono. Vista previa antes de guardar; 08:30 a 18:30 conserva ambos valores al guardar y releer. Sin migracion ni cambios automaticos a franjas existentes: revisar y guardar nuevamente si se habian cargado como 06:30 por error. Mejora integrada en funcion real existente; sin simular persistencia en demo.

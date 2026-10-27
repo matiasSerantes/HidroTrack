@@ -3,9 +3,9 @@
 ## Configurar el horario
 
 1. Entrar en **Clientes → Planilla → Visitas y pedido habitual**.
-2. En **Horario en que te espera**, completar **Te espera desde** y **Te espera hasta**, por ejemplo 16:00 y 17:00.
+2. En **Horario en que te espera**, elegir hora y minutos en **Te espera desde** y **Te espera hasta**. El selector usa 24 horas: por ejemplo, hora 08 y minutos 30 para 08:30; hora 18 y minutos 30 para 18:30. Revisar la franja elegida antes de guardar.
 3. Tocar **Guardar horario de visita**. La franja es del mismo dia y se aplica a las visitas de ese cliente; los dias habituales siguen configurandose arriba.
-4. Para quitarla, vaciar ambos horarios y guardar. Horarios de Argentina.
+4. Para quitarla, elegir **Sin horario** en ambos campos y guardar. Horarios de Argentina.
 
 Al preparar el reparto, cada cliente que tenga horario muestra su franja. Tambien aparece junto a la parada al abrir el recorrido. El orden de visitas sigue siendo el del reparto.
 
