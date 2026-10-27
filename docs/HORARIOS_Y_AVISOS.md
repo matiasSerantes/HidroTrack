@@ -38,3 +38,6 @@ Fuentes: [programar Edge Functions](https://supabase.com/docs/guides/functions/s
 
 ## Preparar por dia
 En Repartos y camion, elegir Fecha del reparto. La lista muestra los clientes con ese dia habitual, primero los horarios de inicio tempranos y al final quienes no tienen franja. Marcar los clientes y Guardar reparto. Para una visita excepcional activar Mostrar tambien clientes de otros dias o sin dia asignado. Cambiar fecha borra la seleccion anterior; cambiar solo el filtro conserva seleccionados y avisa si alguno queda oculto. La lista ordenada es una ayuda de preparacion, no optimiza calles ni garantiza el orden final del recorrido.
+
+## Aviso de las 20 para preparar manana (27/10/2026)
+Desde Mi jornada o Repartos en el celular, abrir Preparar manana. Activar recordatorios y aceptar el permiso; despues tocar Activar aviso de las 20 para esa empresa. Es una preferencia independiente de los horarios. Cada dia con clientes habituales de manana recibe un aviso; si ya hay reparto, invita a revisarlo. Tocar abre fecha/empresa correctas y no crea viajes. Desactivar aviso de las 20 conserva los recordatorios de visitas. Detalles y estado: PLANIFICACION_Y_PLANTILLAS.md.

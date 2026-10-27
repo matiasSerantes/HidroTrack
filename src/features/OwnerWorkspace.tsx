@@ -1,3 +1,4 @@
+import {readPlanningLink} from '../domain/visitPlanning';
 import {NextDayPlanning} from './NextDayPlanning';
 import {signOutWithPushCleanup} from '../lib/pushSession';
 import { matchesCustomer } from '../domain/customerSearch';
@@ -35,8 +36,8 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
   const [stockLocked,setStockLocked]=useState(false);
   const [locationBusy,setLocationBusy]=useState(false);
   const [planningRevision,setPlanningRevision]=useState(0);
-  const [planningDate,setPlanningDate]=useState<string|undefined>();
-  const [view,setView] = useState<OwnerView>(()=>new URLSearchParams(window.location.search).get('recordatorio')==='1'?'trips':'overview');
+  const [planningDate,setPlanningDate]=useState<string|undefined>(()=>readPlanningLink(window.location.search).date);
+  const [view,setView] = useState<OwnerView>(()=>new URLSearchParams(window.location.search).get('recordatorio')==='1'||readPlanningLink(window.location.search).date?'trips':'overview');
   const {balances,failed:balancesFailed,refreshBalances}=useCustomerBalances(client,tenantId,view==='customers'&&!selectedCustomer&&!busy&&!stockLocked);
   const visibleCustomers=workspace?.customers.filter(c=>matchesCustomer(c,search))||[];
   useEffect(() => {
@@ -49,7 +50,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
         if (!active) return;
         const items = (result.data ?? []) as Membership[];
         setMemberships(items);
-        setTenantId(items.find(item => item.role === 'owner')?.tenant_id ?? '');
+        setTenantId(items.find(item=>item.role==='owner'&&item.tenant_id===readPlanningLink(window.location.search).tenant)?.tenant_id??items.find(item => item.role === 'owner')?.tenant_id ?? '');
       } catch { if (active) setError('No pudimos consultar tu acceso. Revisá la conexión e intentá nuevamente.'); }
     })();
     return () => { active = false; };

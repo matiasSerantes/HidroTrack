@@ -10,7 +10,7 @@ Mi jornada y Repartos muestran la fecha de manana en Argentina, cantidad de clie
 
 En el selector se pueden seleccionar juntos los clientes del dia y agregar excepciones. El orden inicial prioriza el inicio de horario; sin franja queda al final. Subir/Bajar permite revisar el orden cuando el contrato nuevo del servidor esta disponible. No es optimizacion por distancia ni garantiza cumplir todas las franjas.
 
-## Plantillas en la cuenta (servidor pendiente de activar)
+## Plantillas en la cuenta (activas)
 
 Cargar una plantilla trae clientes y orden; revisar fecha, repartidor, clientes y orden antes de Guardar reparto. Se omiten clientes que ya no aparecen activos en la lista y se avisa; el servidor rechaza ademas clientes pendientes de recuperacion. La carga del camion se registra aparte y una sola vez para cada reparto nuevo.
 
@@ -22,16 +22,22 @@ Las plantillas son del jefe/empresa y se consultan desde su cuenta en otras PCs.
 
 Implementado en pantalla: despues de las 20:00 de Argentina el recuadro recuerda los clientes de manana y ofrece preparar el recorrido. Se actualiza cada minuto mientras la pagina esta abierta.
 
-**Pendiente: envio Web Push de las 20:00 con la pagina cerrada.** El programador existente actualmente envia recordatorios de franjas de visitas; no se reutiliza ni se presenta como si ya emitiera avisos de preparacion del dia siguiente. Falta agregar cola diaria deduplicada por empresa/usuario/dispositivo, validar licencia y consentimiento, ampliar emisor/receptor, probarlo y activarlo mediante MCP. No hay un envio automatico nuevo ni cambios de cron en produccion durante esta tarea.
+El envio Web Push esta implementado con preferencia explicita por jefe y empresa, ademas del permiso del celular. No se activa por tener avisos de horarios. En Mi jornada o Repartos, desde celular, activar primero los recordatorios y aceptar el permiso; despues tocar **Activar aviso de las 20**. En iPhone/iPad abrir la aplicacion desde el icono agregado a pantalla de inicio. PC muestra agenda, sin pedir permiso de notificaciones.
+
+El programador revisa cada minuto. A partir de las 20:00 de Argentina genera un solo aviso por cuenta/empresa/dispositivo para los clientes con visita habitual manana, activos y sin recuperacion pendiente. Si ya hay reparto preparado, avisa para revisarlo; si no hay, invita a armarlo. El aviso incluye cantidad, no nombres, deudas ni direcciones. Se valida pertenencia/licencia/consentimiento y se vuelve a comprobar antes de enviar. Desactivar la preferencia o retirar el permiso impide nuevos envios; un mensaje ya en transito puede llegar tarde.
+
+No envia avisos a las 19:59 ni recupera avisos despues de las 21. Reintentos limitados con lease y deduplicacion; errores 404/410 desactivan la suscripcion caducada. El telefono necesita Internet y puede demorar/silenciar segun sistema/ahorro de bateria. El mismo dispositivo descarta mensajes vencidos, de otra cuenta y duplicados del mismo dia. Al tocar abre la empresa y fecha correctas, validadas contra la membresia propietaria; no crea un reparto automaticamente.
+
+Cola y emisor diarios independientes de los recordatorios de franjas existentes. No se cambio el cron ni el emisor de horarios. Activacion final del servicio diario pendiente de verificar publicacion del receptor; ninguna preferencia de usuario se activa automaticamente.
 
 ## Activacion de plantillas y orden persistido
 
-Migracion preparada `20261027010000_route_templates.sql`: tabla route_templates con RLS de lectura solo propietario y escrituras por RPC; listado/guardado por ID idempotente; captura desde recorrido; creacion atomica con posiciones en el orden elegido. Envuelve inventory_create_trip conservando permisos, invitaciones y reglas actuales. El reintento valida el orden original y no reordena un viaje ya existente.
+Migracion aplicada por MCP `20261027193814_route_templates.sql`: tabla route_templates con RLS de lectura solo propietario y escrituras por RPC; listado/guardado por ID idempotente; captura desde recorrido; creacion atomica con posiciones en el orden elegido. Envuelve inventory_create_trip conservando permisos, invitaciones y reglas actuales. El reintento no cambia posiciones de un viaje ya existente ni duplica por cambios posteriores de un cliente.
 
-La migracion NO se aplico en Supabase: MCP ausente en esta sesion. La interfaz consulta disponibilidad: si no encuentra contrato, mantiene creacion anterior sin afirmar que se guarda orden personalizado; los botones de orden no se habilitan y las plantillas se muestran no disponibles. No hay fallback que copie datos privados a un navegador.
-
-Al recuperar MCP: revisar registro de migraciones y esquema actual; aplicar migracion autorizada de este pedido; verificar RLS/permisos y pruebas aisladas sin modificar clientes reales. Luego comprobar guardado/carga de plantilla con cuenta de prueba en dos dispositivos y crear/cerrar un recorrido de prueba con orden. No cambiar licencias, secretos ni datos de negocio al activar.
+Aplicadas tambien `20261027194519_planning_reminders.sql` y `20261027194537_planning_reminder_scheduler.sql`. Edge Function planning-reminders v1 activa, autenticacion propia por secreto del programador ya custodiado; no se expusieron claves. Cron hidrotrack-planning-reminders separado. Estado de preferencias/cola privado; endpoints de reclamo/finalizacion solo service_role. Sin escrituras de negocio para validar.
 
 ## Verificacion
 
 Pruebas locales de servidor cubren aislamiento de propietarios/asistentes, guardado idempotente, ausencia de movimientos de stock/caja, orden de paradas, reintento y captura desde reparto. Pruebas UI cubren fechas Argentina/cambio de mes, filtrado de clientes inactivos al cargar, reordenamiento, no simular plantillas sin contrato y reintento con mismo ID tras mala conexion. QA visual telefono/PC y prueba conectada pendientes.
+
+27/10/2026 - Verificacion: suite completa 499/499 y build aprobados. Prueba real de emisor autenticado HTTP 200, contadores cero; sin credencial HTTP 401. Plantillas con RLS y sin INSERT directo anon/authenticated. Activacion final del envio diario y publicacion pendientes en esta entrada; recepcion fisica requiere consentimiento y prueba en telefono.

@@ -5,3 +5,4 @@ export function argentinaClock(now=new Date()){
 }
 export function addVisitDays(date:string,days:number){const value=new Date(`${date}T12:00:00Z`);value.setUTCDate(value.getUTCDate()+days);return value.toISOString().slice(0,10);}
 export function nextHabitualDate(days:number[],today:string){for(let offset=0;offset<7;offset++){const date=addVisitDays(today,offset),weekday=new Date(`${date}T12:00:00Z`).getUTCDay()||7;if(days.includes(weekday))return date;}return null;}
+export function readPlanningLink(search:string){const query=new URLSearchParams(search),date=query.get('planificar')??'',tenant=query.get('empresa')??'';const parsed=new Date(`${date}T12:00:00Z`);return {date:/^20\d{2}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===date?date:undefined,tenant:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenant)?tenant:undefined};}

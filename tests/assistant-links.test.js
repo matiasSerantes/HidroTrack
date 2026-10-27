@@ -49,6 +49,18 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+it('confirma reintentos de plantilla y reparto aunque el cliente haya sido dado de baja despues',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ const direct=crypto.randomUUID(),captured=crypto.randomUUID(),trip=crypto.randomUUID();
+ await db.query("select public.owner_save_route_template($1,$2,'Semanal',$3)",[tenant,direct,[c]]);
+ await db.query("select public.owner_create_ordered_trip($1,$2,$3,'Semanal',current_date,$4)",[tenant,trip,owner,[c]]);
+ await db.query("select public.owner_template_from_trip($1,$2,$3,'Copia semanal')",[tenant,captured,trip]);
+ await db.exec('reset role');await db.query('update public.customers set active=false,pending_recovery=true where id=$1',[c]);await actor(owner);
+ expect((await db.query("select public.owner_save_route_template($1,$2,'Semanal',$3) as id",[tenant,direct,[c]])).rows[0].id).toBe(direct);
+ expect((await db.query("select public.owner_template_from_trip($1,$2,$3,'Copia semanal') as id",[tenant,captured,trip])).rows[0].id).toBe(captured);
+ expect((await db.query("select public.owner_create_ordered_trip($1,$2,$3,'Semanal',current_date,$4) as id",[tenant,trip,owner,[c]])).rows[0].id).toBe(trip);
+ expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
+});
 it('plantilla conserva orden, no crea ventas ni carga y niega otro jefe/asistente',async()=>{
  await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
  const secondCustomer=(await db.query("insert into public.customers(tenant_id,name,address) values($1,'Cliente C','Direccion C') returning id",[tenant])).rows[0].id;
@@ -654,4 +666,36 @@ it('suscripcion rechaza destinos arbitrarios y otro usuario no puede apropiarse 
 
 it('licencia suspendida impide avisos aunque dispositivo siga suscripto',async()=>{
  await windowFixture();await db.exec('reset role');await db.query("update public.licenses set status='suspended' where tenant_id=$1",[tenant]);expect(await claimAt('15:00')).toHaveLength(0);
+});
+
+async function planningFixture(enable=true){
+ await db.exec('reset role');await db.exec("update private.planning_push_config set enabled=true; update private.web_push_config set enabled=true,public_key=repeat('A',87)");await actor(owner);
+ const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query('insert into public.customer_schedules values($1,$2,extract(isodow from current_date+1))',[tenant,customer]);
+ await db.query('select public.push_subscribe($1::jsonb)',[JSON.stringify({endpoint:'https://fcm.googleapis.com/fcm/send/owner-fictional',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}})]);
+ if(enable)await db.query('select public.owner_set_planning_reminder($1,true)',[tenant]);
+ return customer;
+}
+async function planningAt(time){await db.exec('reset role');return (await db.query("select public.push_claim_planning_notifications(20,(current_date+$1::time) at time zone 'America/Argentina/Buenos_Aires') as jobs",[time])).rows[0].jobs;}
+it('aviso de las 20 exige preferencia explicita y no se duplica al minuto siguiente',async()=>{
+ await planningFixture(false);expect(await planningAt('20:00')).toHaveLength(0);await actor(owner);await db.query('select public.owner_set_planning_reminder($1,true)',[tenant]);
+ expect(await planningAt('19:59')).toHaveLength(0);const jobs=await planningAt('20:00');expect(jobs).toHaveLength(1);expect(jobs[0]).toMatchObject({user_id:owner,tenant_id:tenant,customer_count:1,has_route:false});expect(JSON.stringify(jobs)).not.toContain('Cliente A');
+ expect(await planningAt('20:01')).toHaveLength(0);await db.query("select public.push_finish_planning_job($1,$2,'sent')",[jobs[0].id,jobs[0].claim_token]);expect(await planningAt('20:10')).toHaveLength(0);expect(await planningAt('21:00')).toHaveLength(0);
+});
+it('aviso de las 20 indica reparto de manana ya preparado sin crear otro',async()=>{
+ const c=await planningFixture();await db.query("select public.owner_create_ordered_trip($1,$2,$3,'Manana',current_date+1,$4)",[tenant,crypto.randomUUID(),owner,[c]]);const jobs=await planningAt('20:00');expect(jobs[0].has_route).toBe(true);expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
+});
+it('preferencia desactivada y licencia suspendida invalidan un envio reclamado',async()=>{
+ await planningFixture();const [job]=await planningAt('20:00');await actor(owner);await db.query('select public.owner_set_planning_reminder($1,false)',[tenant]);await db.exec('reset role');
+ expect((await db.query("select public.push_planning_job_still_valid($1,$2,(current_date+time '20:01') at time zone 'America/Argentina/Buenos_Aires') as valid",[job.id,job.claim_token])).rows[0].valid).toBe(false);
+ await actor(owner);await db.query('select public.owner_set_planning_reminder($1,true)',[tenant]);await db.exec('reset role');await db.query("update public.licenses set status='suspended' where tenant_id=$1",[tenant]);expect(await planningAt('20:03')).toHaveLength(0);
+});
+it('sin clientes habilitados no manda aviso y chofer no ve preferencias del jefe',async()=>{
+ const c=await planningFixture();await db.exec('reset role');await db.query('update public.customers set pending_recovery=true where id=$1',[c]);expect(await planningAt('20:00')).toHaveLength(0);
+ await actor(driver);await denied(()=>db.query('select public.owner_planning_reminder_settings($1)',[tenant]),/Solo el jefe/);await denied(()=>db.query('select public.push_claim_planning_notifications()'),/permission denied/);await denied(()=>db.query('select * from private.planning_push_preferences'),/permission denied/);
+});
+it('claim viejo no desactiva dispositivo despues de otro reclamo y reintentos son limitados',async()=>{
+ await planningFixture();const [first]=await planningAt('20:00');const [next]=await planningAt('20:03');expect(next.id).toBe(first.id);expect(next.claim_token).not.toBe(first.claim_token);
+ await db.query("select public.push_finish_planning_job($1,$2,'gone')",[first.id,first.claim_token]);expect((await db.query('select active from private.web_push_subscriptions')).rows[0].active).toBe(true);
+ expect(await planningAt('20:06')).toHaveLength(1);expect(await planningAt('20:09')).toHaveLength(0);
 });
