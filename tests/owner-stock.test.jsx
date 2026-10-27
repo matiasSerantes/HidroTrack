@@ -204,6 +204,14 @@ describe('inventario conectado del jefe',()=>{
     expect(screen.queryByRole('heading',{name:'Camión y repartos'})).toBeNull();
     expect(screen.getByRole('button',{name:'Agregar dispenser'}).className).toBe('primary');expect(screen.getByRole('heading',{name:'Retirar producto o dispenser'})).toBeTruthy();
   });
+  it('abre ajuste del articulo desde catalogo y registra la suma sin editar el producto',async()=>{
+    const {client}=fixture('catalog');await screen.findByText('Inventario de productos y dispenser');
+    fireEvent.click(screen.getByRole('button',{name:'Ajustar unidades de Bid\u00f3n 20'}));
+    fireEvent.change(screen.getByLabelText('Unidades a sumar'),{target:{value:'3'}});
+    fireEvent.change(screen.getByLabelText('Motivo del ajuste'),{target:{value:'Corregir carga inicial'}});
+    fireEvent.click(screen.getByRole('button',{name:'Guardar ajuste de unidades'}));
+    await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_kind:'receive_empty',p_items:[{product_id:'b20',quantity:3}],p_customer:null,p_trip:null})));
+  });
   it('prepara clientes del reparto y confirma su carga única usando las RPC',async()=>{
     const {client}=fixture('trips'); await screen.findByText('1. Preparar reparto');
     fireEvent.change(screen.getByLabelText('Nombre del reparto'),{target:{value:'Ruta propia'}});
