@@ -993,3 +993,5 @@ Usuario solicita mejorar seguridad sin migrar a VM ni espejo. Revisar aislamient
 
 ## 2026-10-28 - Acceso visible a papelera del superadministrador
 Usuario no encuentra papelera en su panel. La funcion real ya existe como boton secundario; convertirla en seccion principal del menu, con acceso destacado y enlace directo ?admin=papelera. Reutilizar listado y restauracion existentes (clientes/recorridos, 10 dias); no duplicar backend ni ampliar recuperacion a otras entidades. Mantener bloqueo de navegacion al restaurar y coherencia movil/PC. Estado: en implementacion.
+
+28/10/2026 - Papelera destacada publicada: AdminWorkspace-tlaSTu83.js verificado por HTTP contiene Abrir papelera, enlace directo admin=papelera y restauracion existente. Acceso principal en menu y cabecera; pantalla dedicada evita buscar en el directorio de empresas. 17/17 pruebas de administracion y build correctos. Sin migraciones ni cambios de datos reales. Pendiente prueba visual autenticada en celular/PC. Corregido espacio en blanco detectado al revisar diff, sin cambios funcionales adicionales.
