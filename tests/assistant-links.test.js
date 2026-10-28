@@ -49,6 +49,14 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+it('un jefe no puede borrar fisicamente clientes ni productos y conserva la via de papelera',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ const product=crypto.randomUUID();await db.query("select public.inventory_create_product($1,$2,'Producto',100,'unidad',true)",[tenant,product]);
+ await denied(()=>db.query('delete from public.customers where tenant_id=$1 and id=$2',[tenant,c]),/permission denied/);
+ await denied(()=>db.query('delete from public.products where tenant_id=$1 and id=$2',[tenant,product]),/permission denied/);
+ await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);
+ expect((await db.query('select active,removed_at from public.customers where id=$1',[c])).rows[0]).toMatchObject({active:false,removed_at:expect.anything()});
+});
 async function platformAdmin(){await db.exec('reset role');await db.query('insert into public.platform_admins(user_id) values($1) on conflict do nothing',[otherOwner]);await actor(otherOwner);}
 it('papelera privada: solo superadmin puede listar y recuperar un cliente, con reintento',async()=>{
  await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;

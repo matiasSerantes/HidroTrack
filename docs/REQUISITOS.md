@@ -514,3 +514,6 @@ Planilla: Eliminar cliente retira de activos conservando historial. Si hay envas
 
 ## 2026-10-28 - Papelera de seguridad
 Eliminaciones de clientes/recorridos capturan copia privada atomica durante 10 dias. Solo superadministrador lista por empresa/autor/fechas y recupera. No devuelve permisos de asistente aceptados: plan recuperado vuelve pendiente de aceptacion; cerrado sigue cerrado. Recuperacion de cliente no modifica recorridos existentes. Purga cada 10 minutos, lotes 50, vence por reloj servidor; destruye copia y borra fila si sin referencias, en caso contrario anonimiza ficha preservando historial contable/inventario. Planificar no reserva stock; carga confirmada inicia reparto y bloquea eliminar. No se devuelven unidades ficticias. Backups y documentos historicos tienen conservacion separada. Guia PAPELERA.md.
+
+## 2026-10-28 - Seguridad inicial
+Aplicar primera capa sin cambios comerciales ni cierre de sesiones: CSP/cabeceras compatibles con mapas/GPS/push/PDF; bloquear borrado fisico REST de clientes/productos manteniendo las RPC y papelera; validacion de claves publicas al compilar. Ver SEGURIDAD_BETA.md. Doble factor, CAPTCHA y proteccion contra contrasenas filtradas no se anuncian activos hasta implementacion/configuracion verificada.
