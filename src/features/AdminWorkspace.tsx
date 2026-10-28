@@ -2,7 +2,7 @@ import {AdminRecycleBin} from './AdminRecycleBin';
 import {signOutWithPushCleanup} from '../lib/pushSession';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Droplets, LogOut, Plus, RefreshCw, LayoutDashboard, Users, ShieldCheck, Search } from 'lucide-react';
+import { Droplets, LogOut, Plus, RefreshCw, LayoutDashboard, Users, ShieldCheck, Search, Trash2 } from 'lucide-react';
 import './OwnerWorkspace.css';
 import './AdminWorkspace.css';
 import { AdminAccessHistory, type AccessEvent } from './AdminAccessHistory';
@@ -31,11 +31,11 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
  const [form, setForm] = useState<'owner' | 'driver' | null>(null);
  const [editing, setEditing] = useState<string | null>(null);
  const [search, setSearch] = useState('');
- const [view, setView] = useState<'overview' | 'users' | 'licenses'>('overview');
+ const [view, setView] = useState<'overview' | 'users' | 'licenses' | 'trash'>(()=>new URLSearchParams(window.location.search).get('admin')==='papelera'?'trash':'overview');
  const [roleFilter, setRoleFilter] = useState('all');
  const [accessFilter, setAccessFilter] = useState('all');
  const [showHistory,setShowHistory] = useState(false);
- const [showTrash,setShowTrash]=useState(false),[trashBusy,setTrashBusy]=useState(false);
+ const [trashBusy,setTrashBusy]=useState(false);
  const [demoEvents,setDemoEvents] = useState<AccessEvent[]>([]);
  function licenseState(tenant: Tenant) {
   const license = tenant.license;
@@ -117,13 +117,13 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
   try { const { error } = await signOutWithPushCleanup(client); if (error) throw error; }
   catch { setNotice('No pudimos cerrar la sesión. Reintentá.'); setBusy(false); }
  }
- return <div className="admin-shell"><aside className="admin-sidebar"><a className="admin-brand" href="/"><Droplets size={27}/> HidroTrack<span>ADMINISTRACIÓN</span></a><nav aria-label="Administración de plataforma">{([['overview','Resumen',LayoutDashboard],['users','Usuarios',Users],['licenses','Empresas y licencias',ShieldCheck]] as const).map(([id,label,Icon])=><button key={id} disabled={busy} aria-current={view===id?'page':undefined} onClick={()=>{setView(id);setSearch('');setForm(null);setEditing(null);}}><Icon size={19}/>{label}</button>)}</nav><p>Gestioná el acceso a la plataforma desde tu cuenta de administrador.</p></aside><main className="connected-workspace admin-workspace"><header><div><span className="eyebrow">HIDROTRACK · ADMINISTRACIÓN</span><h1>{view==='overview'?'Tu panel de administración':view==='users'?'Usuarios de la plataforma':'Empresas y licencias'}</h1><p className="muted">Administrá soderías, cuentas y licencias.</p></div><button onClick={signOut} disabled={busy}><LogOut size={16}/> {demo?'Salir de la vista previa':'Cerrar sesión'}</button></header>
+ return <div className="admin-shell"><aside className="admin-sidebar"><a className="admin-brand" href="/"><Droplets size={27}/> HidroTrack<span>ADMINISTRACIÓN</span></a><nav aria-label="Administración de plataforma">{([['overview','Resumen',LayoutDashboard],['users','Usuarios',Users],['licenses','Empresas y licencias',ShieldCheck],['trash','Papelera',Trash2]] as const).map(([id,label,Icon])=><button key={id} disabled={busy||trashBusy} aria-current={view===id?'page':undefined} onClick={()=>{setView(id);setSearch('');setForm(null);setEditing(null);}}><Icon size={19}/>{label}</button>)}</nav><p>Gestioná el acceso a la plataforma desde tu cuenta de administrador.</p></aside><main className="connected-workspace admin-workspace"><header><div><span className="eyebrow">HIDROTRACK · ADMINISTRACIÓN</span><h1>{view==='overview'?'Tu panel de administración':view==='users'?'Usuarios de la plataforma':view==='trash'?'Papelera de seguridad':'Empresas y licencias'}</h1><p className="muted">Administrá soderías, cuentas y licencias.</p></div><div className="admin-actions">{view!=='trash'&&<button className="primary" disabled={busy||trashBusy} onClick={()=>setView('trash')}><Trash2 size={16}/> Abrir papelera</button>}<button onClick={signOut} disabled={busy||trashBusy}><LogOut size={16}/> {demo?'Salir de la vista previa':'Cerrar sesión'}</button></div></header>
+ {view==='trash'?<AdminRecycleBin client={client} demo={demo} onLock={setTrashBusy}/>:<>
  {demo && <div className="demo-notice"><span><strong>Modo demostración</strong> · Datos ficticios guardados solo en este navegador. Las cuentas y contraseñas son de ejemplo.</span><button disabled={busy} onClick={() => { if (confirm('¿Restablecer las soderías y usuarios de demostración?')) { try { saveDemo(initialAdminDemo());setDemoEvents([]); setForm(null); setEditing(null); setNotice('Demostración restablecida.'); } catch { setNotice('No se pudo guardar en este navegador.'); } } }}>Restablecer demo</button></div>}
  <div className="stats">{[['Soderías', tenants.length], ['Usuarios registrados', people.length], ['Accesos habilitados', people.filter(p=>p.access==='Habilitado').length], ['Empresas por revisar', tenants.filter(t=>licenseState(t)!=='Activa').length]].map(([label, value]) => <article className="stat" key={label}><span className="muted">{label}</span><strong>{loading || error ? '—' : value}</strong></article>)}</div>
  {view==='overview' && <section className="admin-welcome"><div><span className="eyebrow">TU PLATAFORMA, EN ORDEN</span><h2>Un lugar para gestionar a tu equipo de usuarios.</h2><p>Revisá quién tiene acceso, agregá titulares o choferes y mantené sus licencias al día.</p><button onClick={()=>{setView('users');setSearch('');}}>Ver usuarios <Users size={17}/></button></div><ShieldCheck size={76} aria-hidden="true"/></section>}
  <div className="admin-actions"><button className="primary" disabled={busy} onClick={() => { setForm('owner'); setNotice(''); }}><Plus size={16}/> Nueva sodería</button><button className="secondary" disabled={busy || loading || !!error || !tenants.length} onClick={() => { setForm('driver'); setNotice(''); }}><Plus size={16}/> Nuevo chofer</button><button disabled={busy || loading} onClick={() => setRefresh(v => v + 1)}><RefreshCw size={16}/> Actualizar</button><button disabled={busy} aria-expanded={showHistory} onClick={()=>setShowHistory(v=>!v)}>{showHistory?'Ocultar historial':'Ver historial de accesos'}</button></div>
- <div className="admin-actions"><button disabled={busy||trashBusy} aria-expanded={showTrash} onClick={()=>setShowTrash(v=>!v)}>{showTrash?'Ocultar papelera':'Papelera de seguridad'}</button></div>
- {showTrash&&<AdminRecycleBin client={client} demo={demo} onLock={setTrashBusy}/>}
+ 
  {showHistory&&<AdminAccessHistory client={client} demo={demo} events={demoEvents} revision={refresh}/>}
  {notice && <p className="notice" role="status">{notice}</p>}
  {form && <section className="panel"><h2>{form === 'owner' ? 'Nueva sodería y titular' : 'Nuevo chofer'}</h2><p className="muted">La contraseña debe tener al menos 12 caracteres. Compartila con el usuario por un medio privado.</p><form className="customer-form" onSubmit={createUser} key={form}>
@@ -136,5 +136,5 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
  <div className="table-wrap"><table><thead><tr><th>Correo</th><th>Rol</th><th>Estado</th></tr></thead><tbody>{t.members.map(m => <tr key={m.user_id}><td>{m.email}</td><td>{m.role === 'owner' ? 'Titular' : 'Chofer'}</td><td>{m.active ? 'Activo' : 'Inactivo'}</td></tr>)}</tbody></table></div>
  {editing === t.id && <form className="customer-form" onSubmit={e => void saveLicense(e, t)}><LicenseFields license={t.license} disabled={busy}/><label>Estado<select name="status" defaultValue={t.license?.status ?? 'active'} disabled={busy}><option value="active">Activa</option><option value="suspended">Suspendida</option></select></label><button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar licencia'}</button><button type="button" disabled={busy} onClick={() => setEditing(null)}>Cancelar</button></form>}</article>)}
  {!tenants.length && <p className="empty">Todavía no hay soderías. Creá la primera para comenzar.</p>}{!!tenants.length && !tenants.some(t => `${t.name} ${t.members.map(m => m.email).join(' ')}`.toLowerCase().includes(search.toLowerCase())) && <p className="empty">No encontramos soderías con esa búsqueda.</p>}</section>}
- </main></div>;
+ </>}</main></div>;
 }

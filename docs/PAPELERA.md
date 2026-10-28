@@ -1,6 +1,6 @@
 # Papelera de seguridad
 
-El jefe elimina clientes desde su planilla y recorridos desde Mis recorridos. La papelera es exclusiva del panel de superadministración: botón **Papelera de seguridad**. El jefe y los asistentes no pueden consultar sus copias ni recuperarlas por API.
+El jefe elimina clientes desde su planilla y recorridos desde Mis recorridos. La papelera es exclusiva del panel de superadministración: sección **Papelera** del menú principal y botón destacado **Abrir papelera**. Enlace directo: https://hidrotrack.matilegen.workers.dev/?admin=papelera . Elegir el registro, tocar **Recuperar** y confirmar. El jefe y los asistentes no pueden consultar sus copias ni recuperarlas por API.
 
 La copia se registra en la misma transacción que la eliminación. Incluye empresa, tipo, nombre, fecha, autor y vencimiento a los 10 días exactos. Listado paginado de 50 registros; las fechas se muestran en horario argentino. Recuperar devuelve el mismo registro, sin duplicar ventas, cobros ni movimientos.
 
