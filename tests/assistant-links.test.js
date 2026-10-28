@@ -49,6 +49,26 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+it('uso por cuenta solo admite superadmin y cuenta cada inventario una sola vez',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Bidon',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive_empty',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:10}])]);
+ await db.query("select public.inventory_assign_existing_containers($1,$2,$3,$4,'depot_empty',current_date,'Conteo existente')",[tenant,crypto.randomUUID(),c,JSON.stringify([{product_id:product,quantity:2}])]);
+ await denied(()=>db.query('select public.admin_account_usage()'),/Solo superadministracion/);
+ await link(tenant,driver);await actor(driver);await denied(()=>db.query('select public.admin_account_usage()'),/Solo superadministracion/);
+ await platformAdmin();const report=(await db.query('select public.admin_account_usage() result')).rows[0].result;
+ const a=report.items.find(i=>i.tenant_id===tenant),b=report.items.find(i=>i.tenant_id===other);
+ expect(a).toMatchObject({active_products:1,stock_total:10,depot_empty:8,truck:0,customers:2,trips_created:0});expect(b.stock_total).toBe(0);
+ await denied(()=>db.query("select public.admin_account_usage(current_date,-1,'')"),/invalida/);
+ expect(c).toBeTruthy();
+});
+it('recorridos creados y de servicio se distinguen por dia argentino incluyendo eliminados',async()=>{
+ const trip=await assigned();await db.exec('reset role');await db.query("update public.inventory_trips set created_at='2026-10-28T02:59:59Z',service_date='2026-10-28' where id=$1",[trip]);await platformAdmin();
+ const report=async date=>(await db.query("select public.admin_account_usage($1,0,'Empresa A') result",[date])).rows[0].result.items[0];
+ expect(await report('2026-10-27')).toMatchObject({trips_created:1,trips_scheduled:0});expect(await report('2026-10-28')).toMatchObject({trips_created:0,trips_scheduled:1,trips_planned:1});
+ await actor(owner);await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);await platformAdmin();
+ expect(await report('2026-10-27')).toMatchObject({trips_created:1,trips_created_removed:1});expect(await report('2026-10-28')).toMatchObject({trips_scheduled:0,trips_closed:0});
+});
 it('un jefe no puede borrar fisicamente clientes ni productos y conserva la via de papelera',async()=>{
  await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
  const product=crypto.randomUUID();await db.query("select public.inventory_create_product($1,$2,'Producto',100,'unidad',true)",[tenant,product]);

@@ -517,3 +517,6 @@ Eliminaciones de clientes/recorridos capturan copia privada atomica durante 10 d
 
 ## 2026-10-28 - Seguridad inicial
 Aplicar primera capa sin cambios comerciales ni cierre de sesiones: CSP/cabeceras compatibles con mapas/GPS/push/PDF; bloquear borrado fisico REST de clientes/productos manteniendo las RPC y papelera; validacion de claves publicas al compilar. Ver SEGURIDAD_BETA.md. Doble factor, CAPTCHA y proteccion contra contrasenas filtradas no se anuncian activos hasta implementacion/configuracion verificada.
+
+## 2026-10-28 - Metricas de cuenta para superadministrador
+Menu Uso por cuenta, acceso ?admin=uso: inventario actual del catalogo por ubicacion, modelos activos y equipos individualizados separados. Fecha argentina filtra solo recorridos: creados ese dia (incluye eliminados), subconjunto eliminado y vigentes para fecha de servicio por estado. Cuenta equivale a empresa del jefe; asistentes no multiplican cantidades. Busqueda empresa/correo/titular y paginas 50 en servidor. Lectura exclusiva de superadmin, sin cambios de cantidades ni datos comerciales; no mide MB/trafico ni stock historico. Guia USO_POR_CUENTA.md.
