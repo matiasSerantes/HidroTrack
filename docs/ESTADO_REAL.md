@@ -348,3 +348,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 28/10/2026 - Mejora preparada: Eliminar cliente dentro de planilla y Eliminar recorrido en Mis recorridos, exclusivos del jefe. Eliminacion logica conserva historial; recuperacion de envases/equipos y cierre de camiones siguen obligatorios. Horarios sin sufijo (24 horas). Migracion owner_remove_records pendiente de aplicar y publicar; pruebas previas suite 504/504 y build correctos, comprobacion final de SQL en curso. Sin datos reales eliminados.
 
 28/10/2026 - Actualizacion: migracion 20261028132907 aplicada y permisos verificados mediante MCP. Acciones disponibles en codigo real; publicacion en curso. Sin registros de negocio eliminados por el agente.
+
+28/10/2026 - Publicado y verificado por HTTP (AccountWorkspace-Cc57xsuU.js): Eliminar cliente, Eliminar recorrido y horarios sin sufijo. Base y web actualizadas. Suite completa 504/504, build correcto. No se purga historial ni se revierte stock/cobros al retirar registros de las listas; no se hizo limpieza de cuenta real.
