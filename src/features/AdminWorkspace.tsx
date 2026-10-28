@@ -1,3 +1,4 @@
+import {AdminRecycleBin} from './AdminRecycleBin';
 import {signOutWithPushCleanup} from '../lib/pushSession';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -34,6 +35,7 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
  const [roleFilter, setRoleFilter] = useState('all');
  const [accessFilter, setAccessFilter] = useState('all');
  const [showHistory,setShowHistory] = useState(false);
+ const [showTrash,setShowTrash]=useState(false),[trashBusy,setTrashBusy]=useState(false);
  const [demoEvents,setDemoEvents] = useState<AccessEvent[]>([]);
  function licenseState(tenant: Tenant) {
   const license = tenant.license;
@@ -120,6 +122,8 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
  <div className="stats">{[['Soderías', tenants.length], ['Usuarios registrados', people.length], ['Accesos habilitados', people.filter(p=>p.access==='Habilitado').length], ['Empresas por revisar', tenants.filter(t=>licenseState(t)!=='Activa').length]].map(([label, value]) => <article className="stat" key={label}><span className="muted">{label}</span><strong>{loading || error ? '—' : value}</strong></article>)}</div>
  {view==='overview' && <section className="admin-welcome"><div><span className="eyebrow">TU PLATAFORMA, EN ORDEN</span><h2>Un lugar para gestionar a tu equipo de usuarios.</h2><p>Revisá quién tiene acceso, agregá titulares o choferes y mantené sus licencias al día.</p><button onClick={()=>{setView('users');setSearch('');}}>Ver usuarios <Users size={17}/></button></div><ShieldCheck size={76} aria-hidden="true"/></section>}
  <div className="admin-actions"><button className="primary" disabled={busy} onClick={() => { setForm('owner'); setNotice(''); }}><Plus size={16}/> Nueva sodería</button><button className="secondary" disabled={busy || loading || !!error || !tenants.length} onClick={() => { setForm('driver'); setNotice(''); }}><Plus size={16}/> Nuevo chofer</button><button disabled={busy || loading} onClick={() => setRefresh(v => v + 1)}><RefreshCw size={16}/> Actualizar</button><button disabled={busy} aria-expanded={showHistory} onClick={()=>setShowHistory(v=>!v)}>{showHistory?'Ocultar historial':'Ver historial de accesos'}</button></div>
+ <div className="admin-actions"><button disabled={busy||trashBusy} aria-expanded={showTrash} onClick={()=>setShowTrash(v=>!v)}>{showTrash?'Ocultar papelera':'Papelera de seguridad'}</button></div>
+ {showTrash&&<AdminRecycleBin client={client} demo={demo} onLock={setTrashBusy}/>}
  {showHistory&&<AdminAccessHistory client={client} demo={demo} events={demoEvents} revision={refresh}/>}
  {notice && <p className="notice" role="status">{notice}</p>}
  {form && <section className="panel"><h2>{form === 'owner' ? 'Nueva sodería y titular' : 'Nuevo chofer'}</h2><p className="muted">La contraseña debe tener al menos 12 caracteres. Compartila con el usuario por un medio privado.</p><form className="customer-form" onSubmit={createUser} key={form}>

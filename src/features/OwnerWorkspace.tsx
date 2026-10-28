@@ -105,7 +105,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     finally { setBusy(false); }
   }
   async function archive(customer: Customer) {
-    if (busy || stockLocked || !confirm(`¿Eliminar a ${customer.name} y retirarlo de los clientes activos? Se conservarán su historial, envases y equipos registrados.`)) return;
+    if (busy || stockLocked || !confirm(`¿Eliminar a ${customer.name} y retirarlo de los clientes activos? Irá a la papelera de superadministración durante 10 días. Los movimientos contables se conservan.`)) return;
     setBusy(true); setNotice('');
     try {
       const result = await client.rpc('owner_remove_customer',{p_tenant:tenantId,p_customer:customer.id});

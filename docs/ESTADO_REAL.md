@@ -350,3 +350,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 28/10/2026 - Actualizacion: migracion 20261028132907 aplicada y permisos verificados mediante MCP. Acciones disponibles en codigo real; publicacion en curso. Sin registros de negocio eliminados por el agente.
 
 28/10/2026 - Publicado y verificado por HTTP (AccountWorkspace-Cc57xsuU.js): Eliminar cliente, Eliminar recorrido y horarios sin sufijo. Base y web actualizadas. Suite completa 504/504, build correcto. No se purga historial ni se revierte stock/cobros al retirar registros de las listas; no se hizo limpieza de cuenta real.
+
+28/10/2026 - Papelera real aplicada por MCP: admin_recycle_bin 20261028134428 y recycle_bin_expiry 20261028134440. Copias privadas sin lectura directa para authenticated/anon; listado y recuperacion con guardia superadmin. Cron */10 minutos activo, servicio de purga todavia apagado hasta publicar/verificar. Cero registros vencidos al verificar; no se borro ni recupero informacion de negocio para QA. Pruebas especificas 115/115 y build correcto; suite final en curso. Activacion/publicacion pendiente.

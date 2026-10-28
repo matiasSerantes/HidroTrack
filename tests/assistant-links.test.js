@@ -49,6 +49,71 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+async function platformAdmin(){await db.exec('reset role');await db.query('insert into public.platform_admins(user_id) values($1) on conflict do nothing',[otherOwner]);await actor(otherOwner);}
+it('papelera privada: solo superadmin puede listar y recuperar un cliente, con reintento',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);
+ await denied(()=>db.query('update public.customers set active=true where tenant_id=$1 and id=$2',[tenant,c]),/Solo superadministracion/);
+ await denied(()=>db.query('select public.admin_recycle_bin()'),/Solo superadministracion/);
+ await denied(()=>db.query('select * from private.recycle_bin'),/permission denied/);
+ await platformAdmin();const items=(await db.query('select public.admin_recycle_bin() as result')).rows[0].result.items;
+ expect(items).toHaveLength(1);expect(items[0].recoverable).toBe(true);expect(items[0].kind).toBe('customer');
+ expect(new Date(items[0].expires_at)-new Date(items[0].deleted_at)).toBe(10*86400000);
+ for(let i=0;i<2;i++)expect((await db.query('select public.admin_restore_removed($1) id',[items[0].id])).rows[0].id).toBe(c);
+ expect((await db.query('select public.admin_recycle_bin() result')).rows[0].result.count).toBe(0);
+ await actor(owner);expect((await db.query('select active,removed_at from public.customers where id=$1',[c])).rows[0]).toEqual({active:true,removed_at:null});
+});
+it('recuperar un plan devuelve paradas y exige nueva aceptacion sin cargar camion',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);
+ await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);await platformAdmin();
+ const item=(await db.query('select public.admin_recycle_bin() result')).rows[0].result.items[0];
+ await db.query('select public.admin_restore_removed($1)',[item.id]);
+ await db.exec('reset role');
+ expect((await db.query('select status,started_at,removed_at from public.inventory_trips where id=$1',[trip])).rows[0]).toEqual({status:'planned',started_at:null,removed_at:null});
+ expect((await db.query('select state from public.trip_invitations where trip_id=$1',[trip])).rows[0].state).toBe('pending');
+ expect((await db.query('select active from public.route_stops where trip_id=$1',[trip])).rows[0].active).toBe(true);
+ expect((await db.query('select count(*)::int n from public.inventory_operations where trip_id=$1',[trip])).rows[0].n).toBe(0);
+});
+it('el limite de diez dias impide recuperar y una eliminacion nueva no reutiliza el ID anterior',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);await platformAdmin();
+ const first=(await db.query('select public.admin_recycle_bin() result')).rows[0].result.items[0];await db.query('select public.admin_restore_removed($1)',[first.id]);
+ await actor(owner);await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);await platformAdmin();
+ const second=(await db.query('select public.admin_recycle_bin() result')).rows[0].result.items[0];expect(second.id).not.toBe(first.id);
+ await db.query('select public.admin_restore_removed($1)',[first.id]); // stale retry does not restore second deletion
+ expect((await db.query('select public.admin_recycle_bin() result')).rows[0].result.count).toBe(1);
+ await db.exec('reset role');await db.query("update private.recycle_bin set expires_at=now() where id=$1",[second.id]);await actor(otherOwner);
+ await denied(()=>db.query('select public.admin_restore_removed($1)',[second.id]),/Vencio el plazo/);
+ await db.exec('reset role;update private.recycle_bin_config set enabled=true;select private.purge_recycle_bin();');
+ expect((await db.query("select count(*)::int n from private.recycle_bin where label<>'Eliminado' or payload is not null")).rows[0].n).toBe(0);
+});
+it('recuperar un recorrido finalizado conserva cierre y no reactiva clientes eliminados',async()=>{
+ const trip=await assigned();await db.exec('reset role');await db.query("update public.inventory_trips set status='closed',started_at=now(),submitted_at=now(),closed_at=now() where id=$1",[trip]);await actor(owner);
+ const c=(await db.query('select customer_id from public.route_stops where trip_id=$1',[trip])).rows[0].customer_id;
+ await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);await platformAdmin();
+ const items=(await db.query('select public.admin_recycle_bin() result')).rows[0].result.items;const trash=items.find(i=>i.kind==='trip');await db.query('select public.admin_restore_removed($1)',[trash.id]);
+ await db.exec('reset role');expect((await db.query('select status,closed_at from public.inventory_trips where id=$1',[trip])).rows[0]).toMatchObject({status:'closed',closed_at:expect.anything()});expect((await db.query('select active from public.route_stops where trip_id=$1',[trip])).rows[0].active).toBe(false);
+});
+it('purga vencida destruye copia recuperable sin borrar el stock ni operaciones historicas',async()=>{
+ const trip=await assigned();await actor(owner);
+ const c=(await db.query('select customer_id from public.route_stops where trip_id=$1',[trip])).rows[0].customer_id;
+ await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);
+ await db.exec("reset role;update private.recycle_bin_config set enabled=true;update private.recycle_bin set expires_at=now();");
+ expect((await db.query('select private.purge_recycle_bin() n')).rows[0].n).toBe(2);
+ expect((await db.query('select state,payload,label from private.recycle_bin order by kind')).rows).toEqual([{state:'purged',payload:null,label:'Eliminado'},{state:'purged',payload:null,label:'Eliminado'}]);
+ expect((await db.query('select name,address,phone from public.customers where id=$1',[c])).rows[0]).toEqual({name:'Cliente eliminado',address:'Eliminada',phone:''});
+ expect((await db.query('select name from public.inventory_trips where id=$1',[trip])).rows[0].name).toBe('Recorrido eliminado');
+ expect((await db.query('select count(*)::int n from public.inventory_trip_customers where trip_id=$1',[trip])).rows[0].n).toBe(1);
+ expect((await db.query('select private.purge_recycle_bin() n')).rows[0].n).toBe(0);
+ await platformAdmin();const id=(await db.exec('reset role;select id from private.recycle_bin limit 1'))[1].rows[0].id;await actor(otherOwner);await denied(()=>db.query('select public.admin_restore_removed($1)',[id]),/Vencio el plazo/);
+});
+it('purga no afecta registros antes de diez dias, nace apagada y no es invocable por jefe',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);
+ await denied(()=>db.query('select private.purge_recycle_bin()'),/permission denied/);
+ await db.exec('reset role');expect((await db.query('select private.purge_recycle_bin() n')).rows[0].n).toBe(0);
+ await db.exec('update private.recycle_bin_config set enabled=true');expect((await db.query('select private.purge_recycle_bin() n')).rows[0].n).toBe(0);
+ expect((await db.query('select payload is not null intact from private.recycle_bin')).rows[0].intact).toBe(true);
+});
 it('el jefe elimina un plan sin borrar clientes ni movimientos y el reintento es seguro',async()=>{
  const trip=await assigned();await actor(owner);
  await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);
@@ -638,6 +703,14 @@ it('preview compartido elimina costos privados y rechaza otros actores y permiso
 });
 
 async function approvedAssistantReceipt(){const v={...await deliveryFixture(),closeId:crypto.randomUUID()};await deliverVisit(v);await submitAssistantClose(v,await assistantCloseQuote(v));await actor(owner);await reviewAssistantClose(v.closeId);return v;}
+it('eliminar y purgar reparto realizado deja identicos cobros ventas stock y comprobante',async()=>{
+ const v=await approvedAssistantReceipt();
+ const before=(await db.query("select (select count(*) from public.sales) sales,(select count(*) from public.payments) payments,(select jsonb_agg(to_jsonb(x) order by x.product_id) from public.inventory_owned_stock x) stock,(select snapshot from public.assistant_trip_close_snapshots where id=$1) receipt",[v.closeId])).rows;
+ await db.query('select public.owner_remove_trip($1,$2)',[tenant,v.trip]);
+ await db.exec("reset role;update private.recycle_bin_config set enabled=true;update private.recycle_bin set expires_at=now();");await db.query('select private.purge_recycle_bin()');await actor(owner);
+ const after=(await db.query("select (select count(*) from public.sales) sales,(select count(*) from public.payments) payments,(select jsonb_agg(to_jsonb(x) order by x.product_id) from public.inventory_owned_stock x) stock,(select snapshot from public.assistant_trip_close_snapshots where id=$1) receipt",[v.closeId])).rows;
+ expect(after).toEqual(before);
+});
 it('comprobante aprobado ofrece copia completa al jefe y proyeccion minima al propio asistente',async()=>{
  const v=await approvedAssistantReceipt();const ownerReceipt=(await db.query('select public.trip_close_receipt($1,$2) as r',[tenant,v.closeId])).rows[0].r;expect(ownerReceipt).toMatchObject({role:'owner',receipt:{id:v.closeId,sales:200,declared_transfer:0,declared_cash:100}});
  await actor(driver);const r=(await db.query('select public.trip_close_receipt($1,$2) as r',[tenant,v.closeId])).rows[0].r;expect(r).toMatchObject({role:'driver',receipt:{id:v.closeId,declared_cash:100,closure_state:'approved'}});for(const key of ['sales','transfer','declared_transfer','cash','revision','request','unit_cost'])expect(r.receipt).not.toHaveProperty(key);expect((await db.query('select public.assistant_close_receipts() as h')).rows[0].h).toHaveLength(1);await denied(()=>preview(v.trip),/acceso finalizado/);
