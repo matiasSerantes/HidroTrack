@@ -106,6 +106,6 @@ export function OwnerCustomerSheet({client,tenantId,customer,onClose,onEdit,onLo
     </>}
     {data&&<OwnerCustomerHabits onChanged={()=>setVisitVersion(v=>v+1)} client={client} tenantId={tenantId} customerId={customer.id} createdAt={customer.created_at} disabled={busy||!!pending||disabled||extraBusy||accountBusy} onLock={setHabitsBusy}/>}
     {data&&<ExtraVisitRequests client={client} tenantId={tenantId} customerId={customer.id} products={data.products} trips={data.trips} disabled={busy||!!pending||disabled||habitsBusy||accountBusy} onLock={setExtraBusy}/>}
-    {onArchive&&<section className="customer-archive-section"><h3>Administración del cliente</h3><p>Archivar lo retira de los clientes activos. Conserva su historial, envases y equipos registrados.</p><div className="customer-actions"><button className="customer-delete" disabled={locked} onClick={onArchive}>Archivar cliente</button></div></section>}
+    {onArchive&&<section className="customer-archive-section"><h3>Administración del cliente</h3><p>Eliminar lo retira de tu lista. Su historial de cobros y movimientos se conserva. Si tiene bidones o dispenser pendientes, primero hay que recuperarlos.</p><div className="customer-actions"><button className="customer-delete" disabled={locked} onClick={onArchive}>Eliminar cliente</button></div></section>}
   </section>;
 }

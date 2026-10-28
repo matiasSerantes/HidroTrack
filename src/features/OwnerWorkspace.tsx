@@ -105,14 +105,14 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
     finally { setBusy(false); }
   }
   async function archive(customer: Customer) {
-    if (busy || stockLocked || !confirm(`¿Archivar a ${customer.name} y retirarlo de los clientes activos? Se conservarán su historial, envases y equipos registrados.`)) return;
+    if (busy || stockLocked || !confirm(`¿Eliminar a ${customer.name} y retirarlo de los clientes activos? Se conservarán su historial, envases y equipos registrados.`)) return;
     setBusy(true); setNotice('');
     try {
-      const result = await client.from('customers').update({ active: false }).eq('tenant_id', tenantId).eq('id', customer.id).select('id').single();
+      const result = await client.rpc('owner_remove_customer',{p_tenant:tenantId,p_customer:customer.id});
       if (result.error) throw result.error;
       setWorkspace(current => current ? { ...current, customers: current.customers.filter(item => item.id !== customer.id) } : null);
-      setSelectedCustomer(null);setEditing(null);setShowForm(false);setNotice('Cliente archivado. Su historial y asignaciones se conservan.');
-    } catch { setNotice('No se pudo archivar el cliente. Revisá la conexión y tus permisos.'); }
+      setSelectedCustomer(null);setEditing(null);setShowForm(false);setNotice('Cliente eliminado de tu lista. Su historial se conserva.');
+    } catch(err) { setNotice((err as {message?:string}).message || 'No se pudo eliminar. Revisá la conexión y volvé a intentar.'); }
     finally { setBusy(false); }
   }
   async function signOut() {

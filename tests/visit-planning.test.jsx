@@ -31,7 +31,7 @@ it('sin migracion no finge guardado local de plantillas',async()=>{
 it('planilla muestra horario 24h y distingue fecha habitual de visita confirmada',async()=>{
  const client={from:table=>{const chain={select:()=>chain,eq:()=>chain,then:resolve=>Promise.resolve({data:[{weekday:1}],error:null}).then(resolve),maybeSingle:async()=>({data:{start_time:'08:30:00',end_time:'18:30:00'},error:null})};return chain;}};
  render(<CustomerVisitSummary client={client} tenantId="t" customerId="c" version={0}/>);
- await screen.findByText('Podés pasar de 08:30 a 18:30 (24 horas)');expect(screen.getByText(/no confirma una visita ni un recorrido/)).toBeTruthy();
+ await screen.findByText('Podés pasar de 08:30 a 18:30');expect(screen.getByText(/no confirma una visita ni un recorrido/)).toBeTruthy();
 });
 it('mañana informa reparto existente y abre la fecha correcta sin crear uno automaticamente',async()=>{
  const prepare=vi.fn(),client={from:table=>{const data=table==='customer_schedules'?[{customer_id:'c'}]:table==='customers'?[{id:'c'}]:[{name:'Ruta mañana'}];const chain={select:()=>chain,eq:()=>chain,order:()=>chain,in:()=>chain,range:()=>chain,then:resolve=>Promise.resolve({data,error:null}).then(resolve)};return chain;}};

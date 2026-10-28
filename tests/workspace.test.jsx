@@ -9,7 +9,7 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   const calls = [];
   const records = [{ id: 'customer-a', name: 'María', address: 'Calle 123', phone: '' }];
   const client = {
-    rpc: vi.fn(async()=>({data:null,error:{message:'Sin respuesta de la conexión'}})),
+    rpc: vi.fn(async(name,args)=>name==='owner_remove_customer'?{data:args.p_customer,error:null}:{data:null,error:{message:'Sin respuesta de la conexión'}}),
     auth: { getUser:vi.fn(async()=>({data:{user:{id:'user-a',email:'self@example.test'}},error:null})),signOut: vi.fn(async () => ({ error: null })) },
     from: vi.fn(table => {
       const call = { table, filters: [], operation: 'read' }; calls.push(call);
@@ -51,7 +51,7 @@ describe('panel conectado del titular', () => {
     const {client,calls}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');
     fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
-    expect(screen.queryByRole('button',{name:'Archivar cliente'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'Eliminar cliente'})).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'Planilla'}));
     await screen.findByText('Bidones y envases que tiene');
     fireEvent.click(screen.getByRole('button',{name:'Editar datos'}));
@@ -75,7 +75,7 @@ describe('panel conectado del titular', () => {
     fireEvent.click(screen.getByText('Guardar envases iniciales'));
     await screen.findByText('Reintentar misma operación');
     expect(screen.getByRole('button',{name:'Volver a clientes'}).disabled).toBe(true);
-    expect(screen.getByRole('button',{name:'Archivar cliente'}).disabled).toBe(true);
+    expect(screen.getByRole('button',{name:'Eliminar cliente'}).disabled).toBe(true);
     await waitFor(()=>expect(screen.getByRole('button',{name:'Ver catálogo'}).disabled).toBe(true));
     client.rpc.mockResolvedValue({data:'ok',error:null});
     fireEvent.click(screen.getByText('Reintentar misma operación'));
@@ -165,14 +165,12 @@ describe('panel conectado del titular', () => {
     await screen.findByText('Ana');
     expect(calls.find(call => call.operation === 'insert').value).toEqual({ tenant_id: 'tenant-a', name: 'Ana', address: 'Mitre 100', phone: '' });
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    expect(screen.queryByRole('button',{name:'Archivar cliente'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'Eliminar cliente'})).toBeNull();
     fireEvent.click(screen.getAllByText('Planilla')[1]);
     await screen.findByText('Bidones y envases que tiene');
-    fireEvent.click(screen.getByRole('button',{name:'Archivar cliente'}));
+    fireEvent.click(screen.getByRole('button',{name:'Eliminar cliente'}));
     await waitFor(() => expect(screen.queryByText('María')).toBeNull());
-    const update = calls.find(call => call.operation === 'update');
-    expect(update.value).toEqual({ active: false });
-    expect(update.filters).toEqual([['tenant_id', 'tenant-a'], ['id', 'customer-a']]);
+    expect(client.rpc).toHaveBeenCalledWith('owner_remove_customer',{p_tenant:'tenant-a',p_customer:'customer-a'});
   });
 });
 

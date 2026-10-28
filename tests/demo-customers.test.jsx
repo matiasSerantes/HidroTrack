@@ -19,7 +19,7 @@ it('edita el cliente y archiva sin perder entregas; reactivar recupera el recorr
  fireEvent.click(screen.getByText('Guardar cliente'));
  expect(screen.getByRole('dialog').textContent).toContain('Timbre del local');
  vi.spyOn(window, 'confirm').mockReturnValue(true);
- fireEvent.click(screen.getByText('Archivar cliente'));
+ fireEvent.click(screen.getByText('Eliminar cliente'));
  expect(save.mock.lastCall[0].deliveries).toHaveLength(1);
  expect(save.mock.lastCall[0].order).not.toContain('maria');
  expect(within(screen.getByRole('dialog')).getByText('Archivado')).toBeTruthy();
@@ -54,7 +54,7 @@ it('el chofer solo ve asignados y no puede crear o editar clientes', () => {
  expect(screen.queryByText('Nuevo cliente')).toBeNull();
  fireEvent.click(screen.getByLabelText('Ver ficha de María González'));
  expect(screen.queryByText('Editar cliente')).toBeNull();
- expect(screen.queryByText('Archivar cliente')).toBeNull();
+ expect(screen.queryByText('Eliminar cliente')).toBeNull();
 });
 it('busca por teléfono y filtra por día de visita', () => {
  render(<Fixture/>);

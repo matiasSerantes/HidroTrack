@@ -49,6 +49,43 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+it('el jefe elimina un plan sin borrar clientes ni movimientos y el reintento es seguro',async()=>{
+ const trip=await assigned();await actor(owner);
+ await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);
+ await db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]);
+ expect((await db.query('select status,removed_at from public.inventory_trips where id=$1',[trip])).rows[0]).toMatchObject({status:'closed',removed_at:expect.anything()});
+ await db.exec('reset role');
+ expect((await db.query('select state from public.trip_invitations where trip_id=$1',[trip])).rows[0].state).toBe('revoked');
+ expect((await db.query('select active from public.route_stops where trip_id=$1',[trip])).rows[0].active).toBe(false);
+ expect((await db.query('select count(*)::int n from public.customers where tenant_id=$1',[tenant])).rows[0].n).toBe(1);
+});
+it('asistente y otro jefe no pueden eliminar recorridos ajenos',async()=>{
+ const trip=await assigned();await actor(driver);
+ await denied(()=>db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]),/Solo el jefe/);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]),/Solo el jefe/);
+});
+it('no elimina reparto cargado ni cliente de un reparto en marcha',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);
+ const product=crypto.randomUUID(),items=JSON.stringify([{product_id:product,quantity:2}]);
+ await db.query("select public.inventory_create_product($1,$2,'Agua',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.inventory_post($1,$2,'receive',null,null,$3,'')",[tenant,crypto.randomUUID(),items]);
+ await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),trip,items]);
+ await denied(()=>db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]),/Primero finaliza/);
+ const c=(await db.query('select customer_id from public.route_stops where trip_id=$1',[trip])).rows[0].customer_id;
+ await denied(()=>db.query('select public.owner_remove_customer($1,$2)',[tenant,c]),/reparto en curso/);
+ expect((await db.query('select removed_at from public.inventory_trips where id=$1',[trip])).rows[0].removed_at).toBeNull();
+});
+it('eliminar cliente retira paradas futuras pero conserva su registro y es idempotente',async()=>{
+ const trip=await assigned();await actor(owner);const c=(await db.query('select customer_id from public.route_stops where trip_id=$1',[trip])).rows[0].customer_id;
+ for(let i=0;i<2;i++)await db.query('select public.owner_remove_customer($1,$2)',[tenant,c]);
+ expect((await db.query('select active from public.customers where id=$1',[c])).rows[0].active).toBe(false);
+ expect((await db.query('select active from public.route_stops where trip_id=$1',[trip])).rows[0].active).toBe(false);
+});
+it('eliminar cliente no evita recuperar dispenser y no permite acceso ajeno',async()=>{
+ const v=await dispenserContract();
+ await denied(()=>db.query('select public.owner_remove_customer($1,$2)',[tenant,v.customer]),/recuperar/);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_remove_customer($1,$2)',[tenant,v.customer]),/Solo el jefe/);
+});
 it('confirma reintentos de plantilla y reparto aunque el cliente haya sido dado de baja despues',async()=>{
  await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
  const direct=crypto.randomUUID(),captured=crypto.randomUUID(),trip=crypto.randomUUID();
