@@ -4,14 +4,14 @@ import ts from 'typescript';
 import { expect, it, vi } from 'vitest';
 
 const source = ts.transpileModule(readFileSync(new URL('../supabase/functions/admin-users/index.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-function fixture({ admin = true, provisionError = null, cleanupError = null } = {}) {
+function fixture({ admin = true, mfaAllowed = true, provisionError = null, cleanupError = null } = {}) {
  const server = {
   auth: { getUser: vi.fn(async token => token === 'valid-session' ? { data: { user: { id: 'admin-id' } } } : { data: {}, error: {} }), admin: {
    createUser: vi.fn(async () => ({ data: { user: { id: 'new-user' } } })),
    deleteUser: vi.fn(async () => ({ error: cleanupError })),
   } },
   from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: admin ? { user_id: 'admin-id' } : null }) }) }) }),
-  rpc: vi.fn(async () => ({ data: 'new-tenant', error: provisionError })),
+  rpc: vi.fn(async name => name==='admin_mfa_state'?{data:admin?{allowed:mfaAllowed,enabled:!mfaAllowed}:null,error:admin?null:{code:'42501'}}:{ data: 'new-tenant', error: provisionError }),
  };
  let handler;
  runInNewContext(source, { exports: {}, require: () => ({ createClient: () => server }), Deno: { env: { get: () => 'server-only' }, serve: fn => { handler = fn; } }, Response });
@@ -27,6 +27,10 @@ it('rechaza usuarios que no sean superadministradores', async () => {
  const { server, call } = fixture({ admin: false });
  expect((await call()).status).toBe(403);
  expect(server.auth.admin.createUser).not.toHaveBeenCalled();
+});
+it('rechaza AAL insuficiente antes de crear usuarios',async()=>{
+ const {server,call}=fixture({mfaAllowed:false});expect((await call()).status).toBe(403);
+ expect(server.rpc).toHaveBeenCalledWith('admin_mfa_state');expect(server.auth.admin.createUser).not.toHaveBeenCalled();
 });
 it('deriva el actor de la sesión verificada y no del cuerpo', async () => {
  const { server, call } = fixture();

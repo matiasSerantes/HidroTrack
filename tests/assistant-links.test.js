@@ -37,6 +37,8 @@ beforeAll(async()=>{
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
  create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+ create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
+ create table auth.mfa_factors(id uuid primary key default gen_random_uuid(),user_id uuid references auth.users(id),factor_type text,status text);
  grant usage on schema auth,public to authenticated,anon;`);
  for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).filter(f=>f.endsWith('.sql')).sort())await db.exec(await readFile(new URL(`../supabase/migrations/${file}`,import.meta.url),'utf8'));
 },30000);
@@ -49,6 +51,29 @@ beforeEach(async()=>{
  insert into public.customers(tenant_id,name,address) values('${tenant}','Cliente A','Direccion A'),('${other}','Cliente B','Direccion B');`);
 });
 afterEach(async()=>{await db.exec('rollback; reset role;');});
+it('MFA admin se exige solo tras verificar TOTP y conserva descubrimiento de rol en AAL1',async()=>{
+ await platformAdmin();expect((await db.query('select public.admin_mfa_state() state')).rows[0].state).toEqual({enabled:false,allowed:true});
+ await db.exec('reset role');await db.query("insert into auth.mfa_factors(user_id,factor_type,status) values($1,'totp','unverified')",[otherOwner]);await actor(otherOwner);
+ expect((await db.query('select public.admin_mfa_state() state')).rows[0].state.allowed).toBe(true);
+ await db.exec("reset role;update auth.mfa_factors set status='verified'");await actor(otherOwner);
+ expect((await db.query('select public.is_platform_admin() admin')).rows[0].admin).toBe(true);
+ expect((await db.query('select public.admin_mfa_state() state')).rows[0].state).toEqual({enabled:true,allowed:false});
+ for(const sql of ['select public.admin_directory()','select public.admin_recycle_bin()','select public.admin_account_usage()','select public.admin_access_history()'])await denied(()=>db.query(sql),/denegado|superadministracion/);
+ expect((await db.query("update public.licenses set status='suspended' where tenant_id=$1 returning tenant_id",[tenant])).rows).toHaveLength(0);
+ await denied(()=>db.query('select * from auth.mfa_factors'),/permission denied/);
+ await db.exec(`select set_config('request.jwt.claims','{"aal":"aal2"}',true)`);
+ expect((await db.query('select public.admin_mfa_state() state')).rows[0].state).toEqual({enabled:true,allowed:true});
+ expect((await db.query('select public.admin_directory() items')).rows[0].items).toHaveLength(2);
+ expect((await db.query("update public.licenses set status='suspended' where tenant_id=$1 returning tenant_id",[tenant])).rows).toHaveLength(1);
+});
+it('AAL2 no concede rol admin a un jefe y MFA de jefe no cambia sus permisos comerciales',async()=>{
+ await db.exec('reset role');await db.query("insert into auth.mfa_factors(user_id,factor_type,status) values($1,'totp','verified')",[owner]);await actor(owner);
+ expect((await db.query('select count(*)::int n from public.customers where tenant_id=$1',[tenant])).rows[0].n).toBe(1);
+ await db.exec(`select set_config('request.jwt.claims','{"aal":"aal2"}',true)`);
+ expect((await db.query('select public.is_platform_admin() admin')).rows[0].admin).toBe(false);
+ await denied(()=>db.query('select public.admin_mfa_state()'),/superadministracion/);
+ await denied(()=>db.query('select public.admin_directory()'),/denegado/);
+});
 it('uso por cuenta solo admite superadmin y cuenta cada inventario una sola vez',async()=>{
  await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
  await db.query("select public.inventory_create_product($1,$2,'Bidon',100,'unidad',true)",[tenant,product]);

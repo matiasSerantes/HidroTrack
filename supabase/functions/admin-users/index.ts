@@ -12,8 +12,9 @@ Deno.serve(async (req: Request) => {
   const server = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: identity, error: authError } = await server.auth.getUser(authorization.slice(7));
   if (authError || !identity.user) return reply(401, { error: 'Sesión inválida.' });
-  const { data: admin, error: adminError } = await server.from('platform_admins').select('user_id').eq('user_id', identity.user.id).maybeSingle();
-  if (adminError || !admin) return reply(403, { error: 'Acceso reservado al superadministrador.' });
+  const caller = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: security, error: securityError } = await caller.rpc('admin_mfa_state');
+  if (securityError || security?.allowed !== true) return reply(403, { error: 'Verificá tu acceso de superadministrador y el código de doble factor antes de continuar.' });
   const body = await req.json();
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';

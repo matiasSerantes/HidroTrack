@@ -520,3 +520,6 @@ Aplicar primera capa sin cambios comerciales ni cierre de sesiones: CSP/cabecera
 
 ## 2026-10-28 - Metricas de cuenta para superadministrador
 Menu Uso por cuenta, acceso ?admin=uso: inventario actual del catalogo por ubicacion, modelos activos y equipos individualizados separados. Fecha argentina filtra solo recorridos: creados ese dia (incluye eliminados), subconjunto eliminado y vigentes para fecha de servicio por estado. Cuenta equivale a empresa del jefe; asistentes no multiplican cantidades. Busqueda empresa/correo/titular y paginas 50 en servidor. Lectura exclusiva de superadmin, sin cambios de cantidades ni datos comerciales; no mide MB/trafico ni stock historico. Guia USO_POR_CUENTA.md.
+
+## 2026-10-30 - MFA optativo de superadministrador
+Alta real TOTP con QR propio o clave manual y codigo de confirmacion. Desafio de segundo factor al iniciar sesion AAL1 para admins con TOTP verificado. Exigencia servidor en guardia admin compartida (RPC/RLS) y en Edge admin-users; descubrimiento de rol separado de permiso elevado. Activacion final por usuario, sin tocar factores reales para QA. Desactivacion requiere codigo nuevo/AAL2; perdida de telefono exige respaldo o recuperacion asistida del proyecto, sin bypass por correo. Jefes/asistentes no se modifican. Ver DOBLE_FACTOR.md.

@@ -21,7 +21,7 @@ La URL pública y sus cabeceras se comprueban después del despliegue. La navega
 
 ## Pendiente de una siguiente capa
 
-- Doble factor real, empezando por superadministración. No se ha habilitado ni exigido MFA en esta entrega.
+- Actualización 30/10/2026: doble factor TOTP de superadministración implementado, con alta voluntaria y exigencia real AAL2 al tener factor verificado. La activación de cada cuenta requiere QR/código del usuario; ver DOBLE_FACTOR.md. Extensión a jefes/asistentes pendiente.
 - CAPTCHA y protección adicional contra abuso en registro/recuperación. Los límites del servidor Auth no se modificaron; un temporizador del navegador no reemplaza rate limiting del servidor.
 - Protección contra contraseñas filtradas: el asesor informa que está deshabilitada. Requiere revisar el plan/configuración Auth; no se cambió ni se presentó como activa. No se leyó SMTP ni se cambiaron contraseñas existentes.
 - Revisar periódicamente las funciones `SECURITY DEFINER`. Son APIs intencionales con guardias; no revocar todas automáticamente porque rompería la operación. El aviso de `pg_net` en `public` se conserva pendiente de una migración específica y probada, sin afectar recordatorios.

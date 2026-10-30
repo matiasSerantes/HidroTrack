@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { OwnerWorkspace } from './OwnerWorkspace';
 import { AdminWorkspace } from './AdminWorkspace';
 import {OwnerSignupGate} from './OwnerSignupGate';
+import {AdminMfaGate} from './AdminMfa';
 
 export function AccountWorkspace({ client, userId }: { client: SupabaseClient; userId: string }) {
  const [admin, setAdmin] = useState<boolean | null>(null);
@@ -19,5 +20,5 @@ export function AccountWorkspace({ client, userId }: { client: SupabaseClient; u
  }, [client, userId, retry]);
  if (error) return <main><p role="alert">No pudimos verificar tu acceso.</p><button onClick={() => setRetry(v => v + 1)}>Reintentar</button><button onClick={() => void signOutWithPushCleanup(client)}>Cerrar sesión</button></main>;
  if (admin === null) return <main><p role="status">Verificando tu acceso…</p></main>;
- return admin ? <AdminWorkspace client={client}/> : <OwnerSignupGate key={userId} client={client} userId={userId}><OwnerWorkspace client={client} userId={userId}/></OwnerSignupGate>;
+ return admin ? <AdminMfaGate client={client}><AdminWorkspace client={client}/></AdminMfaGate> : <OwnerSignupGate key={userId} client={client} userId={userId}><OwnerWorkspace client={client} userId={userId}/></OwnerSignupGate>;
 }

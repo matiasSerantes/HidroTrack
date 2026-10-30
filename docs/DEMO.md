@@ -503,3 +503,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 28/10/2026 - Papelera se convierte en seccion principal del panel, con icono y boton destacado Abrir papelera en cabecera. Enlace directo ?admin=papelera; no cambia permisos de plataforma ni backend. Al restaurar se bloquea navegacion/salida para conservar confirmacion. Demo admin refleja el acceso; restauracion sigue siendo ficticia en demo. Guia PAPELERA.md actualizada.
 
 28/10/2026 - Demo admin agrega Uso por cuenta con metricas ficticias de inventario y recorridos; cartel explicito de ejemplo sin consultar informacion real. En real se usa consulta admin protegida, fecha/busqueda/paginacion y error sin ceros no verificados. El stock es actual aunque se elija un dia anterior para recorridos. No son datos de consumo de red o almacenamiento.
+
+30/10/2026 - Seguridad en demo admin simula activacion con texto explicito; no muestra QR utilizable ni llama a Auth. En la cuenta real la seccion Seguridad enrola TOTP a pedido del usuario y requiere codigo verdadero. No presentar el ejemplo o el despliegue como factor real ya activado. Guia DOBLE_FACTOR.md.
