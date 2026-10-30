@@ -532,3 +532,6 @@ El jefe puede indicar Cliente desde al crear o editar. Fecha opcional sin futuro
 
 ## 2026-10-30 - Buscar clientes por calle
 Clientes agrega filtro Buscar por calle combinado con nombre/telefono. Busca palabras en la direccion, ignora tildes/mayusculas y no requiere altura. Muestra cantidad encontrada y permite limpiar ambos filtros. No amplifica permisos ni consulta al servidor por cada tecla. No interpreta abreviaturas o calles con nombres alternativos automaticamente.
+
+## 2026-10-30 - Cuadra en mapa operativo
+Acceso manual a paradas de misma calle/centena/localidad, ordenadas por altura; sin localidad exigir puntos cercanos, no agrupar direcciones ambiguas. Solo recorrido autorizado. GPS por boton puede sugerir llegada a pendientes con precision <=50 m, distancia <=60 m y muestra reciente hasta 30 s; descartar al ocultar. Seleccion del chofer, nunca confirmar domicilio/visita/entrega automaticamente. Seguimiento continuo y compartir con jefe pendientes separados.
