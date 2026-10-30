@@ -523,3 +523,6 @@ Menu Uso por cuenta, acceso ?admin=uso: inventario actual del catalogo por ubica
 
 ## 2026-10-30 - MFA optativo de superadministrador
 Alta real TOTP con QR propio o clave manual y codigo de confirmacion. Desafio de segundo factor al iniciar sesion AAL1 para admins con TOTP verificado. Exigencia servidor en guardia admin compartida (RPC/RLS) y en Edge admin-users; descubrimiento de rol separado de permiso elevado. Activacion final por usuario, sin tocar factores reales para QA. Desactivacion requiere codigo nuevo/AAL2; perdida de telefono exige respaldo o recuperacion asistida del proyecto, sin bypass por correo. Jefes/asistentes no se modifican. Ver DOBLE_FACTOR.md.
+
+## 2026-10-30 - QR y acceso Google
+Corregir formato SVG XML/comentario que devuelve Supabase y conservar ingreso manual si falla la imagen, sin crear otro factor. Pasos explicitos para aplicacion autenticadora y mismo celular. Agregar Continuar con Google para ingreso/registro; activacion depende de proveedor Google habilitado y credenciales OAuth backend. Detectar disponibilidad real y no redirigir si esta apagado. Mantener rol/empresa/licencia en servidor, intencion jefe en regreso y MFA opcional. No mezclar Google login con app autenticadora. Guia ACCESO_GOOGLE.md.

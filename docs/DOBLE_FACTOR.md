@@ -39,3 +39,8 @@ Pruebas con datos ficticios: TOTP pendiente no bloquea; verificado más AAL1 blo
 No se activó ni desactivó ningún factor real para QA. El primer escaneo y código real del usuario y la comprobación en teléfono/PC quedan a cargo del usuario. El estado remoto consultado al instalar se documenta sin secretos en ESTADO_REAL.md.
 
 Fuentes: [Supabase TOTP](https://supabase.com/docs/guides/auth/auth-mfa/totp), [exigir MFA en el servidor](https://supabase.com/docs/guides/auth/auth-mfa), [retirar un factor verificado](https://supabase.com/docs/reference/javascript/auth-mfa-unenroll).
+
+
+## Correccion del QR (30/10/2026)
+
+El generador SVGo utilizado por Supabase devuelve una declaracion XML y un comentario antes del elemento SVG. La validacion inicial rechazaba ese formato y dejaba el alta pendiente sin mostrar la imagen. Ahora admite ese encabezado, SVG codificado en data URI y alternativa manual. Si la imagen no se puede decodificar o cargar, se conserva la misma alta y se muestra la clave manual para completar con codigo, sin crear un segundo factor. No se modificaron factores reales para probar. Pruebas usan SVG ficticio con la estructura del proveedor.
