@@ -1031,3 +1031,5 @@ Usuario escaneo y confirmo varias veces pero formulario sigue visible. Metadata 
 
 
 30/10/2026 - Implementado Cliente desde: alta/edicion guarda customer_since y planilla muestra fecha historica separada de Cargado en HidroTrack. Campo opcional; nuevas altas sugieren hoy, existentes quedan desconocidas, sin backfill. Migracion 20261030174659 aplicada por MCP, columna/check y politica owner verificadas. Validacion de calendario/futuro en UI y servidor, sin tocar deudas/stock ni datos de clientes para QA. 132/132 pruebas relacionadas correctas; build correcto, publicacion en curso. Demo conserva joinedOn ficticio. Guia FECHA_CLIENTE.md.
+
+30/10/2026 - Publicacion de Cliente desde verificada por HTTP: AccountWorkspace-9Y4SePRq.js incluye customer_since y fecha de carga separada. Migracion 20261030174659 aplicada y permisos conservados. 132/132 pruebas relacionadas y build correctos. Sustituye publicacion pendiente anterior; revision visual autenticada movil/PC pendiente. Sin cambios a fechas de clientes reales para QA.

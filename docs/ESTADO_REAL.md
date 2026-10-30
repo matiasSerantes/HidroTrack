@@ -382,3 +382,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 
 
 30/10/2026 - Fecha historica del cliente conectada: customer_since opcional en customers (20261030174659 aplicada). Nuevo cliente y Editar datos permiten registrar desde cuando compra; planilla separa fecha real de inicio y timestamp de carga. Sin modificar filas existentes ni permisos. 132/132 pruebas relacionadas y build correctos; publicacion pendiente de comprobar, revision visual movil/PC pendiente. Ver FECHA_CLIENTE.md.
+
+30/10/2026 - Publicacion de Cliente desde verificada por HTTP: AccountWorkspace-9Y4SePRq.js incluye customer_since y fecha de carga separada. Migracion 20261030174659 aplicada y permisos conservados. 132/132 pruebas relacionadas y build correctos. Sustituye publicacion pendiente anterior; revision visual autenticada movil/PC pendiente. Sin cambios a fechas de clientes reales para QA.
