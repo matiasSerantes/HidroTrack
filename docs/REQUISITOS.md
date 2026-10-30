@@ -529,3 +529,6 @@ Corregir formato SVG XML/comentario que devuelve Supabase y conservar ingreso ma
 
 ## 2026-10-30 - Inicio historico del servicio
 El jefe puede indicar Cliente desde al crear o editar. Fecha opcional sin futuro (desde 1900); existentes sin fecha no se completan por inferencia. Planilla distingue inicio historico y carga en el sistema. No altera antiguedad de deudas, ventas, visitas, stock ni fechas de operaciones.
+
+## 2026-10-30 - Buscar clientes por calle
+Clientes agrega filtro Buscar por calle combinado con nombre/telefono. Busca palabras en la direccion, ignora tildes/mayusculas y no requiere altura. Muestra cantidad encontrada y permite limpiar ambos filtros. No amplifica permisos ni consulta al servidor por cada tecla. No interpreta abreviaturas o calles con nombres alternativos automaticamente.

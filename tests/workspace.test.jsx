@@ -5,9 +5,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { OwnerWorkspace } from '../src/features/OwnerWorkspace';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 'active', expires_at: null }, members = true, balances = [], balanceError = null } = {}) {
+function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 'active', expires_at: null }, members = true, balances = [], balanceError = null, customers } = {}) {
   const calls = [];
-  const records = [{ id: 'customer-a', name: 'María', address: 'Calle 123', phone: '' }];
+  const records = customers ?? [{ id: 'customer-a', name: 'María', address: 'Calle 123', phone: '' }];
   const client = {
     rpc: vi.fn(async(name,args)=>name==='owner_remove_customer'?{data:args.p_customer,error:null}:{data:null,error:{message:'Sin respuesta de la conexión'}}),
     auth: { getUser:vi.fn(async()=>({data:{user:{id:'user-a',email:'self@example.test'}},error:null})),signOut: vi.fn(async () => ({ error: null })) },
@@ -34,6 +34,22 @@ function clientFixture({ role = 'owner', license = { kind: 'permanent', status: 
   return { client, calls };
 }
 describe('panel conectado del titular', () => {
+  it('busca por calle, combina nombre y limpia filtros sin volver a consultar clientes',async()=>{
+    const {client,calls}=clientFixture({customers:[{id:'a',name:'María',address:'San Martín 100',phone:''},{id:'b',name:'Pedro',address:'San Martín 900',phone:''},{id:'c',name:'San Martín',address:'Belgrano 200',phone:''}]});
+    render(<OwnerWorkspace client={client} userId="user-a"/>);
+    await screen.findByText('María');
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
+    const reads=calls.filter(c=>c.table==='customers').length;
+    fireEvent.change(screen.getByLabelText('Buscar por calle'),{target:{value:'san martin'}});
+    expect(screen.getByText('2 clientes encontrados en la calle: san martin')).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'San Martín',exact:true})).toBeNull();
+    fireEvent.change(screen.getByLabelText('Buscar clientes'),{target:{value:'pedro'}});
+    expect(screen.getByText('1 clientes encontrados en la calle: san martin')).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'María',exact:true})).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Limpiar búsqueda'}));
+    expect(screen.getByText('3 clientes encontrados')).toBeTruthy();
+    expect(calls.filter(c=>c.table==='customers')).toHaveLength(reads);
+  });
   it('guarda el punto exacto del cliente en su empresa y lo muestra en planilla',async()=>{
     const {client,calls}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
@@ -62,7 +78,7 @@ describe('panel conectado del titular', () => {
     await screen.findByText('María actualizada');
     const update=calls.find(c=>c.operation==='update');
     expect(update.filters).toEqual([['tenant_id','tenant-a'],['id','customer-a']]);
-    expect(update.value).toEqual({name:'María actualizada',address:'Calle 123',phone:''});
+    expect(update.value).toEqual({name:'María actualizada',address:'Calle 123',phone:'',customer_since:null});
     expect(calls.some(c=>c.operation==='insert')).toBe(false);
   });
   it('abre la ficha desde la lista y bloquea la navegación ante una apertura incierta',async()=>{
@@ -163,7 +179,7 @@ describe('panel conectado del titular', () => {
     fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Mitre 100' } });
     fireEvent.click(screen.getByText('Guardar cliente'));
     await screen.findByText('Ana');
-    expect(calls.find(call => call.operation === 'insert').value).toEqual({ tenant_id: 'tenant-a', name: 'Ana', address: 'Mitre 100', phone: '' });
+    expect(calls.find(call => call.operation === 'insert').value).toEqual({ tenant_id: 'tenant-a', name: 'Ana', address: 'Mitre 100', phone: '', customer_since:expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) });
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     expect(screen.queryByRole('button',{name:'Eliminar cliente'})).toBeNull();
     fireEvent.click(screen.getAllByText('Planilla')[1]);
@@ -177,7 +193,7 @@ describe('panel conectado del titular', () => {
 it('muestra deuda directamente y permite buscar sin acentos y por direccion',async()=>{
  const {client}=clientFixture({balances:[{id:'s1',customer_id:'customer-a',balance:3000},{id:'s2',customer_id:'customer-a',balance:1800}]});render(<OwnerWorkspace client={client} userId="user-a"/>);
  await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));
- expect(await screen.findByText(/Debe.*4.800,00/)).toBeTruthy();fireEvent.change(screen.getByRole('searchbox'),{target:{value:'maria 123'}});expect(screen.getByRole('button',{name:'Planilla'})).toBeTruthy();fireEvent.change(screen.getByRole('searchbox'),{target:{value:'nadie'}});expect(screen.getByText(/No hay coincidencias/)).toBeTruthy();fireEvent.click(screen.getByRole('button',{name:'Limpiar búsqueda'}));expect(screen.getByRole('button',{name:'Planilla'})).toBeTruthy();
+ expect(await screen.findByText(/Debe.*4.800,00/)).toBeTruthy();fireEvent.change(screen.getByRole('searchbox',{name:'Buscar clientes'}),{target:{value:'maria 123'}});expect(screen.getByRole('button',{name:'Planilla'})).toBeTruthy();fireEvent.change(screen.getByRole('searchbox',{name:'Buscar clientes'}),{target:{value:'nadie'}});expect(screen.getByText(/No hay coincidencias/)).toBeTruthy();fireEvent.click(screen.getByRole('button',{name:'Limpiar búsqueda'}));expect(screen.getByRole('button',{name:'Planilla'})).toBeTruthy();
 });
 it('un error de saldos no indica que el cliente no debe',async()=>{
  const {client}=clientFixture({balanceError:{message:'offline'}});render(<OwnerWorkspace client={client} userId="user-a"/>);await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));await screen.findByText('Saldo sin verificar');expect(screen.queryByText('Sin deuda pendiente')).toBeNull();

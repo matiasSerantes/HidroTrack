@@ -511,3 +511,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 30/10/2026 - Flujo real de Seguridad distingue activo/alta/desafio/desactivacion: la demo sigue representando MFA ficticio con texto, sin generar codigos. Tras alta real confirmada regresa al panel; vista activa ya no repite el formulario.
 
 30/10/2026 - La planilla demo ya representa la fecha ficticia joinedOn. La cuenta real incorpora Cliente desde en alta/edicion y muestra la fecha historica separada de Cargado en HidroTrack; no se usa la demo como persistencia real. Ver FECHA_CLIENTE.md.
+
+30/10/2026 - Clientes de demo y cuenta real agregan Buscar por calle: escribir la calle sin altura para listar sus domicilios, combinar con otros filtros y ver cantidad. La demo usa exclusivamente sus clientes ficticios; cuenta real filtra los clientes activos autorizados ya cargados.

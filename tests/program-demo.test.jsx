@@ -15,6 +15,16 @@ function enter(assistant = false) {
   fireEvent.click(screen.getByText('Entrar a la demostración'));
 }
 describe('recorridos navegables de la demo', () => {
+  it('muestra juntos los clientes de una calle desde el filtro explicito',()=>{
+    const state=seedProgram();state.clients.forEach(c=>{c.address='Otra calle 500';});
+    state.clients.push({...state.clients[0],id:'calle-a',address:'San Martín 100'},{...state.clients[1],id:'calle-b',address:'San Martín 900'},{...state.clients[2],id:'calle-c',address:'Belgrano 200'});
+    localStorage.setItem(DEMO_KEY,JSON.stringify(state));enter();
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación de la demo'})).getByRole('button',{name:'Clientes',exact:true}));
+    fireEvent.change(screen.getByLabelText('Buscar por calle'),{target:{value:'san martin'}});
+    expect(screen.getByRole('status').textContent).toBe('2 clientes encontrados en la calle: san martin');
+    expect(screen.getByText('San Martín 100')).toBeTruthy();expect(screen.getByText('San Martín 900')).toBeTruthy();
+    expect(screen.queryByText('Belgrano 200')).toBeNull();
+  });
   it('finaliza el jefe y la espera del asistente conserva solo informacion personal',()=>{
     const s=seedProgram();s.trips[0].stops.forEach(p=>{p.status='visited';});localStorage.setItem(DEMO_KEY,JSON.stringify(s));enter();
     expect(screen.getByRole('heading',{name:'Ganancia y gastos del mes'})).toBeTruthy();
