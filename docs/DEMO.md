@@ -507,3 +507,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 30/10/2026 - Seguridad en demo admin simula activacion con texto explicito; no muestra QR utilizable ni llama a Auth. En la cuenta real la seccion Seguridad enrola TOTP a pedido del usuario y requiere codigo verdadero. No presentar el ejemplo o el despliegue como factor real ya activado. Guia DOBLE_FACTOR.md.
 
 30/10/2026 - QR real ahora admite XML/comentarios del proveedor y clave manual si falla imagen; demo MFA sigue explicitamente ficticia, sin QR utilizable. Inicio real agrega Continuar con Google condicionado a disponibilidad del proveedor. Sin credenciales/proveedor habilitado se muestra pendiente; no fingir inicio de sesion ni autenticar desde demo. Alta de jefe vuelve al flujo de empresa existente.
+
+30/10/2026 - Flujo real de Seguridad distingue activo/alta/desafio/desactivacion: la demo sigue representando MFA ficticio con texto, sin generar codigos. Tras alta real confirmada regresa al panel; vista activa ya no repite el formulario.

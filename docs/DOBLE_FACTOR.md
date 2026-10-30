@@ -6,7 +6,7 @@
 2. Abrir **Seguridad** en el menú, o https://hidrotrack.matilegen.workers.dev/?admin=seguridad .
 3. Tocar **Activar doble factor**.
 4. Escanear el QR con una aplicación autenticadora compatible con TOTP. Si se está usando el mismo teléfono, tocar **Ingresar clave manualmente** y agregarla en la aplicación.
-5. Escribir los seis números del autenticador y tocar **Confirmar y activar**.
+5. Escribir los seis números del autenticador y tocar **Confirmar y activar**. Al confirmar el permiso en servidor, vuelve automáticamente al panel.
 
 La protección de la cuenta se activa solo cuando Supabase confirma un código correcto. Instalar el código de la aplicación no registra un teléfono ni completa la activación. El agente no genera ni ve el QR de la cuenta real. No compartir QR, clave ni códigos por chat; conservar el autenticador con un respaldo seguro.
 
@@ -44,3 +44,8 @@ Fuentes: [Supabase TOTP](https://supabase.com/docs/guides/auth/auth-mfa/totp), [
 ## Correccion del QR (30/10/2026)
 
 El generador SVGo utilizado por Supabase devuelve una declaracion XML y un comentario antes del elemento SVG. La validacion inicial rechazaba ese formato y dejaba el alta pendiente sin mostrar la imagen. Ahora admite ese encabezado, SVG codificado en data URI y alternativa manual. Si la imagen no se puede decodificar o cargar, se conserva la misma alta y se muestra la clave manual para completar con codigo, sin crear un segundo factor. No se modificaron factores reales para probar. Pruebas usan SVG ficticio con la estructura del proveedor.
+
+
+## Estado activo y salida del formulario
+
+Al volver a Seguridad con el autenticador ya confirmado, muestra **Doble factor activado** y **Continuar al panel**, sin pedir otro codigo. El campo solo aparece para verificar el ingreso cuando sea necesario o despues de elegir desactivar; esta ultima accion requiere codigo nuevo y confirmacion. La salida tras verificar depende del permiso del servidor y no omite la guardia MFA. Actualizar la pagina tras recibir la correccion si quedo abierta una version anterior.

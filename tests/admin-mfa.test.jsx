@@ -3,7 +3,8 @@ import React from 'react';
 import {it,expect,vi,afterEach} from 'vitest';
 import {render,screen,fireEvent,cleanup,waitFor} from '@testing-library/react';
 import {AdminMfaGate,AdminMfaPanel,mfaQrImage} from '../src/features/AdminMfa';
-afterEach(()=>{cleanup();vi.restoreAllMocks();});
+import {AdminWorkspace} from '../src/features/AdminWorkspace';
+afterEach(()=>{cleanup();vi.restoreAllMocks();window.history.replaceState(null,'','/');});
 function fixture({enabled=true,allowed=false}={}){
  let permission=allowed;
  const factor={id:'factor-test',factor_type:'totp',status:'verified',friendly_name:'Prueba'};
@@ -35,8 +36,20 @@ it('una respuesta perdida de alta exige actualizar y no permite crear otro facto
 it('desactivar autenticador exige codigo nuevo y confirmacion explicita',async()=>{
  const client=fixture({enabled:true,allowed:true});vi.spyOn(window,'confirm').mockReturnValue(true);render(<AdminMfaPanel client={client}/>);
  fireEvent.click(await screen.findByRole('button',{name:'Desactivar autenticador seleccionado'}));expect(client.auth.mfa.unenroll).not.toHaveBeenCalled();
- fireEvent.change(screen.getByLabelText('Código del autenticador'),{target:{value:'123456'}});fireEvent.click(screen.getByRole('button',{name:'Desactivar autenticador seleccionado'}));
+ fireEvent.change(screen.getByLabelText('Código del autenticador'),{target:{value:'123456'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar desactivación'}));
  await waitFor(()=>expect(client.auth.mfa.unenroll).toHaveBeenCalledWith({factorId:'factor-test'}));expect(client.auth.mfa.challengeAndVerify).toHaveBeenCalledWith({factorId:'factor-test',code:'123456'});expect(client.auth.refreshSession).toHaveBeenCalled();
+});
+it('seguridad ya activada no vuelve a pedir codigo y ofrece continuar al panel',async()=>{
+ const client=fixture({enabled:true,allowed:true}),onContinue=vi.fn();render(<AdminMfaPanel client={client} onContinue={onContinue}/>);
+ expect(await screen.findByText('Doble factor activado')).toBeTruthy();expect(screen.queryByLabelText('Código del autenticador')).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'Continuar al panel'}));expect(onContinue).toHaveBeenCalledOnce();expect(client.auth.mfa.challengeAndVerify).not.toHaveBeenCalled();
+});
+it('al confirmar alta y permiso servidor vuelve automaticamente al panel de administracion',async()=>{
+ const client=fixture({enabled:false,allowed:true}),read=client.rpc.getMockImplementation();client.rpc.mockImplementation((name,...args)=>name==='admin_directory'?Promise.resolve({data:[],error:null}):read(name,...args));
+ window.history.replaceState(null,'','/?admin=seguridad');render(<AdminWorkspace client={client}/>);
+ fireEvent.click(await screen.findByRole('button',{name:'Activar doble factor'}));await screen.findByAltText('QR para tu aplicación autenticadora');
+ fireEvent.change(screen.getByLabelText('Código del autenticador'),{target:{value:'123456'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar y activar'}));
+ expect(await screen.findByRole('heading',{name:'Tu panel de administración'})).toBeTruthy();expect(screen.queryByLabelText('Código del autenticador')).toBeNull();expect(client.rpc).toHaveBeenCalledWith('admin_mfa_state');expect(new URL(window.location.href).searchParams.has('admin')).toBe(false);
 });
 it('alta solo con click explicito, QR como imagen, clave en memoria y confirmacion real',async()=>{
  const client=fixture({enabled:false,allowed:true}),storage=vi.spyOn(Storage.prototype,'setItem');render(<AdminMfaPanel client={client}/>);
