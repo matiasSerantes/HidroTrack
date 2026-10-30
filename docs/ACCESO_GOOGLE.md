@@ -2,9 +2,9 @@
 
 El botón **Continuar con Google** está preparado en ingreso y registro. Una consulta pública a Supabase determina si el proveedor está habilitado. Si sigue apagado, el botón informa configuración pendiente; no envía al usuario a una página de error. Se puede tocar **Revisar disponibilidad de Google** después de configurar el proveedor, sin recompilar.
 
-Estado verificado el 30/10/2026: proveedor Google deshabilitado. La integración no se presenta como activa hasta cargar las credenciales OAuth y verificar un ingreso real. No se crearon cuentas Google ni credenciales durante el desarrollo.
+Actualización verificada el 30/10/2026: Google ya está habilitado en la configuración pública de Supabase. Una solicitud de autorización devuelve 302 hacia accounts.google.com, con Client ID presente, estado OAuth y callback correcto del proyecto. Esto valida la preparación básica; el ingreso completo y el intercambio de credenciales siguen pendientes de una prueba del usuario. No se leyeron ni guardaron secretos, ni se crearon cuentas para probar.
 
-## Configuración que falta en Google y Supabase
+## Configuración de referencia en Google y Supabase
 
 1. Abrir [Google Auth Platform](https://console.cloud.google.com/auth/overview), seleccionar o crear el proyecto de HidroTrack y completar marca/audiencia según el asistente de Google. Si queda en modo de pruebas, agregar los correos de prueba autorizados antes de probar.
 2. En **Clientes**, crear un cliente OAuth de tipo **Aplicación web**.
