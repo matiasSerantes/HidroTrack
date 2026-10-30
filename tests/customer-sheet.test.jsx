@@ -4,7 +4,12 @@ import {afterEach,it,expect,vi} from 'vitest';
 import {cleanup,render,screen,fireEvent,waitFor} from '@testing-library/react';
 import {OwnerCustomerSheet} from '../src/features/OwnerCustomerSheet';
 afterEach(cleanup);
-function fixture(fail=false,{model=false,unavailable=false,noIndividual=false}={}){
+it('separa fecha historica de compra de la fecha de carga en el sistema',()=>{
+ fixture(false,{customerSince:'2019-06-12',createdAt:'2026-10-30T15:00:00Z'});
+ expect(screen.getByText('Cliente desde: 12/06/2019')).toBeTruthy();
+ expect(screen.getByText(/Cargado en HidroTrack: 30\/10\/2026/)).toBeTruthy();
+});
+function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,customerSince,createdAt}={}){
   const calls=[],onLock=vi.fn();
   const records={products:[{id:'b20',name:'Bidón 20 litros',active:true,returnable:true},{id:'b12',name:'Bidón 12 litros',active:true,returnable:true}],inventory_customer_containers:[{product_id:'b20',quantity:2}],inventory_operations:[],dispensers:[{id:'available',name:'Frío calor',serial:'FC-1',ownership:'company',location:'depot',customer_id:null,monthly:0},{id:'private',name:'Equipo particular',serial:'P-1',ownership:'customer',location:'customer',customer_id:'client-a',mode:'customer_owned',monthly:0},{id:'other',name:'Equipo de otro cliente',ownership:'company',location:'customer',customer_id:'client-b',monthly:0}]};
   records.inventory_owned_stock=model?[{product_id:'model',depot_ready:unavailable?0:2}]:[];
@@ -15,7 +20,7 @@ function fixture(fail=false,{model=false,unavailable=false,noIndividual=false}={
   const client={rpc:vi.fn(async()=>({data:'ok',error:null})),from:vi.fn(table=>{
     const call={table,filters:[]};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table],error:fail?{message:'Sin conexión'}:null}).then(resolve,reject)};return chain;
   })};
-  render(<OwnerCustomerSheet client={client} tenantId="tenant-a" customer={{id:'client-a',name:'Cliente de prueba',address:'Calle 123',phone:'123'}} onClose={vi.fn()} onEdit={vi.fn()} onLock={onLock}/>);
+  render(<OwnerCustomerSheet client={client} tenantId="tenant-a" customer={{id:'client-a',name:'Cliente de prueba',address:'Calle 123',phone:'123',customer_since:customerSince,created_at:createdAt}} onClose={vi.fn()} onEdit={vi.fn()} onLock={onLock}/>);
   return {client,calls,records,setFailure:value=>{fail=value;}};
 }
 it('explica catálogo sin unidades y registra existencias antes de permitir asignar, sin duplicarlas',async()=>{

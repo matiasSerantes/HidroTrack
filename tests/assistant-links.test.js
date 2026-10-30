@@ -2,6 +2,20 @@ import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
+it('fecha historica: jefe guarda sin cambiar alta y no admite futuro ni otra empresa',async()=>{
+ await actor(owner);
+ const before=(await db.query('select id,created_at,customer_since from public.customers where tenant_id=$1',[tenant])).rows[0];
+ expect(before.customer_since).toBeNull();
+ await db.query("update public.customers set customer_since=date '2019-06-12' where id=$1",[before.id]);
+ const after=(await db.query('select created_at,customer_since from public.customers where id=$1',[before.id])).rows[0];
+ expect(after.created_at).toEqual(before.created_at);expect(String(after.customer_since)).toContain('2019');
+ await denied(()=>db.query('update public.customers set customer_since=current_date+2 where id=$1',[before.id]),/customers_since_valid/);
+ await actor(otherOwner);
+ expect((await db.query("update public.customers set customer_since=date '2020-01-01' where id=$1 returning id",[before.id])).rows).toHaveLength(0);
+ await actor(owner);
+ await db.query('update public.customers set customer_since=null where id=$1',[before.id]);
+ expect((await db.query('select customer_since from public.customers where id=$1',[before.id])).rows[0].customer_since).toBeNull();
+});
 const owner='00000000-0000-0000-0000-000000000001',otherOwner='00000000-0000-0000-0000-000000000002',driver='00000000-0000-0000-0000-000000000003',second='00000000-0000-0000-0000-000000000004',unconfirmed='00000000-0000-0000-0000-000000000005';
 const tenant='10000000-0000-0000-0000-000000000001',other='10000000-0000-0000-0000-000000000002';
 async function actor(id){await db.exec(`reset role; select set_config('request.jwt.claim.sub','${id}',true); set local role authenticated;`);}

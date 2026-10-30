@@ -526,3 +526,6 @@ Alta real TOTP con QR propio o clave manual y codigo de confirmacion. Desafio de
 
 ## 2026-10-30 - QR y acceso Google
 Corregir formato SVG XML/comentario que devuelve Supabase y conservar ingreso manual si falla la imagen, sin crear otro factor. Pasos explicitos para aplicacion autenticadora y mismo celular. Agregar Continuar con Google para ingreso/registro; activacion depende de proveedor Google habilitado y credenciales OAuth backend. Detectar disponibilidad real y no redirigir si esta apagado. Mantener rol/empresa/licencia en servidor, intencion jefe en regreso y MFA opcional. No mezclar Google login con app autenticadora. Guia ACCESO_GOOGLE.md.
+
+## 2026-10-30 - Inicio historico del servicio
+El jefe puede indicar Cliente desde al crear o editar. Fecha opcional sin futuro (desde 1900); existentes sin fecha no se completan por inferencia. Planilla distingue inicio historico y carga en el sistema. No altera antiguedad de deudas, ventas, visitas, stock ni fechas de operaciones.

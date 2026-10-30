@@ -509,3 +509,5 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 30/10/2026 - QR real ahora admite XML/comentarios del proveedor y clave manual si falla imagen; demo MFA sigue explicitamente ficticia, sin QR utilizable. Inicio real agrega Continuar con Google condicionado a disponibilidad del proveedor. Sin credenciales/proveedor habilitado se muestra pendiente; no fingir inicio de sesion ni autenticar desde demo. Alta de jefe vuelve al flujo de empresa existente.
 
 30/10/2026 - Flujo real de Seguridad distingue activo/alta/desafio/desactivacion: la demo sigue representando MFA ficticio con texto, sin generar codigos. Tras alta real confirmada regresa al panel; vista activa ya no repite el formulario.
+
+30/10/2026 - La planilla demo ya representa la fecha ficticia joinedOn. La cuenta real incorpora Cliente desde en alta/edicion y muestra la fecha historica separada de Cargado en HidroTrack; no se usa la demo como persistencia real. Ver FECHA_CLIENTE.md.
