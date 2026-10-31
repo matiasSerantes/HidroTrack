@@ -535,3 +535,6 @@ Clientes agrega filtro Buscar por calle combinado con nombre/telefono. Busca pal
 
 ## 2026-10-30 - Cuadra en mapa operativo
 Acceso manual a paradas de misma calle/centena/localidad, ordenadas por altura; sin localidad exigir puntos cercanos, no agrupar direcciones ambiguas. Solo recorrido autorizado. GPS por boton puede sugerir llegada a pendientes con precision <=50 m, distancia <=60 m y muestra reciente hasta 30 s; descartar al ocultar. Seleccion del chofer, nunca confirmar domicilio/visita/entrega automaticamente. Seguimiento continuo y compartir con jefe pendientes separados.
+
+## Validacion de beta - 31/10/2026
+Una operacion pendiente en el recorrido debe impedir otras escrituras de entrega, cobro, ausencia, alta propuesta, rendicion y recordatorios hasta confirmar o recibir rechazo verificable. Su propio reintento sigue disponible con los mismos datos e identificador. Correccion de interfaz local; no sustituye validacion transaccional del servidor ni permite trabajar sin conexion. Prueba integrada automatizada con RPC simuladas: carga, entrega con retorno/pago parcial y respuesta perdida, rendicion, aprobacion y solicitud de PDF. Prueba fisica autenticada sigue pendiente.
