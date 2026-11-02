@@ -2,6 +2,47 @@ import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
+async function sharePosition(v,session,{lat=-34.6,lng=-58.4,accuracy=15,offset=0,customer=v.customer}={}){
+ return (await db.query("select public.assistant_publish_trip_position($1,$2,$3,$4,$5,$6,now()+make_interval(secs=>$7),$8) result",[tenant,v.trip,session,lat,lng,accuracy,offset,customer])).rows[0].result;
+}
+it('ubicacion compartida requiere reparto activo aceptado, sesion explicita y permiso de empresa',async()=>{
+ const v=await deliveryFixture(),session=crypto.randomUUID();
+ await denied(()=>sharePosition(v,session),/no autorizada/);
+ await db.query('select public.assistant_start_trip_sharing($1,$2,$3)',[tenant,v.trip,session]);
+ expect(await sharePosition(v,session)).toMatchObject({updated:true});
+ expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(1);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_live_trip_positions($1)',[tenant]),/Solo el jefe/);
+ expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(0);
+ await actor(owner);const list=(await db.query('select public.owner_live_trip_positions($1) result',[tenant])).rows[0].result;
+ expect(list.items).toHaveLength(1);expect(list.items[0]).toMatchObject({latitude:-34.6,longitude:-58.4,customer:'Cliente A'});
+ await actor(driver);await db.query('select public.assistant_stop_trip_sharing($1,$2,$3)',[tenant,v.trip,session]);
+ await denied(()=>sharePosition(v,session),/detenida/);
+ await denied(()=>db.query('select public.assistant_start_trip_sharing($1,$2,$3)',[tenant,v.trip,session]),/ya termino/);
+ await actor(owner);expect((await db.query('select public.owner_live_trip_positions($1) result',[tenant])).rows[0].result.items[0].latitude).toBeNull();
+});
+it('GPS descarta lecturas malas, fuera de orden o demasiado frecuentes y no afecta stock',async()=>{
+ const v=await deliveryFixture(),session=crypto.randomUUID();await db.query('select public.assistant_start_trip_sharing($1,$2,$3)',[tenant,v.trip,session]);
+ for(const values of [{accuracy:101},{lat:100},{offset:-31},{offset:6}])await denied(()=>sharePosition(v,session,values),/GPS impreciso/);
+ expect(await sharePosition(v,session)).toMatchObject({updated:true});
+ expect(await sharePosition(v,session,{offset:1})).toMatchObject({updated:false});
+ expect(await sharePosition(v,session,{offset:-1})).toMatchObject({updated:false});
+ await db.exec('reset role');await db.query("update public.driver_positions set updated_at=now()-interval '91 seconds' where trip_id=$1",[v.trip]);await actor(owner);
+ expect((await db.query('select public.owner_live_trip_positions($1) result',[tenant])).rows[0].result.items[0].latitude).toBeNull();
+ await actor(driver);expect(await sharePosition(v,session,{offset:1})).toMatchObject({updated:true});
+ const stock=(await preview(v.trip)).rows[0].result.stock[0];expect(stock.ready).toBe(5);expect(stock.empties).toBe(0);
+});
+it('sesion vieja no detiene otra y revocacion oculta inmediatamente GPS y bloquea nuevos puntos',async()=>{
+ const v=await deliveryFixture(),old=crypto.randomUUID(),current=crypto.randomUUID();
+ await db.query('select public.assistant_start_trip_sharing($1,$2,$3)',[tenant,v.trip,old]);await sharePosition(v,old);
+ await db.query('select public.assistant_start_trip_sharing($1,$2,$3)',[tenant,v.trip,current]);await sharePosition(v,current);
+ await db.query('select public.assistant_stop_trip_sharing($1,$2,$3)',[tenant,v.trip,old]);expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(1);
+ await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,v.trip,crypto.randomUUID()]);
+ expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(0);
+ expect((await db.query('select public.owner_live_trip_positions($1) result',[tenant])).rows[0].result.items).toHaveLength(0);
+ await actor(driver);await denied(()=>sharePosition(v,current),/no autorizada/);
+ await db.exec('reset role');await db.query("update public.trip_invitations set state='accepted',revoked_at=null,answered_at=now() where trip_id=$1",[v.trip]);await actor(driver);await denied(()=>sharePosition(v,current),/detenida/);
+ await db.query('select public.assistant_stop_trip_sharing($1,$2,$3)',[tenant,v.trip,current]);
+});
 async function routeChangeFixture(){
  const trip=await assigned();await actor(driver);await answer(trip);
  await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
@@ -696,7 +737,8 @@ it('cierre propio devuelve stock y permite siguiente carga sin duplicar caja ni 
  const visit={...v,id:crypto.randomUUID()};await deliverVisit(visit,{r:0});await collectAssistantDebt(visit,{amount:100,method:'transfer'});
  await db.query('select public.route_publish_position($1,$2,1,1,5)',[tenant,v.trip]);const quote=await ownerCloseQuote(v);expect(quote).toMatchObject({cash:150,transfer:100,sales:200,pending_visits:0});
  const id=crypto.randomUUID(),receipt=await finishOwner(v,quote,{id});expect(receipt.trip.status).toBe('closed');expect(await finishOwner(v,quote,{id})).toEqual(receipt);
- expect((await db.query("select * from public.inventory_operations where kind='close'")).rows).toHaveLength(1);expect((await db.query('select * from public.payments')).rows).toHaveLength(3);expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(1);
+ expect((await db.query("select * from public.inventory_operations where kind='close'")).rows).toHaveLength(1);expect((await db.query('select * from public.payments')).rows).toHaveLength(3);// Closed or legacy positions are not exposed as current tracking.
+ expect((await db.query('select * from public.driver_positions')).rows).toHaveLength(0);
  const stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.product])).rows[0];expect(Number(stock.depot_ready)).toBe(3);expect(Number(stock.truck_ready)).toBe(0);
  await db.query("update public.products set name='Nuevo nombre' where id=$1",[v.product]);expect((await db.query('select public.owner_self_close_history($1) as history',[tenant])).rows[0].history[0].stock[0].name).toBe('Agua costo');
  const next=crypto.randomUUID();await db.query("select public.inventory_create_trip($1,$2,$3,'Otra salida',current_date,$4)",[tenant,next,owner,[v.customer]]);await db.query("select public.inventory_post($1,$2,'load',$3,null,$4,'')",[tenant,crypto.randomUUID(),next,JSON.stringify([{product_id:v.product,quantity:1}])]);

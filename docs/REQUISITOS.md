@@ -541,3 +541,6 @@ Una operacion pendiente en el recorrido debe impedir otras escrituras de entrega
 
 ## 2026-11-02 - Cambios del jefe durante el reparto
 Aviso al asistente aceptado por datos operativos/horarios o alta/retiro/reorden de paradas. Historial en recorrido y push opcional independiente de horarios, apagado por defecto. Push generico sin PII; permisos revalidados antes de enviar y abrir. Retencion de eventos siete dias, reintentos limitados y no duplicar actualizaciones sin cambios. Revocacion/cierre/suspension detiene nuevos envios. Guia AVISOS_CAMBIOS_REPARTO.md.
+
+## 2026-11-02 - Seguimiento autorizado
+Compartir GPS solo por accion explicita del asistente en mapa visible y reparto activo aceptado. Unico punto reciente por empresa, precision/antiguedad visibles, parada seleccionada sin confirmar presencia. Jefe ve solo asistentes autorizados propios. Detener, ocultar, revocar, reasignar o cerrar invalida sesion; renovar invitacion no reactiva GPS anterior. No historial; vencimiento visible 90 s y purga temporal. Ver SEGUIMIENTO_ASISTENTES.md.
