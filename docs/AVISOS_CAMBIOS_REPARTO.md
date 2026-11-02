@@ -23,4 +23,4 @@ El aviso de pantalla bloqueada es generico: no muestra nombres, domicilios, deud
 
 ## Instalacion verificada
 
-Migraciones `20261030193344_route_change_alerts` y `20261030193404_route_change_scheduler` instaladas mediante MCP; Edge `route-changes` v1 activa con autenticacion por secreto de cron, igual al emisor existente. Tablas privadas sin acceso directo de usuarios; RPC propias limitadas al destinatario, cola exclusiva de servicio. Activacion global se realiza despues de verificar la interfaz y el worker publicados. Preferencias personales siguen apagadas hasta consentimiento.
+Migraciones `20261030193344_route_change_alerts` y `20261030193404_route_change_scheduler` instaladas mediante MCP; Edge `route-changes` v1 activa con autenticacion por secreto de cron, igual al emisor existente. Tablas privadas sin acceso directo de usuarios; RPC propias limitadas al destinatario, cola exclusiva de servicio. Activacion global comprobada el 02/11/2026 despues de verificar interfaz y worker publicados. Preferencias personales siguen apagadas hasta consentimiento.
