@@ -26,6 +26,8 @@ it('el foco no elimina el reintento aunque el servidor ya haya recibido la rendi
   if(name==='assistant_open_trip')return {data:{trip:{...q.trip,status:state},stops:[],stock:[]},error:null};
   if(name==='assistant_close_state')return {data:state==='submitted'?submitted:null,error:null};
   if(name==='assistant_preview_close')return {data:q,error:null};
+  if(name==='assistant_route_changes')return {data:{items:[],unread:0,available:false,push_enabled:false},error:null};
+  if(name!=='assistant_submit_close')throw new Error(`RPC inesperada: ${name}`);
   state='submitted';return ++attempts===1?{data:null,error:{message:'Respuesta perdida'}}:{data:{...submitted,id:args.p_id},error:null};
  })};render(<AssistantTripInvitations client={client} userId="u"/>);fireEvent.click(await screen.findByRole('button',{name:'Abrir reparto'}));await screen.findByRole('button',{name:'Terminar y rendir reparto'});await send();await screen.findByText('Respuesta perdida');fireEvent(window,new Event('focus'));expect(screen.getByRole('button',{name:'Reintentar misma rendición'})).toBeTruthy();fireEvent.click(screen.getByRole('button',{name:'Reintentar misma rendición'}));await screen.findByText(/Rendición enviada/);expect(client.rpc.mock.calls.filter(([n])=>n==='assistant_submit_close')).toHaveLength(2);
 });

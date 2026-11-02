@@ -522,3 +522,5 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 02/11/2026 - Editar cliente o agregar/retirar/reordenar parada en demo genera novedad ficticia al asistente asignado a un recorrido aceptado. La cuenta real conserva su historial privado de Cambios del jefe y activacion independiente de push; demo no pide permisos ni envia notificaciones reales. Ver AVISOS_CAMBIOS_REPARTO.md.
 
 02/11/2026 - La demo mantiene su mapa ficticio de asistentes. Cuenta real incorpora Mapa de asistentes y compartir GPS voluntario desde mapa visible del recorrido aceptado activo; no usa coordenadas demo como reales. Se?al reciente/progreso y parada seleccionada, sin afirmar presencia. Ver SEGUIMIENTO_ASISTENTES.md.
+
+02/11/2026 - Demo mantiene modalidades prestamo/alquiler y cuotas ficticias, sin facturacion remota. Cuenta real suma acuerdo de importe/condiciones editable por jefe, asignacion atomica y Cuotas de alquiler en planilla; cargo real manual con saldo/pago existentes. Ver ALQUILERES.md.

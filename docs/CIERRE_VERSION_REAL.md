@@ -10,7 +10,7 @@ Inicio: 02/11/2026. Alcance: requisitos acordados, manteniendo la optimizacion a
 | Reparto, entregas, cobros y rendicion/PDF | Conectado | Jornada simulada y permisos probados; falta prueba fisica final |
 | Avisos de cambios del jefe | Publicado y activado | Opt-in separado; recepcion fisica pendiente |
 | Seguimiento de asistentes por el jefe | Publicado | Sesion explicita, punto reciente, revocacion y prueba fisica pendiente |
-| Alquileres y recuperacion/baja | Por auditar y completar | Reutilizar contratos instalados y conectar pantallas faltantes |
+| Alquileres y recuperacion/baja | Alquileres conectados; baja por completar | Acuerdos/cuotas/cobro, falta circuito completo de recuperacion |
 | Promociones del asistente | Por auditar y completar | Permiso del jefe y aprobacion/avisos |
 | Graficos, gastos y resultados | Pendiente real | Usar cobros/cargos y costos historicos sin inventar ganancia |
 | Perfil y empresa | Por completar | Foto privada, datos, logo y configuracion autorizada |

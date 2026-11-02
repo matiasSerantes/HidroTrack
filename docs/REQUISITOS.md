@@ -544,3 +544,6 @@ Aviso al asistente aceptado por datos operativos/horarios o alta/retiro/reorden 
 
 ## 2026-11-02 - Seguimiento autorizado
 Compartir GPS solo por accion explicita del asistente en mapa visible y reparto activo aceptado. Unico punto reciente por empresa, precision/antiguedad visibles, parada seleccionada sin confirmar presencia. Jefe ve solo asistentes autorizados propios. Detener, ocultar, revocar, reasignar o cerrar invalida sesion; renovar invitacion no reactiva GPS anterior. No historial; vencimiento visible 90 s y purga temporal. Ver SEGUIMIENTO_ASISTENTES.md.
+
+## 2026-11-02 - Acuerdo de alquiler por jefe
+El usuario aclara que cada jefe acuerda el alquiler por dispenser y puede editarlo si no lo configuro correctamente. Importe mensual y condiciones por contrato, en asignacion y luego en planilla. Sin prorrateo global; cargos ya generados se conservan. Generar cuota es una accion explicita, no debito automatico. Asignacion y acuerdo se confirman juntos; cuota por periodo idempotente, precio y contrato esperados, cobro en cuenta corriente.

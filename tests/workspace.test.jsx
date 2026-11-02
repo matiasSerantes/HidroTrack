@@ -96,7 +96,7 @@ describe('panel conectado del titular', () => {
     client.rpc.mockResolvedValue({data:'ok',error:null});
     fireEvent.click(screen.getByText('Reintentar misma operación'));
     await screen.findByText('Envases asignados desde el depósito. El total propio no cambió.');
-    expect(client.rpc.mock.calls[0]).toEqual(client.rpc.mock.calls[1]);
+    const writes=client.rpc.mock.calls.filter(([name])=>name==='inventory_assign_existing_containers');expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);
   });
   it('ofrece inicio, menú lateral y navegación móvil con las secciones conectadas',async()=>{
     const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
@@ -134,7 +134,7 @@ describe('panel conectado del titular', () => {
     fireEvent.click(screen.getByText('Reintentar misma operación'));
     await screen.findByText(/Inventario registrado/);
     await waitFor(()=>expect(within(menu).getByRole('button',{name:'Clientes'}).disabled).toBe(false));
-    expect(client.rpc.mock.calls[0]).toEqual(client.rpc.mock.calls[1]);
+    const writes=client.rpc.mock.calls.filter(([name])=>name==='inventory_record_stock');expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);
   });
   it('abre el inventario real del jefe solo después de validar acceso y licencia', async()=>{
     const {client,calls}=clientFixture();

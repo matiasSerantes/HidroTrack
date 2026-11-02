@@ -21,6 +21,8 @@ it('actualizacion por foco no pierde un reintento aunque servidor ya haya activa
   if(name==='assistant_trip_invitations')return {data:[{...invitation,status:active?'active':'planned'}],error:null};
   if(name==='assistant_open_trip')return {data:{trip:{name:'Ruta ficticia',date:'2026-10-25',status:active?'active':'planned'},stops:[],stock:[]},error:null};
   if(name==='assistant_load_options')return {data:options,error:null};
+  if(name==='assistant_route_changes')return {data:{items:[],unread:0,available:false,push_enabled:false},error:null};
+  if(name!=='assistant_confirm_load')throw new Error(`RPC inesperada: ${name}`);
   active=true;return ++attempts===1?{data:null,error:{message:'Respuesta perdida'}}:{data:args.p_id,error:null};
  })};
  render(<AssistantTripInvitations client={client} userId="u"/>);fireEvent.click(await screen.findByRole('button',{name:'Abrir reparto'}));await screen.findByLabelText('Cargar Agua');chooseLoad();await screen.findByText('Respuesta perdida');fireEvent(window,new Event('focus'));expect(screen.getByRole('button',{name:'Reintentar misma carga'})).toBeTruthy();fireEvent.click(screen.getByRole('button',{name:'Reintentar misma carga'}));await screen.findByText('En recorrido');expect(screen.queryByRole('button',{name:'Registrar carga e iniciar reparto'})).toBe(null);expect(client.rpc.mock.calls.filter(([n])=>n==='assistant_confirm_load')).toHaveLength(2);

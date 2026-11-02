@@ -2,6 +2,42 @@ import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
+it('equipo individualizado conserva serie y acuerdo; reintentar asignacion no revierte precio editado',async()=>{
+ await actor(owner);const equipment=crypto.randomUUID(),request=crypto.randomUUID(),agreement=crypto.randomUUID(),customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query("select public.inventory_save_dispenser($1,$2,$3,'Frio calor','SERIE-PRUEBA','company','depot',null,null,null,0)",[tenant,crypto.randomUUID(),equipment]);
+ const args=[tenant,request,agreement,customer,equipment,'Condiciones del jefe'];
+ const assign=()=>db.query('select public.owner_assign_rental_agreement($1,$2,$3,$4,null,$5,1800,null,null,$6) id',args);
+ expect((await assign()).rows[0].id).toBe(equipment);const panel=await rentalPanel({customer}),contract=panel.contracts[0];expect(contract).toMatchObject({source:'equipment',id:equipment,monthly:1800,terms:'Condiciones del jefe'});expect(contract.anchor).toBeTruthy();
+ await db.query('select public.owner_edit_rental_agreement($1,$2,$3,$4,$5,$6,1800,$7,2000,$8)',[tenant,crypto.randomUUID(),customer,'equipment',equipment,contract.anchor,'Condiciones del jefe','Nuevo acuerdo']);await assign();
+ expect((await db.query('select monthly,serial from public.dispensers where id=$1',[equipment])).rows[0]).toMatchObject({monthly:'2000.00',serial:'SERIE-PRUEBA'});
+});
+async function rentalPanel(v){return (await db.query('select public.owner_customer_rentals($1,$2) data',[tenant,v.customer])).rows[0].data;}
+async function billRental(v,c,{id=crypto.randomUUID(),monthly=c.monthly,date}={}){return db.query('select public.owner_charge_rental_period($1,$2,$3,$4,null,$5,coalesce($6::date,current_date),$7,$8) id',[tenant,id,v.customer,c.id,c.next_period,date||null,c.anchor,monthly]);}
+it('cuotas del cliente siguen fecha de entrega sin deriva de fin de mes y no se duplican',async()=>{
+ const v=await dispenserContract();await db.exec('reset role');await db.query("update public.dispenser_assignments set occurred_on=date '2024-01-31' where id=$1",[v.assignment]);await actor(owner);
+ let panel=await rentalPanel(v),contract=panel.contracts[0];expect(contract).toMatchObject({anchor:'2024-01-31',period_start:'2024-01-31',period_end:'2024-02-29',next_period:0});
+ const id=crypto.randomUUID();await billRental(v,contract,{id});await billRental(v,contract,{id});await denied(()=>billRental(v,contract),/ya fue generada/);
+ panel=await rentalPanel(v);expect(panel.contracts[0]).toMatchObject({next_period:1,period_start:'2024-02-29',period_end:'2024-03-31'});expect(panel.charges).toHaveLength(1);
+ await actor(otherOwner);await denied(()=>rentalPanel(v),/Solo el jefe/);
+});
+it('jefe edita importe y condiciones con auditoria y no cambia cuotas anteriores',async()=>{
+ const v=await dispenserContract(),contract=(await rentalPanel(v)).contracts[0];await billRental(v,contract);
+ const id=crypto.randomUUID(),args=[tenant,id,v.customer,'assignment',v.assignment,contract.anchor,1000,'',1500,'Devolucion a convenir'];
+ const edit=()=>db.query('select public.owner_edit_rental_agreement($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',args);await edit();await edit();
+ const panel=await rentalPanel(v);expect(panel.contracts[0]).toMatchObject({monthly:1500,terms:'Devolucion a convenir'});expect(panel.charges[0].monthly).toBe(1000);
+ await denied(()=>billRental(v,{...contract,next_period:1},{monthly:1000}),/alquiler cambio/);
+ await denied(()=>db.query('select public.owner_edit_rental_agreement($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[...args.slice(0,1),crypto.randomUUID(),...args.slice(2)]),/alquiler cambio/);
+ expect((await db.query('select count(*) n from public.rental_agreement_changes')).rows[0].n).toBe(1);
+});
+it('asignar dispenser y acuerdo es atomico e idempotente aunque falle el registro de condiciones',async()=>{
+ const v=await dispenserContract(),id=crypto.randomUUID(),agreement=crypto.randomUUID();
+ const assign=(request=id,terms='Acuerdo libre del jefe')=>db.query("select public.owner_assign_rental_agreement($1,$2,$3,$4,$5,null,2500,current_date,null,$6) id",[tenant,request,agreement,v.customer,v.replacement,terms]);
+ await assign();await assign();const panel=await rentalPanel(v);expect(panel.contracts.find(c=>c.id===id)).toMatchObject({monthly:2500,terms:'Acuerdo libre del jefe'});
+ await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:v.replacement,quantity:1}])]);
+ const failed=crypto.randomUUID();await denied(()=>assign(failed),/ID de acuerdo/);
+ expect((await db.query('select * from public.dispenser_assignments where id=$1',[failed])).rows).toHaveLength(0);
+ expect(Number((await db.query('select depot_ready from public.inventory_owned_stock where product_id=$1',[v.replacement])).rows[0].depot_ready)).toBe(1);
+});
 async function sharePosition(v,session,{lat=-34.6,lng=-58.4,accuracy=15,offset=0,customer=v.customer}={}){
  return (await db.query("select public.assistant_publish_trip_position($1,$2,$3,$4,$5,$6,now()+make_interval(secs=>$7),$8) result",[tenant,v.trip,session,lat,lng,accuracy,offset,customer])).rows[0].result;
 }
