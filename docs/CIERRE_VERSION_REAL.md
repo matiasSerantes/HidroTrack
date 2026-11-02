@@ -9,7 +9,7 @@ Inicio: 02/11/2026. Alcance: requisitos acordados, manteniendo la optimizacion a
 | Catalogo, carga unica, stock, roturas y cambios | Conectado parcialmente | Auditar reparacion y equipos por serie |
 | Reparto, entregas, cobros y rendicion/PDF | Conectado | Jornada simulada y permisos probados; falta prueba fisica final |
 | Avisos de cambios del jefe | Publicado y activado | Opt-in separado; recepcion fisica pendiente |
-| Seguimiento de asistentes por el jefe | Backend aplicado, publicacion en curso | Sesion explicita, punto reciente, revocacion y prueba fisica pendiente |
+| Seguimiento de asistentes por el jefe | Publicado | Sesion explicita, punto reciente, revocacion y prueba fisica pendiente |
 | Alquileres y recuperacion/baja | Por auditar y completar | Reutilizar contratos instalados y conectar pantallas faltantes |
 | Promociones del asistente | Por auditar y completar | Permiso del jefe y aprobacion/avisos |
 | Graficos, gastos y resultados | Pendiente real | Usar cobros/cargos y costos historicos sin inventar ganancia |
