@@ -11,6 +11,15 @@ async function worker(){
  async function click(data){let promise;listeners.notificationclick({notification:{data,close:vi.fn()},waitUntil:p=>{promise=p;}});await promise;}
  return {message,push,showNotification,close,click,openWindow};
 }
+it('cambio de recorrido muestra aviso generico una vez y abre solo destino interno de cuenta actual',async()=>{
+ const w=await worker(),tenant='10000000-0000-0000-0000-000000000001',trip='20000000-0000-0000-0000-000000000001';
+ await w.message({type:'PUSH_SESSION',userId:'u'});
+ const payload={type:'route-change',id:'event',tenant_id:tenant,trip_id:trip,customer:'Nombre privado',address:'Domicilio privado'};
+ await w.push(payload);await w.push(payload);expect(w.showNotification).toHaveBeenCalledTimes(1);
+ const options=w.showNotification.mock.calls[0][1];expect(options.body).not.toContain('Nombre privado');expect(options.body).not.toContain('Domicilio privado');
+ await w.click({...options.data,url:'https://malicious.test'});const url=new URL(w.openWindow.mock.calls[0][0]);expect(url.origin).toBe('https://example.test');expect(url.searchParams.get('recorrido')).toBe(trip);expect(url.searchParams.get('empresa')).toBe(tenant);
+ await w.message({type:'PUSH_SESSION',userId:null});await w.click(options.data);expect(w.openWindow).toHaveBeenCalledTimes(1);
+});
 it('muestra aviso solo para cuenta actual y no despues de cerrar sesion',async()=>{const w=await worker();await w.message({type:'PUSH_SESSION',userId:'u'});await w.push();expect(w.showNotification).toHaveBeenCalledTimes(1);await w.push({user_id:'otro'});expect(w.showNotification).toHaveBeenCalledTimes(1);await w.message({type:'PUSH_SESSION',userId:null});await w.push();expect(w.showNotification).toHaveBeenCalledTimes(1);});
 it('ignora mensajes vencidos y paradas ya resueltas, cierra notificacion anterior',async()=>{const w=await worker();await w.message({type:'PUSH_SESSION',userId:'u'});await w.push({expires_at:new Date(Date.now()-1000).toISOString()});expect(w.showNotification).not.toHaveBeenCalled();await w.message({type:'VISITS_RESOLVED',tripId:'r',customers:['c']});expect(w.close).toHaveBeenCalledTimes(1);await w.push();expect(w.showNotification).not.toHaveBeenCalled();});
 it('planificacion se muestra una vez por cuenta empresa y dia, independiente de paradas resueltas',async()=>{

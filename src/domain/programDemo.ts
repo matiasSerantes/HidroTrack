@@ -247,6 +247,11 @@ export function scheduleStop(state: DemoProgramState, tripId: string, clientId: 
   return s;
 }
 export const moneyInput = (cents: number) => String(cents / 100);
+export function withDemoRouteNotice(state:DemoProgramState,tripId:string,text:string){
+ const trip=state.trips.find(t=>t.id===tripId),recipient=state.members.find(m=>m.id===trip?.driverId&&m.active);
+ if(!trip||!recipient||recipient.id==='owner'||!['planned','active'].includes(trip.stage)||['pending','rejected'].includes(trip.acceptance||''))return state;
+ return {...state,notices:[{id:uid(),recipientId:recipient.id,text:`${recipient.name}: ${text}`,read:false},...state.notices]};
+}
 export function editDemoStop(state: DemoProgramState, actor: string, tripId: string, clientId: string, action: 'add' | 'remove' | 'up' | 'down') {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId), client = s.clients.find(c => c.id === clientId && c.active);
   if (actor !== 'owner' || !s.members.some(m => m.id === actor && m.active)) throw new Error('Solo el jefe puede editar las paradas del reparto.');
@@ -254,7 +259,7 @@ export function editDemoStop(state: DemoProgramState, actor: string, tripId: str
   const index = trip.stops.findIndex(p => p.clientId === clientId);
   if (action === 'add') {
     if (index >= 0) throw new Error('El cliente ya está en el reparto.');
-    trip.stops.push({ clientId, status: 'pending' }); return s;
+    trip.stops.push({ clientId, status: 'pending' }); return withDemoRouteNotice(s,tripId,`El jefe agrego a ${client.name} al recorrido (demo).`);
   }
   if (index < 0 || !['pending', 'later'].includes(trip.stops[index].status)) throw new Error('La parada ya está resuelta o no pertenece a este reparto.');
   if (action === 'remove') trip.stops.splice(index, 1);
@@ -263,5 +268,5 @@ export function editDemoStop(state: DemoProgramState, actor: string, tripId: str
     if (target < 0 || target >= trip.stops.length || !['pending', 'later'].includes(trip.stops[target].status)) throw new Error('No se puede mover la parada en esa dirección.');
     [trip.stops[index], trip.stops[target]] = [trip.stops[target], trip.stops[index]];
   }
-  return s;
+  return withDemoRouteNotice(s,tripId,`El jefe ${action==='remove'?'retiro':'reordeno'} la parada de ${client.name} (demo).`);
 }

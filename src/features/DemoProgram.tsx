@@ -1,3 +1,4 @@
+import {withDemoRouteNotice} from '../domain/programDemo';
 import {matchesCustomerStreet} from '../domain/customerSearch';
 import { DemoAssistantProfile } from './DemoAssistantProfile';
 import { answerTripInvitation, assistantShareId } from '../domain/assistantDemo';
@@ -274,7 +275,7 @@ function DialogView({ dialog: d, dismiss }: { dialog: NonNullable<Dialog>; dismi
       if (d.type === 'customer') {
         const c: Client = { joinedOn:client?client.joinedOn:demoDay, visitDays:f.getAll('visit_days').map(Number), geo:readCustomerLocation(f), usualItems:Object.fromEntries(s.products.filter(p=>p.kind==='sale'&&p.active).map(p=>[p.id,Number(f.get(`usual-${p.id}`)||0)])), id: d.id || uid(), name: val('name'), address: val('address'), locality: val('locality'), block: val('block').toLowerCase(), x: 42, y: 55, active: true, debt: 0, held: {}, rentals: [], usual: val('usual'), note: val('note') };
         if (!c.name || !c.address || !c.locality) throw new Error('Completá nombre, dirección y localidad.');
-        if(d.id&&owner&&client){if(act(state=>({...state,clients:state.clients.map(x=>x.id===d.id?{...x,name:c.name,address:c.address,locality:c.locality,block:c.block,usual:c.usual,note:c.note}:x)}),'Cliente actualizado en la demo.'))dismiss();return;}
+        if(d.id&&owner&&client){if(act(state=>{let next={...state,clients:state.clients.map(x=>x.id===d.id?{...x,name:c.name,address:c.address,locality:c.locality,block:c.block,usual:c.usual,note:c.note}:x)};for(const route of state.trips.filter(t=>t.stops.some(p=>p.clientId===d.id)))next=withDemoRouteNotice(next,route.id,`El jefe modifico los datos de ${c.name} (demo).`);return next;},'Cliente actualizado en la demo.'))dismiss();return;}
         if (requestOrAdd({ id: uid(), kind: 'customer', title: `Alta de cliente · ${c.name}`, authorId: actor, status: 'pending', client: c }, state => ({ ...state, clients: [...state.clients, c] }))) dismiss();
       } else if (d.type === 'product') {
         const price = parseMoney(val('price')), depot = Number(val('depot')); if (!Number.isSafeInteger(depot) || depot < 0 || depot > 100000) throw new Error('Revisá el stock inicial.');

@@ -1,3 +1,4 @@
+import {readRouteChangeLink} from '../domain/routeChangeLink';
 import {AssistantTripView,type AssistantTrip} from './AssistantTripView';
 import { useEffect, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -19,7 +20,7 @@ function useRefreshPulse(){
 
 export function AssistantTripInvitations({client,userId}:{client:SupabaseClient;userId?:string}){
  const [items,setItems]=useState<Invitation[]|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[pulse,refresh]=useRefreshPulse();
- const [selected,setSelected]=useState<RoutePointer|null>(()=>restoreRoute(userId)),[preview,setPreview]=useState<AssistantTrip|null>(null),[previewLoading,setPreviewLoading]=useState(false);
+ const [selected,setSelected]=useState<RoutePointer|null>(()=>readRouteChangeLink(window.location.search)??restoreRoute(userId)),[preview,setPreview]=useState<AssistantTrip|null>(null),[previewLoading,setPreviewLoading]=useState(false);
  const [deliveryLocked,setDeliveryLocked]=useState(false);
  const request=useRef<{key:string;id:string}|null>(null);
  useEffect(()=>{if(!userId)return;try{if(selected)localStorage.setItem(assistantRouteKey(userId),JSON.stringify(selected));else localStorage.removeItem(assistantRouteKey(userId));}catch{}},[userId,selected]);

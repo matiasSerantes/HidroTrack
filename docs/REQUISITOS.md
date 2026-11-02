@@ -538,3 +538,6 @@ Acceso manual a paradas de misma calle/centena/localidad, ordenadas por altura; 
 
 ## Validacion de beta - 31/10/2026
 Una operacion pendiente en el recorrido debe impedir otras escrituras de entrega, cobro, ausencia, alta propuesta, rendicion y recordatorios hasta confirmar o recibir rechazo verificable. Su propio reintento sigue disponible con los mismos datos e identificador. Correccion de interfaz local; no sustituye validacion transaccional del servidor ni permite trabajar sin conexion. Prueba integrada automatizada con RPC simuladas: carga, entrega con retorno/pago parcial y respuesta perdida, rendicion, aprobacion y solicitud de PDF. Prueba fisica autenticada sigue pendiente.
+
+## 2026-11-02 - Cambios del jefe durante el reparto
+Aviso al asistente aceptado por datos operativos/horarios o alta/retiro/reorden de paradas. Historial en recorrido y push opcional independiente de horarios, apagado por defecto. Push generico sin PII; permisos revalidados antes de enviar y abrir. Retencion de eventos siete dias, reintentos limitados y no duplicar actualizaciones sin cambios. Revocacion/cierre/suspension detiene nuevos envios. Guia AVISOS_CAMBIOS_REPARTO.md.

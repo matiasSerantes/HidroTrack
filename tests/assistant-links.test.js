@@ -2,6 +2,43 @@ import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
+async function routeChangeFixture(){
+ const trip=await assigned();await actor(driver);await answer(trip);
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ return {trip,customer};
+}
+it('cambios de jefe: genera datos/horario/retiro atomicos, lectura solo chofer aceptado',async()=>{
+ const v=await routeChangeFixture();
+ await db.query("update public.customers set phone='123' where id=$1",[v.customer]);
+ await db.query("update public.customers set phone='123' where id=$1",[v.customer]);
+ await db.query("select public.customer_set_visit_window($1,$2,time '08:00',time '18:30')",[tenant,v.customer]);
+ await db.exec('reset role');await db.query('update public.route_stops set active=false where trip_id=$1',[v.trip]);await actor(owner);
+ // Simulate the same authorized owner operation (the direct stop table is RPC-only).
+ await db.query("update public.customers set phone='456' where id=$1",[v.customer]);
+ await actor(driver);let result=(await db.query('select public.assistant_route_changes($1,$2) v',[tenant,v.trip])).rows[0].v;
+ expect(result.items.map(e=>e.kind).sort()).toEqual(['customer_updated','stop_removed','visit_window_updated']);
+ expect(result.push_enabled).toBe(false);
+ await db.query('select public.assistant_read_route_changes($1,$2,$3)',[tenant,v.trip,result.items.map(e=>e.id)]);
+ expect((await db.query('select public.assistant_route_changes($1,$2) v',[tenant,v.trip])).rows[0].v.unread).toBe(0);
+ await actor(second);await denied(()=>db.query('select public.assistant_route_changes($1,$2)',[tenant,v.trip]),/no accesible/);
+ await actor(owner);await db.query('select public.owner_revoke_trip_invitation($1,$2,$3)',[tenant,v.trip,crypto.randomUUID()]);await actor(driver);
+ await denied(()=>db.query('select public.assistant_route_changes($1,$2)',[tenant,v.trip]),/no accesible/);
+});
+it('push de cambios exige opt-in y revalida permiso, lectura y finalizacion',async()=>{
+ const v=await routeChangeFixture();await db.exec('reset role');
+ await db.exec("update private.route_change_config set enabled=true;update private.web_push_config set enabled=true;");
+ await db.query("insert into private.web_push_subscriptions(user_id,endpoint,p256dh,auth_key) values($1,'https://fcm.googleapis.com/fictional','fake','fake')",[driver]);
+ await actor(owner);await db.query("update public.customers set phone='111' where id=$1",[v.customer]);
+ await db.exec('reset role;set local role service_role');expect((await db.query('select public.push_claim_route_changes() v')).rows[0].v).toEqual([]);
+ await actor(driver);await db.query('select public.assistant_set_route_change_push(true)');
+ await actor(owner);await db.query("update public.customers set phone='222' where id=$1",[v.customer]);
+ await db.exec('reset role;set local role service_role');const jobs=(await db.query('select public.push_claim_route_changes() v')).rows[0].v;expect(jobs.length).toBeGreaterThan(0);
+ const j=jobs[0];expect((await db.query('select public.push_route_change_valid($1,$2) v',[j.id,j.claim_token])).rows[0].v).toBe(true);
+ await actor(driver);await db.query('select public.assistant_set_route_change_push(false)');
+ await db.exec('reset role;set local role service_role');expect((await db.query('select public.push_route_change_valid($1,$2) v',[j.id,j.claim_token])).rows[0].v).toBe(false);
+ await actor(second);await denied(()=>db.query('select public.push_claim_route_changes()'),/permission denied/);
+ await denied(()=>db.query('select * from private.route_change_events'),/permission denied/);
+});
 it('fecha historica: jefe guarda sin cambiar alta y no admite futuro ni otra empresa',async()=>{
  await actor(owner);
  const before=(await db.query('select id,created_at,customer_since from public.customers where tenant_id=$1',[tenant])).rows[0];

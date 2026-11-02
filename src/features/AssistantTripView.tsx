@@ -1,3 +1,4 @@
+import {RouteChangeAlerts} from './RouteChangeAlerts';
 import {syncResolvedPushStops} from '../lib/pushSession';
 import {PushNotificationConsent} from './PushNotificationConsent';
 import {VisitTimeReminders} from './VisitTimeReminders';
@@ -24,7 +25,7 @@ export function AssistantTripView({data,selectedId,onSelect,onClose,client,tenan
  return <section className="assistant-trip-view"><div className="invitation-heading"><h3>{data.trip.name}</h3><button className="hd-btn" disabled={locked} onClick={onClose}>{owner?'Volver a mis repartos':'Cerrar recorrido'}</button></div>
  <p>{data.trip.status==='planned'?'Preparado · Falta confirmar la carga del camión.':data.trip.status==='submitted'?'Reparto presentado para rendir.':'En recorrido'}</p><p><strong>Atendidos: {attended} de {data.stops.length} clientes</strong></p>
  {!owner&&client&&tenantId&&tripId&&onChanged&&data.trip.status==='planned'&&<AssistantInitialLoad key={tripId} client={client} tenantId={tenantId} tripId={tripId} disabled={visitLocked||proposalLocked} onLock={setLoadLocked} onDone={onChanged}/>}
- {client&&<PushNotificationConsent client={client}/>}
+ {client&&(owner||!tenantId||!tripId?<PushNotificationConsent client={client}/>:<RouteChangeAlerts key={`${tenantId}.${tripId}`} client={client} tenantId={tenantId} tripId={tripId} disabled={locked} onChanged={onChanged}/>)}
  {client&&tenantId&&tripId&&onChanged&&data.trip.status==='active'&&<VisitTimeReminders client={client} tenantId={tenantId} tripId={tripId} date={data.trip.date} serverNow={data.server_now} stops={data.stops} disabled={visitLocked||proposalLocked||loadLocked||closeLocked} onLock={setReminderLocked} onChanged={onChanged} onSelect={onSelect}/>}
  <div className="assistant-route-actions"><button className="hd-btn primary" aria-expanded={showMap} onClick={()=>setShowMap(v=>!v)}>{showMap?'Ocultar mapa':'Ver mapa del reparto'}</button><button className="hd-btn primary" aria-expanded={showStock} onClick={()=>setShowStock(v=>!v)}>Stock del camión</button></div>
  {showStock&&<section className="assistant-route-stock"><h4>Stock de este camión</h4>{!(data.stock?.length)&&<p>Todavía no hay carga registrada para este reparto.</p>}{data.stock?.map(p=><article key={p.product_id}><strong>{p.name}</strong><p>{p.family==='dispenser'?`${p.ready} disponibles`:`${p.ready} llenos / unidades listas${p.returnable?` · ${p.empties} vacíos`:''}`}</p><small>Carga inicial: {p.loaded} {p.unit}</small></article>)}<p>Se consulta el saldo del servidor al actualizar. La carga confirmada no se edita desde acá.</p></section>}
