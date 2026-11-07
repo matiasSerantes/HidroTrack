@@ -1077,3 +1077,5 @@ Usuario autoriza continuar hacia beta. Hallazgo al revisar recorrido: rendicion 
 07/11/2026 - Correccion de bidones: migracion 20261107165540 aplicada por MCP; RPC solo jefe, sin acceso anonimo, sin cambiar datos comerciales al instalar. 143 pruebas relacionadas y build aprobados antes de ultima regresion UI integrada. Publicacion pendiente. Cambios anteriores de futura baja siguen separados sin publicar.
 
 07/11/2026 - Validacion de la entrega aislada de cambios pendientes anteriores: 142/142 pruebas SQL/UI aprobadas, build correcto. Ajuste conserva 600 unidades al pasar 0->2->4->1->0; comprueba saldo cambiado, stock insuficiente, reintento estable y aislamiento entre empresas. Sin alterar cantidades reales para QA.
+
+07/11/2026 - Publicado 74533e4: GitHub Actions 42393864232 success y Workers Builds success. Web HTTP 200, AccountWorkspace-B_t0YSjD.js incluye inventory_correct_customer_containers. Backend 20261107165540 y permisos verificados. 142 pruebas de entrega aislada aprobadas; revision visual autenticada pendiente. Ninguna cantidad real modificada para QA.
