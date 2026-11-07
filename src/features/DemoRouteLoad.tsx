@@ -1,8 +1,9 @@
+import {currency} from '../domain/demo';
 import {useState} from 'react';
 import type {Client,DemoProgramState,Trip} from '../domain/programDemo';
 import {routeLoadSuggestion} from '../domain/routeLoadDemo';
 export function DemoUsualItems({state:s,client}:{state:DemoProgramState;client?:Client}){
- return <fieldset className="customer-profile"><legend>Cantidades habituales para preparar el camión</legend><p>Estas cantidades permiten sugerir la carga del recorrido. La descripción escrita se conserva.</p>{s.products.filter(p=>p.active&&p.kind==='sale').map(p=><label key={p.id}>{p.name}<input aria-label={`Pedido habitual · ${p.name}`} name={`usual-${p.id}`} type="number" min="0" max="100000" defaultValue={client?.usualItems?.[p.id]||0}/></label>)}</fieldset>;
+ return <fieldset className="customer-profile"><legend>Cantidades habituales para preparar el camión</legend><p>Estas cantidades permiten sugerir la carga del recorrido. La descripción escrita se conserva.</p>{s.products.filter(p=>p.active&&p.kind==='sale').map(p=><label key={p.id}>{p.name}<input aria-label={`Pedido habitual · ${p.name}`} name={`usual-${p.id}`} type="number" min="0" max="100000" defaultValue={client?.usualItems?.[p.id]||0}/></label>)}{(s.saleCombos||[]).filter(c=>c.active).map(c=><label key={c.id}>{c.name} - {currency(Number(c.price)*100)} por promo<input aria-label={`Promo habitual - ${c.name}`} name={`usual-combo-${c.id}`} type="number" min="0" max="100000" defaultValue={client?.usualCombos?.[c.id]||0}/></label>)}</fieldset>;
 }
 export function DemoLoadSuggestion({state:s,trip}:{state:DemoProgramState;trip:Pick<Trip,'stops'|'plannedEquipment'>}){
  const {quantities,missing}=routeLoadSuggestion(s,trip);

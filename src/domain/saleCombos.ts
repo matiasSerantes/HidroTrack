@@ -1,4 +1,4 @@
-export type SaleCombo={id:string;name:string;price:number;version:number;active:boolean;available:number;items:{product_id:string;quantity:number}[]};
+export type SaleCombo={usual_quantity?:number;id:string;name:string;price:number;version:number;active:boolean;available:number;items:{product_id:string;quantity:number}[]};
 export type ComboProduct={id:string;name:string;price:number;ready:number;held:number;active:boolean;returnable:boolean};
 export function comboUnits(combo:Pick<SaleCombo,'items'>,stock:(id:string)=>number){return Math.max(0,Math.min(...combo.items.map(i=>Math.floor(stock(i.product_id)/Number(i.quantity)))));}
 export function comboDelivery(products:ComboProduct[],quantities:Record<string,{quantity:number;returned:number}>,combos:SaleCombo[],selection:Record<string,number>){

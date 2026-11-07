@@ -5,7 +5,8 @@ export function routeLoadSuggestion(s:DemoProgramState,t:Pick<Trip,'stops'|'plan
   const c=s.clients.find(c=>c.id===stop.clientId&&c.active);
   if(!c||pendingDemoRecovery(s,c.id))continue;
   const extra=stop.extraVisitId?s.extraVisits?.find(v=>v.id===stop.extraVisitId):undefined;
-  const items=extra?{[extra.productId]:extra.quantity}:c.usualItems;
+  const items:Record<string,number>=extra?{[extra.productId]:extra.quantity}:{...c.usualItems};
+  if(!extra)for(const [id,n] of Object.entries(c.usualCombos||{})){const combo=s.saleCombos?.find(v=>v.id===id&&v.active&&v.items.every(i=>s.products.some(p=>p.id===i.product_id&&p.active&&p.kind==='sale')));if(combo&&n>0)for(const part of combo.items)items[part.product_id]=(items[part.product_id]||0)+n*part.quantity;}
   if(!items||!Object.values(items).some(n=>n>0))missing.push(c.name);
   for(const [id,n] of Object.entries(items||{})){if(s.products.some(p=>p.id===id&&p.active&&p.kind==='sale'))quantities[id]=(quantities[id]||0)+n;}
  }

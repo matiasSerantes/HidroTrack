@@ -27,3 +27,12 @@ La venta guarda nombre, versión, composición, cantidades y precio del combo us
 Los kits de prueba para personas que aún no son clientes conservan su circuito separado: no son estos combos vendidos.
 
 La demo permite crear combos ficticios en Promociones y usarlos en Atender cliente. No toca la base real.
+
+
+## Promo habitual de un cliente
+
+En Planilla > Visitas y pedido habitual > Producto habitual, elegir la promo en el grupo Promociones. En Promos por visita escribir 1 para una promo por visita. Ejemplo: una promo de dos bidones de 12 L suma dos bidones de 12 L a la sugerencia de carga; no suma un bidon de 20 L por tener ese precio. Se usa el precio definido en Promociones al registrar la venta, no al configurar el habito.
+
+Guardar cero quita esa preferencia. Si la promo reemplaza un producto habitual anterior, quitar tambien ese anterior con cero para no sumar los dos. Los pedidos extraordinarios asignados reemplazan el habitual completo durante esa visita. La planilla de atencion recuerda la cantidad habitual de promos; el chofer sigue confirmando lo realmente entregado.
+
+Editar la composicion del combo actualiza futuras sugerencias; desactivarlo o retirar un ingrediente lo deja fuera de sugerencias sin borrar ventas anteriores. Siempre revisar la carga. No modifica stock, envases ni deuda al guardar el habito. La demo ofrece el mismo campo de promo habitual y expansion de carga ficticia.

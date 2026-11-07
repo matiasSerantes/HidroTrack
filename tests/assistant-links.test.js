@@ -3,6 +3,23 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('promo habitual sugiere sus bidones y no crea venta, cobro ni envases',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID(),combo=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Bidon 12',100,'unidad',true)",[tenant,product]);await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:10}])]);await db.query("select public.owner_save_sale_combo($1,$2,$3,0,'Dos de 12',150,$4,true)",[tenant,crypto.randomUUID(),combo,JSON.stringify([{product_id:product,quantity:2}])]);
+ await db.query('insert into public.customer_combo_preferences values($1,$2,$3,1)',[tenant,customer,combo]);expect((await db.query('select quantity from public.customer_load_preferences where customer_id=$1 and product_id=$2',[customer,product])).rows[0].quantity).toBe(2);
+ expect((await db.query('select * from public.sales')).rows).toHaveLength(0);expect((await db.query('select * from public.inventory_customer_containers')).rows).toHaveLength(0);
+ await db.query('select public.promotion_set_permission($1,$2,$3,true)',[tenant,crypto.randomUUID(),driver]);await actor(driver);const options=(await db.query('select public.assistant_load_options($1,$2) result',[tenant,trip])).rows[0].result;expect(options.products.find(p=>p.id===product).suggested).toBe(2);
+ await denied(()=>db.query('insert into public.customer_combo_preferences values($1,$2,$3,2)',[tenant,customer,combo]),/permission|row-level|duplic|Promo no disponible/);
+ await actor(otherOwner);expect((await db.query('select * from public.customer_combo_preferences')).rows).toHaveLength(0);
+});
+it('planilla indica promo habitual y desactivarla conserva historial pero deja de sugerirla',async()=>{
+ const v=await comboFixture();await actor(owner);await db.query('insert into public.customer_combo_preferences values($1,$2,$3,2)',[tenant,v.customer,v.combo]);await actor(driver);expect((await visitDetail(v)).combos[0].usual_quantity).toBe(2);
+ await actor(owner);await db.query("select public.owner_save_sale_combo($1,$2,$3,1,'Dos',150,$4,false)",[tenant,crypto.randomUUID(),v.combo,v.comboItems]);expect((await db.query('select * from public.customer_load_preferences where customer_id=$1',[v.customer])).rows).toHaveLength(0);await denied(()=>db.query('update public.customer_combo_preferences set quantity=3 where customer_id=$1',[v.customer]),/Promo no disponible/);await db.query('delete from public.customer_combo_preferences where customer_id=$1',[v.customer]);
+});
+
+
+
+
 async function sheetCommand(action,args,{id=crypto.randomUUID(),at='2026-11-07T13:11:12.345Z',zone='America/Argentina/Buenos_Aires'}={}){return db.query('select public.owner_customer_sheet_command($1,$2,$3,$4,$5,$6) result',[tenant,id,action,JSON.stringify(args),at,zone]);}
 it('reloj de dispositivo no reemplaza auditoria de servidor y reintento conserva la captura original',async()=>{
  const v=await comboFixture(),operation=crypto.randomUUID(),request=crypto.randomUUID();await actor(owner);const args={p_tenant:tenant,p_id:operation,p_customer:v.customer,p_product:v.product,p_expected:2,p_quantity:3,p_source:'depot_ready',p_date:'2026-11-07',p_note:'Conteo anterior'};

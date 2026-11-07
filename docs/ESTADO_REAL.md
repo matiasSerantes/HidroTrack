@@ -426,3 +426,6 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 
 
 07/11/2026 - Direccion del cliente se completa al elegir resultado de busqueda en mapa, en cuenta real, propuestas y demo. Solo buscar no modifica el formulario; ajuste del pin/GPS conserva texto editado. Aviso si falta altura o se acorta al maximo permitido. Sin migraciones ni cambios de clientes existentes. Publicacion en NOTAS.md.
+
+
+07/11/2026 - Promociones en pedido habitual: cantidad de combos por cliente y expansion a articulos fisicos para carga del jefe/asistente; pedidos extraordinarios reemplazan el habitual. Atender cliente recuerda promos habituales sin registrar entrega automatica. Habito no modifica ventas/deudas/envases. Demo permite configurarlo y sugerir su carga ficticia. Guia COMBOS.md; publicacion en NOTAS.md.

@@ -26,7 +26,7 @@ export function OwnerLoadSuggestion({client,tenantId,tripId,products,available,f
    // Count + pagination avoids treating PostgREST's row limit as the whole list.
    const habits:{customer_id:string;product_id:string;quantity:number}[]=[];let expected:number|null=null;
    for(let offset=0;;){
-    const page=await client.from('customer_product_preferences').select('customer_id,product_id,quantity',{count:'exact'}).eq('tenant_id',tenantId).in('customer_id',eligible).order('customer_id').order('product_id').range(offset,offset+499);
+    const page=await client.from('customer_load_preferences').select('customer_id,product_id,quantity',{count:'exact'}).eq('tenant_id',tenantId).in('customer_id',eligible).order('customer_id').order('product_id').range(offset,offset+499);
     if(page.error||page.count===null||page.count>100000||(expected!==null&&expected!==page.count))throw new Error();
     if(!active)return;
     expected=page.count;habits.push(...(page.data??[]));offset=habits.length;
