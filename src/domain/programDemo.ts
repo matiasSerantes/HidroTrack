@@ -1,3 +1,4 @@
+import {comboDelivery,type SaleCombo} from './saleCombos';
 import type { Promotion } from './promotionsDemo';
 import { buildDemoTripReceipt, type DemoTripReceipt } from './tripReceiptDemo';
 import { routeLoadSuggestion } from './routeLoadDemo';
@@ -16,9 +17,9 @@ export type Member = { promotionAllowed?:boolean; id: string; name: string; role
 export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
 export type Trip = { acceptance?:'pending'|'accepted'|'rejected'; receipt?:DemoTripReceipt; plannedEquipment?:Record<string,number>;loadRecommendation?:Record<string,number>;loadPlan?:Record<string,number>;loadExtras?:Record<string,number>; date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
-export type Sale = { date?:string; id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
+export type Sale = { combos?:{name:string;quantity:number;price:number}[]; date?:string; id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
 export type Request = { id: string; kind: 'customer' | 'product' | 'user' | 'deactivation' | 'credit'; title: string; authorId: string; status: 'pending' | 'approved' | 'rejected'; saleId?: string; amount?: number; clientId?: string; reason?: string; returns?: { rentalId: string; returned: boolean; good: boolean }[]; client?: Client; product?: Product; member?: Member };
-export type DemoProgramState = { promotions?:Promotion[]; extraVisits?:ExtraVisit[]; dispenserChanges?:DispenserChange[]; fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string;photo?:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { recipientId?:string; id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
+export type DemoProgramState = { saleCombos?:SaleCombo[]; promotions?:Promotion[]; extraVisits?:ExtraVisit[]; dispenserChanges?:DispenserChange[]; fillingCost?:{enabled:boolean}; assistantPlan?: 'basic'|'intermediate'|'unlimited'; assistantAccounts?: {id:string;name:string;email:string;photo?:string}[]; otherEmployerLinks?: {accountId:string;company:string}[]; stockEvents?:StockEvent[]; version: 1; company: { name: string; initials: string; locality: string; logo?: string }; clients: Client[]; products: Product[]; members: Member[]; trips: Trip[]; sales: Sale[]; requests: Request[]; notices: { recipientId?:string; id: string; text: string; read: boolean }[]; depotEmpties: Record<string, number>; loanExampleAdded?: boolean; presence?: Record<string, { clientId: string; time: string; attending: boolean }> };
 export const uid = () => crypto.randomUUID();
 export const pendingDemoRecovery = (s: DemoProgramState, clientId: string) => s.requests.some(r => r.kind === 'deactivation' && r.clientId === clientId && r.status === 'pending');
 export function demoOwnedStock(s: DemoProgramState, productId: string) {
@@ -115,7 +116,7 @@ export function readProgram(): DemoProgramState {
 }
 function integer(n: number) { if (!Number.isSafeInteger(n) || n < 0 || n > 100000) throw new Error('Usá cantidades enteras entre 0 y 100.000.'); }
 function notify(s: DemoProgramState, text: string) { s.notices.unshift({ id: uid(), text, read: false }); }
-export function recordVisit(state: DemoProgramState, input: { tripId: string; clientId: string; actorId: string; items: { productId: string; quantity: number; returned: number }[]; rentalIds?: string[]; paid: string; method: Sale['method']; dispenserChange?:{rentalId:string;productId:string;condition:'good'|'damaged'} }): DemoProgramState {
+export function recordVisit(state: DemoProgramState, input: { combos?:Record<string,number>; tripId: string; clientId: string; actorId: string; items: { productId: string; quantity: number; returned: number }[]; rentalIds?: string[]; paid: string; method: Sale['method']; dispenserChange?:{rentalId:string;productId:string;condition:'good'|'damaged'} }): DemoProgramState {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === input.tripId), client = s.clients.find(c => c.id === input.clientId);
   if (!trip || !client?.active || trip.stage !== 'active') throw new Error('Necesitás un reparto activo y un cliente habilitado.');
   if (input.actorId !== 'owner' && (trip.driverId !== input.actorId||trip.acceptance==='pending'||trip.acceptance==='rejected')) throw new Error('Este reparto no está asignado a tu usuario.');
@@ -123,9 +124,14 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   if (!member?.active) throw new Error('El usuario está desactivado.');
   const visit = trip.stops.find(p => p.clientId === client.id);
   if (!visit || !['pending', 'later'].includes(visit.status)) throw new Error('La parada ya fue resuelta o no pertenece al reparto.');
+  const chosen=(s.saleCombos||[]).filter(c=>(input.combos?.[c.id]||0)>0);
+  if(chosen.length&&input.actorId!=='owner'&&!member.promotionAllowed)throw new Error('El jefe debe habilitar promociones.');
+  if(chosen.some(c=>!c.active)||Object.keys(input.combos||{}).some(id=>(input.combos![id]||0)>0&&!chosen.some(c=>c.id===id)))throw new Error('Combo no disponible.');
+  const comboCalc=chosen.length?comboDelivery(s.products.filter(p=>p.active).map(p=>({...p,price:p.price/100,ready:trip.stock[p.id]||0,held:client.held[p.id]||0})),Object.fromEntries(input.items.map(i=>[i.productId,{quantity:i.quantity,returned:i.returned}])),chosen,input.combos||{}):null;
+  const physical=comboCalc?comboCalc.items.map(i=>({productId:i.product_id,quantity:i.quantity,returned:i.returned})):input.items;
   const items: SaleItem[] = [], ids = new Set<string>(), newRentals: string[] = [];
-  if (pendingDemoRecovery(s, client.id) && input.items.some(i => i.quantity > 0)) throw new Error('Futura baja: solo recuperar artículos y cobrar pendientes.');
-  for (const item of input.items) {
+  if (pendingDemoRecovery(s, client.id) && physical.some(i => i.quantity > 0)) throw new Error('Futura baja: solo recuperar artículos y cobrar pendientes.');
+  for (const item of physical) {
     integer(item.quantity); integer(item.returned);
     if (ids.has(item.productId)) throw new Error('El artículo está repetido.');
     ids.add(item.productId);
@@ -154,7 +160,7 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   const rentalIds = [...new Set(input.rentalIds || [])];
   const rentalFee = rentalIds.reduce((sum, id) => { const rental = client.rentals.find(r => r.id === id); if (!rental || s.sales.some(sale => sale.rentalIds?.includes(id))) throw new Error('El alquiler ya se cobró en el período demo o no pertenece al cliente.'); return sum + rental.monthly; }, 0);
   rentalIds.push(...newRentals);
-  const total = items.reduce((a, i) => a + i.price * i.quantity, 0) + rentalFee, paid = parseMoney(input.paid), before = client.debt;
+  const total = (comboCalc?.total??items.reduce((a, i) => a + i.price * i.quantity, 0)) + rentalFee, paid = parseMoney(input.paid), before = client.debt;
   if (!Number.isSafeInteger(total) || !Number.isSafeInteger(before + total)) throw new Error('El importe excede el rango permitido para la demo.');
   if (paid > total + before) throw new Error('El cobro supera la venta más la deuda anterior.');
   if (!items.length && !paid && !rentalFee && !input.dispenserChange) throw new Error('Cargá una entrega, devolución o cobro; para una visita sin operación usá «No compró».');
@@ -162,7 +168,7 @@ export function recordVisit(state: DemoProgramState, input: { tripId: string; cl
   if(visit.extraVisitId){const extra=s.extraVisits?.find(v=>v.id===visit.extraVisitId);if(extra)extra.status='completed';}
   client.debt = before - Math.max(paid - total, 0) + (approved ? unpaid : 0); visit.status = 'visited'; delete visit.rescheduleDate;
   const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' });
-  s.sales.unshift({ date:trip.date||demoDay, id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
+  s.sales.unshift({ ...(chosen.length?{combos:chosen.map(c=>({name:c.name,price:c.price,quantity:input.combos![c.id]}))}:{}),date:trip.date||demoDay, id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
   if (unpaid && !approved) {
     s.requests.unshift({ id: uid(), kind: 'credit', saleId, amount: unpaid, clientId: client.id, authorId: input.actorId, status: 'pending', title: `Deuda solicitada · ${client.name}` });
   }

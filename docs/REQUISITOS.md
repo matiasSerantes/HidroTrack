@@ -547,3 +547,6 @@ Compartir GPS solo por accion explicita del asistente en mapa visible y reparto 
 
 ## 2026-11-02 - Acuerdo de alquiler por jefe
 El usuario aclara que cada jefe acuerda el alquiler por dispenser y puede editarlo si no lo configuro correctamente. Importe mensual y condiciones por contrato, en asignacion y luego en planilla. Sin prorrateo global; cargos ya generados se conservan. Generar cuota es una accion explicita, no debito automatico. Asignacion y acuerdo se confirman juntos; cuota por periodo idempotente, precio y contrato esperados, cobro en cuenta corriente.
+
+
+07/11/2026 - Combos con precio especial para clientes: el jefe crea/edita/desactiva nombre, precio y composicion reutilizable. Atender cliente permite combos mas unidades sueltas, con stock fisico compartido del camion y envases completos. Asistentes requieren permiso promocional; historial conserva precio/composicion y reintentos estables. Demo permite crearlos y venderlos con datos ficticios. Implementacion y publicacion se detallan en NOTAS.md; guia COMBOS.md.

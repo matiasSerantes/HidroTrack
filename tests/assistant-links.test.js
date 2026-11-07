@@ -2,6 +2,56 @@ import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
+
+
+it('jefe usa combo en reparto propio y aprueba saldo sin exigir permiso de asistente',async()=>{
+ const v=await comboFixture(false);await db.exec('reset role');await db.query('update public.inventory_trips set driver_id=$1 where tenant_id=$2 and id=$3',[owner,tenant,v.trip]);await actor(owner);
+ expect((await visitDetail(v)).combos[0].id).toBe(v.combo);expect(await deliverCombo(v)).toMatchObject({total:250,remaining:150,credit_status:'approved'});
+});
+it('combo gratuito conserva stock y no crea cobro o deuda ficticia',async()=>{
+ const v=await comboFixture();await actor(owner);await db.query("select public.owner_save_sale_combo($1,$2,$3,1,'Gratis',0,$4,true)",[tenant,crypto.randomUUID(),v.combo,v.comboItems]);await actor(driver);
+ const result=(await db.query("select public.assistant_deliver_with_combos($1,$2,$3,$4,1,$5,0,0,null,'',$6) result",[tenant,v.id,v.trip,v.customer,JSON.stringify([{product_id:v.product,quantity:2,returned:0}]),JSON.stringify([{id:v.combo,version:2,quantity:1}])])).rows[0].result;
+ expect(result).toMatchObject({total:0,paid:0,remaining:0});await actor(owner);expect((await db.query('select * from public.payments')).rows).toHaveLength(0);expect((await db.query('select * from public.credit_requests')).rows).toHaveLength(0);expect((await db.query('select ready from public.inventory_truck_stock where trip_id=$1 and product_id=$2',[v.trip,v.product])).rows[0].ready).toBe(3);
+});
+
+async function comboFixture(allow=true){
+ const v=await deliveryFixture(),combo=crypto.randomUUID();await actor(owner);
+ const items=JSON.stringify([{product_id:v.product,quantity:2}]);
+ await db.query("select public.owner_save_sale_combo($1,$2,$3,0,'Dos bidones',150,$4,true)",[tenant,crypto.randomUUID(),combo,items]);
+ if(allow)await db.query('select public.promotion_set_permission($1,$2,$3,true)',[tenant,crypto.randomUUID(),driver]);
+ await actor(driver);return {...v,combo,comboItems:items};
+}
+async function deliverCombo(v,{q=3,total=250,version=1,id=v.id,comboVersion=1,paid=100}={}){return (await db.query("select public.assistant_deliver_with_combos($1,$2,$3,$4,$5,$6,$7,$8,'cash','Combo de prueba',$9) result",[tenant,id,v.trip,v.customer,version,JSON.stringify([{product_id:v.product,quantity:q,returned:1}]),total,paid,JSON.stringify([{id:v.combo,version:comboVersion,quantity:1}])])).rows[0].result;}
+it('combo mas suelto cobra precio pactado y mueve todos los envases una sola vez',async()=>{
+ const v=await comboFixture();expect((await visitDetail(v)).combos[0]).toMatchObject({id:v.combo,available:2,price:150});
+ const receipt=await deliverCombo(v);expect(receipt).toMatchObject({total:250,paid:100,remaining:150,credit_status:'pending'});expect(await deliverCombo(v)).toEqual(receipt);
+ await actor(owner);const stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.product])).rows[0];expect([Number(stock.truck_ready),Number(stock.in_customers)]).toEqual([2,4]);
+ expect((await db.query('select quantity,unit_price from public.sale_items where sale_id=$1',[v.id])).rows[0]).toEqual({quantity:1,unit_price:'100.00'});
+ expect((await db.query('select price,quantity from public.sale_combo_lines where sale_id=$1',[v.id])).rows[0]).toEqual({price:'150.00',quantity:1});
+ await db.query("select public.owner_save_sale_combo($1,$2,$3,1,'Dos bidones nuevo',120,$4,false)",[tenant,crypto.randomUUID(),v.combo,v.comboItems]);
+ await actor(driver);expect(await deliverCombo(v)).toEqual(receipt);expect((await visitDetail(v)).combos).toEqual([]);
+});
+it('combos sin permiso no se muestran ni se venden, tampoco por otra empresa',async()=>{
+ const v=await comboFixture(false);expect((await visitDetail(v)).combos).toEqual([]);await denied(()=>deliverCombo(v),/habilitar promociones/);
+ await actor(driver);await denied(()=>db.query("select public.owner_save_sale_combo($1,$2,$3,0,'No',1,$4,true)",[tenant,crypto.randomUUID(),crypto.randomUUID(),v.comboItems]),/Solo el jefe/);
+ await actor(otherOwner);await denied(()=>db.query('select public.owner_sale_combos($1)',[tenant]),/Solo el jefe/);
+});
+it('precio o composicion cambiados obligan a actualizar; no deja entrega parcial',async()=>{
+ const v=await comboFixture();await actor(owner);await db.query("select public.owner_save_sale_combo($1,$2,$3,1,'Dos',120,$4,true)",[tenant,crypto.randomUUID(),v.combo,v.comboItems]);await actor(driver);
+ await denied(()=>deliverCombo(v),/combo cambio/);await denied(()=>deliverCombo(v,{comboVersion:2,total:250}),/precio cambio/);
+ await denied(()=>deliverCombo(v,{comboVersion:2,q:1,total:120}),/no cubren/);
+ expect((await visitDetail(v)).products[0]).toMatchObject({ready:5,held:2});
+ expect((await deliverCombo(v,{comboVersion:2,total:220})).total).toBe(220);
+});
+it('stock compartido entre combos y sueltos se valida en total y sin duplicar al guardar combo',async()=>{
+ const v=await comboFixture(),request=crypto.randomUUID();await actor(owner);const combo=crypto.randomUUID(),args=[tenant,request,combo,JSON.stringify([{product_id:v.product,quantity:4}])];
+ const save=()=>db.query("select public.owner_save_sale_combo($1,$2,$3,0,'Cuatro',300,$4,true)",args);await save();await save();expect((await db.query('select public.owner_sale_combos($1) list',[tenant])).rows[0].list).toHaveLength(2);
+ await actor(driver);await denied(()=>deliverCombo(v,{q:6,total:550}),/Stock insuficiente/);
+ await db.exec('reset role');await db.query('update public.tenant_members set promotion_allowed=false where tenant_id=$1 and user_id=$2',[tenant,driver]);await actor(driver);await denied(()=>deliverCombo(v),/habilitar promociones/);
+});
+
+
+
 it('corrige conteo de bidones varias veces el mismo dia sin duplicar patrimonio ni ventas',async()=>{
  await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
  await db.query("select public.catalog_create_item($1,$2,'Bidon',100,'unidad',true,'article')",[tenant,product]);

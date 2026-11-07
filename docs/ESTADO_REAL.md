@@ -411,3 +411,6 @@ Usuario confirma que Waze y Google Maps toman correctamente los destinos en la p
 
 
 07/11/2026 - Planilla real: Corregir cantidad de bidones permite fijar total actual, repetir el mismo dia y devolver diferencias al deposito. Conserva patrimonio, ventas y deuda mediante movimiento compensatorio y saldo esperado. No es una entrega ni venta. Demo conserva su circuito ficticio de entregas/devoluciones; este ajuste administrativo se valida en cuenta real. Guia: CORREGIR_BIDONES.md.
+
+
+07/11/2026 - Combos con precio especial para clientes: el jefe crea/edita/desactiva nombre, precio y composicion reutilizable. Atender cliente permite combos mas unidades sueltas, con stock fisico compartido del camion y envases completos. Asistentes requieren permiso promocional; historial conserva precio/composicion y reintentos estables. Demo permite crearlos y venderlos con datos ficticios. Implementacion y publicacion se detallan en NOTAS.md; guia COMBOS.md.
