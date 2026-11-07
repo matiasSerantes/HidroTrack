@@ -4,15 +4,17 @@ import {afterEach,it,expect,vi} from 'vitest';
 import {cleanup,render,screen,fireEvent,waitFor} from '@testing-library/react';
 import {OwnerCustomerSheet} from '../src/features/OwnerCustomerSheet';
 afterEach(cleanup);
+function logicalCalls(client){return client.rpc.mock.calls.map(([name,args])=>name==='owner_customer_sheet_command'?[args.p_action,args.p_args]:[name,args]);}
 const emptyRentals={data:{as_of:'2026-11-02',contracts:[],charges:[]},error:null};
 it('separa fecha historica de compra de la fecha de carga en el sistema',()=>{
  fixture(false,{customerSince:'2019-06-12',createdAt:'2026-10-30T15:00:00Z'});
  expect(screen.getByText('Cliente desde: 12/06/2019')).toBeTruthy();
  expect(screen.getByText(/Cargado en HidroTrack: 30\/10\/2026/)).toBeTruthy();
 });
-function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,customerSince,createdAt,history=false}={}){
+function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,customerSince,createdAt,history=false,combos=false}={}){
   const calls=[],onLock=vi.fn();
   const records={products:[{id:'b20',name:'Bidón 20 litros',active:true,returnable:true},{id:'b12',name:'Bidón 12 litros',active:true,returnable:true}],inventory_customer_containers:[{product_id:'b20',quantity:2}],inventory_operations:[],dispensers:[{id:'available',name:'Frío calor',serial:'FC-1',ownership:'company',location:'depot',customer_id:null,monthly:0},{id:'private',name:'Equipo particular',serial:'P-1',ownership:'customer',location:'customer',customer_id:'client-a',mode:'customer_owned',monthly:0},{id:'other',name:'Equipo de otro cliente',ownership:'company',location:'customer',customer_id:'client-b',monthly:0}]};
+  records.sale_combos=combos?[{id:'promo-a',name:'Promo doble',active:true,version:1,price:100,items:[{product_id:'b20',quantity:2}]}]:[];
   records.user_profiles=history?[{user_id:'owner-a',full_name:'Jefe de prueba'},{user_id:'driver-a',full_name:'Chofer de prueba'}]:[];
   if(history){records.inventory_operations=[{id:'movement-a',kind:'delivery',actor_id:'driver-a',trip_id:'route-a',created_at:'2026-11-07T12:00:00Z',note:'Entrega del chofer',items:[]},{id:'movement-b',kind:'opening_customer',actor_id:'owner-a',trip_id:null,created_at:'2026-11-07T11:00:00Z',note:'Conteo del jefe',items:[]}];}
   records.inventory_owned_stock=model?[{product_id:'model',depot_ready:unavailable?0:2}]:[];
@@ -20,7 +22,7 @@ function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,cu
   if(model)records.products.push({id:'model',name:'Dispenser básico',family:'dispenser',active:true,returnable:false});
   if(unavailable)records.dispensers.push({id:'broken',name:'Dispenser roto',serial:'R-1',ownership:'company',location:'depot',retired:true});
   if(noIndividual)records.dispensers=records.dispensers.filter(a=>a.id!=='available');
-  const client={rpc:vi.fn(async(name,args)=>name==='owner_customer_rentals'?emptyRentals:{data:name==='owner_assign_rental_agreement'?args.p_equipment||args.p_id:'ok',error:null}),from:vi.fn(table=>{
+  const client={rpc:vi.fn(async(name,args)=>{if(name==='owner_customer_sheet_command'){name=args.p_action;args=args.p_args;}return name==='owner_customer_rentals'?emptyRentals:{data:name==='owner_assign_rental_agreement'?args.p_equipment||args.p_id:'ok',error:null};}),from:vi.fn(table=>{
     const call={table,filters:[]};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},in:(key,value)=>{call.filters.push([key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table],error:fail?{message:'Sin conexión'}:null}).then(resolve,reject)};return chain;
   })};
   render(<OwnerCustomerSheet client={client} tenantId="tenant-a" userId="owner-a" customer={{id:'client-a',name:'Cliente de prueba',address:'Calle 123',phone:'123',customer_since:customerSince,created_at:createdAt}} onClose={vi.fn()} onEdit={vi.fn()} onLock={onLock}/>);
@@ -32,30 +34,30 @@ it('explica catálogo sin unidades y registra existencias antes de permitir asig
   expect(screen.getByLabelText('Dispenser disponible').disabled).toBe(true);expect(screen.getByRole('button',{name:'Guardar dispenser del cliente'}).disabled).toBe(true);
   fireEvent.click(screen.getByRole('button',{name:'Registrar unidades de dispenser'}));
   fireEvent.change(screen.getByLabelText('Unidades que aún no registraste'),{target:{value:'3'}});
-  client.rpc.mockImplementation(async(name)=>{
+  client.rpc.mockImplementation(async(name,args)=>{if(name==='owner_customer_sheet_command'){name=args.p_action;args=args.p_args;}
     if(name==='inventory_record_stock')records.inventory_owned_stock[0].depot_ready=3;
     if(name==='inventory_assign_dispenser_model')records.inventory_owned_stock[0].depot_ready=2;
     return {data:'ok',error:null};
   });
   fireEvent.click(screen.getByRole('button',{name:'Registrar unidades existentes'}));
   await screen.findByText('Unidades de dispenser registradas. Ahora elegí Asignar dispenser para dejar una en este cliente.');
-  expect(client.rpc).toHaveBeenCalledWith('inventory_record_stock',expect.objectContaining({p_tenant:'tenant-a',p_kind:'receive',p_trip:null,p_customer:null,p_items:[{product_id:'model',quantity:3}]}));
+  expect(logicalCalls(client)).toContainEqual(['inventory_record_stock',expect.objectContaining({p_tenant:'tenant-a',p_kind:'receive',p_trip:null,p_customer:null,p_items:[{product_id:'model',quantity:3}]})]);
   fireEvent.click(screen.getByText('Asignar dispenser'));expect(screen.getByRole('option',{name:'Dispenser básico · 3 disponibles en depósito'})).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Dispenser disponible'),{target:{value:'model:model:depot'}});fireEvent.click(screen.getByText('Guardar dispenser del cliente'));
   await screen.findByText('Dispenser asignado desde stock. Ya no figura disponible.');
-  expect(client.rpc.mock.calls.filter(([name])=>name==='inventory_record_stock')).toHaveLength(1);
+  expect(logicalCalls(client).filter(([name])=>name==='inventory_record_stock')).toHaveLength(1);
   expect(records.inventory_owned_stock[0].depot_ready).toBe(2);
 });
 it('actualiza una ficha abierta cuando el stock se cargó desde otra pantalla',async()=>{
   const {client,records}=fixture(false,{model:true,unavailable:true,noIndividual:true});await screen.findByText('No hay unidades de dispenser disponibles para asignar.');
   records.inventory_owned_stock[0].depot_ready=4;
   fireEvent.click(screen.getByRole('button',{name:'Actualizar disponibilidad'}));await waitFor(()=>expect(screen.getByText('Asignar dispenser').disabled).toBe(false));fireEvent.click(screen.getByText('Asignar dispenser'));
-  expect(await screen.findByRole('option',{name:'Dispenser básico · 4 disponibles en depósito'})).toBeTruthy();expect(client.rpc.mock.calls.filter(([name])=>name!=='owner_customer_rentals')).toHaveLength(0);
+  expect(await screen.findByRole('option',{name:'Dispenser básico · 4 disponibles en depósito'})).toBeTruthy();expect(logicalCalls(client).filter(([name])=>!['owner_customer_rentals'].includes(name))).toHaveLength(0);
 });
 it('abrir asignación vuelve a consultar el stock sin pedir otra carga',async()=>{
   const {client,records}=fixture(false,{model:true,unavailable:true,noIndividual:true});await screen.findByText('No hay unidades de dispenser disponibles para asignar.');
   records.inventory_owned_stock[0].depot_ready=5;fireEvent.click(screen.getByText('Asignar dispenser'));
-  expect(await screen.findByRole('option',{name:'Dispenser básico · 5 disponibles en depósito'})).toBeTruthy();expect(client.rpc.mock.calls.filter(([name])=>name!=='owner_customer_rentals')).toHaveLength(0);
+  expect(await screen.findByRole('option',{name:'Dispenser básico · 5 disponibles en depósito'})).toBeTruthy();expect(logicalCalls(client).filter(([name])=>!['owner_customer_rentals'].includes(name))).toHaveLength(0);
 });
 it('consulta la ficha por empresa y cliente y separa equipos propios del cliente',async()=>{
   const {calls}=fixture();await screen.findByText('2 para devolver');
@@ -72,7 +74,7 @@ it('registra envases anteriores del cliente en una sola apertura con varios art�
   fireEvent.change(screen.getByLabelText('Envases iniciales de Bidón 12 litros'),{target:{value:'2'}});
   fireEvent.click(screen.getByText('Guardar envases iniciales'));
   await screen.findByText('Envases asignados desde el depósito. El total propio no cambió.');
-  expect(client.rpc).toHaveBeenCalledWith('inventory_assign_existing_containers',expect.objectContaining({p_tenant:'tenant-a',p_source:'depot_empty',p_customer:'client-a',p_items:[{product_id:'b20',quantity:4},{product_id:'b12',quantity:2}]}));
+  expect(logicalCalls(client)).toContainEqual(['inventory_assign_existing_containers',expect.objectContaining({p_tenant:'tenant-a',p_source:'depot_empty',p_customer:'client-a',p_items:[{product_id:'b20',quantity:4},{product_id:'b12',quantity:2}]})]);
 });
 it('asigna un dispenser del depósito conservando su identificación y el alquiler',async()=>{
   const {client}=fixture();await screen.findByText('2 para devolver');
@@ -83,7 +85,7 @@ it('asigna un dispenser del depósito conservando su identificación y el alquil
   fireEvent.change(screen.getByLabelText('Cuota mensual ($)'),{target:{value:'12500'}});
   fireEvent.click(screen.getByText('Guardar dispenser del cliente'));
   await screen.findByText('Dispenser y acuerdo de alquiler guardados juntos.');
-  expect(client.rpc).toHaveBeenCalledWith('owner_assign_rental_agreement',expect.objectContaining({p_equipment:'available',p_product:null,p_customer:'client-a',p_trip:null,p_monthly:12500,p_terms:''}));
+  expect(logicalCalls(client)).toContainEqual(['owner_assign_rental_agreement',expect.objectContaining({p_equipment:'available',p_product:null,p_customer:'client-a',p_trip:null,p_monthly:12500,p_terms:''})]);
 });
 it('un error de lectura no presenta los envases como cero ni habilita asignaciones',async()=>{
   const {client,calls}=fixture(true);await screen.findByRole('alert');
@@ -105,7 +107,7 @@ it('el modelo con stock aparece disponible y asignarlo consume una unidad sin vo
   fireEvent.click(screen.getByText('Asignar dispenser'));
   expect(screen.getByRole('option',{name:'Dispenser básico · 2 disponibles en depósito'})).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Dispenser disponible'),{target:{value:'model:model:depot'}});
-  client.rpc.mockImplementation(async name=>{
+  client.rpc.mockImplementation(async(name,args)=>{if(name==='owner_customer_sheet_command'){name=args.p_action;args=args.p_args;}
     if(name==='owner_customer_rentals')return emptyRentals;
     records.inventory_owned_stock[0].depot_ready=1;
     records.dispenser_assignments.push({id:'assignment',product_id:'model',customer_id:'client-a',mode:'loan',monthly:0,status:'active',occurred_on:'2026-10-19'});
@@ -113,8 +115,8 @@ it('el modelo con stock aparece disponible y asignarlo consume una unidad sin vo
   });
   fireEvent.click(screen.getByText('Guardar dispenser del cliente'));
   await screen.findByText('Dispenser asignado desde stock. Ya no figura disponible.');
-  expect(client.rpc).toHaveBeenCalledWith('inventory_assign_dispenser_model',expect.objectContaining({p_product:'model',p_customer:'client-a',p_mode:'loan',p_monthly:0,p_trip:null}));
-  expect(client.rpc.mock.calls.filter(([name])=>name==='inventory_assign_dispenser_model')).toHaveLength(1);
+  expect(logicalCalls(client)).toContainEqual(['inventory_assign_dispenser_model',expect.objectContaining({p_product:'model',p_customer:'client-a',p_mode:'loan',p_monthly:0,p_trip:null})]);
+  expect(logicalCalls(client).filter(([name])=>name==='inventory_assign_dispenser_model')).toHaveLength(1);
   expect(screen.getByRole('button',{name:'Registrar devolución'})).toBeTruthy();
   fireEvent.click(screen.getByText('Asignar dispenser'));
   expect(screen.getByRole('option',{name:'Dispenser básico · 1 disponibles en depósito'})).toBeTruthy();
@@ -123,10 +125,10 @@ it('devolver el modelo desde la planilla lo libera y retira la asignación activ
   const {client,records}=fixture(false,{model:true});
   records.dispenser_assignments.push({id:'assignment',product_id:'model',customer_id:'client-a',mode:'loan',monthly:0,status:'active',occurred_on:'2026-10-18'});
   await screen.findByRole('button',{name:'Registrar devolución'});
-  client.rpc.mockImplementation(async name=>{if(name==='owner_customer_rentals')return emptyRentals;records.dispenser_assignments[0].status='returned';return {data:'ok',error:null};});
+  client.rpc.mockImplementation(async(name,args)=>{if(name==='owner_customer_sheet_command'){name=args.p_action;args=args.p_args;}if(name==='owner_customer_rentals')return emptyRentals;records.dispenser_assignments[0].status='returned';return {data:'ok',error:null};});
   fireEvent.click(screen.getByRole('button',{name:'Registrar devolución'}));
   await screen.findByText('Devolución registrada. El dispenser vuelve a estar disponible en depósito.');
-  expect(client.rpc).toHaveBeenCalledWith('inventory_return_dispenser_model',expect.objectContaining({p_assignment:'assignment',p_tenant:'tenant-a'}));
+  expect(logicalCalls(client)).toContainEqual(['inventory_return_dispenser_model',expect.objectContaining({p_assignment:'assignment',p_tenant:'tenant-a'})]);
   expect(screen.queryByRole('button',{name:'Registrar devolución'})).toBeNull();
 });
 it('no ofrece modelos sin disponibilidad ni equipos retirados por rotura',async()=>{
@@ -143,11 +145,18 @@ it('corrige total de bidones existentes sin repetir apertura',async()=>{
  fireEvent.change(screen.getByLabelText('Total correcto en poder del cliente'),{target:{value:'4'}});
  fireEvent.change(screen.getByLabelText('Motivo de la correcci\u00f3n'),{target:{value:'Error de conteo'}});
  fireEvent.click(screen.getByText('Guardar cantidad correcta'));
- await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_correct_customer_containers',expect.objectContaining({p_customer:'client-a',p_product:'b20',p_expected:2,p_quantity:4,p_source:'depot_empty',p_note:'Error de conteo'})));
+ await waitFor(()=>expect(logicalCalls(client)).toContainEqual(['inventory_correct_customer_containers',expect.objectContaining({p_customer:'client-a',p_product:'b20',p_expected:2,p_quantity:4,p_source:'depot_empty',p_note:'Error de conteo'})]));
 });
 
 it('historial identifica quien registra y el reparto sin confundirlo con el usuario actual',async()=>{
  const {calls}=fixture(false,{history:true});
  await screen.findByText('Registrado por: Chofer de prueba');expect(screen.getByText('Registrado por: Jefe de prueba (vos)')).toBeTruthy();expect(screen.getByText('Reparto: Ruta del lunes')).toBeTruthy();
  expect(calls.find(c=>c.table==='user_profiles').filters).toContainEqual(['user_id',['driver-a','owner-a']]);
+});
+
+it('carga una promo anterior como articulos fisicos y captura reloj del dispositivo',async()=>{
+ const {client}=fixture(false,{combos:true});await screen.findByText('2 para devolver');fireEvent.click(screen.getByText('Registrar bidones que ya tiene'));
+ fireEvent.change(screen.getByLabelText('Promoci\u00f3n para el conteo inicial'),{target:{value:'promo-a'}});fireEvent.change(screen.getByLabelText('Cantidad de promos ya entregadas'),{target:{value:'2'}});fireEvent.click(screen.getByText('Guardar envases iniciales'));await screen.findByText(/Envases asignados desde el dep/);
+ expect(logicalCalls(client)).toContainEqual(['inventory_assign_existing_containers',expect.objectContaining({p_items:[{product_id:'b20',quantity:4}],p_note:'Conteo inicial: 2 x Promo doble'})]);
+ const [,wire]=client.rpc.mock.calls.find(([n])=>n==='owner_customer_sheet_command');expect(Number.isFinite(Date.parse(wire.p_device_at))).toBe(true);expect(wire.p_device_zone).toBeTruthy();
 });

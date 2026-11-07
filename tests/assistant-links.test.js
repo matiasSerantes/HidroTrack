@@ -3,6 +3,29 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+async function sheetCommand(action,args,{id=crypto.randomUUID(),at='2026-11-07T13:11:12.345Z',zone='America/Argentina/Buenos_Aires'}={}){return db.query('select public.owner_customer_sheet_command($1,$2,$3,$4,$5,$6) result',[tenant,id,action,JSON.stringify(args),at,zone]);}
+it('reloj de dispositivo no reemplaza auditoria de servidor y reintento conserva la captura original',async()=>{
+ const v=await comboFixture(),operation=crypto.randomUUID(),request=crypto.randomUUID();await actor(owner);const args={p_tenant:tenant,p_id:operation,p_customer:v.customer,p_product:v.product,p_expected:2,p_quantity:3,p_source:'depot_ready',p_date:'2026-11-07',p_note:'Conteo anterior'};
+ await sheetCommand('inventory_correct_customer_containers',args,{id:request});await sheetCommand('inventory_correct_customer_containers',args,{id:request});
+ const o=(await db.query('select * from public.inventory_operations where id=$1',[operation])).rows[0];expect(new Date(o.device_recorded_at).toISOString()).toBe('2026-11-07T13:11:12.345Z');expect(o.device_time_zone).toBe('America/Argentina/Buenos_Aires');expect(o.created_at).toBeTruthy();
+ await denied(()=>sheetCommand('inventory_correct_customer_containers',args,{id:request,at:'2026-11-07T13:12:00Z'}),/otros datos/);
+ await denied(()=>sheetCommand('owner_remove_customer',{p_tenant:tenant,p_customer:v.customer}),/Operacion no permitida/);await denied(()=>sheetCommand('inventory_correct_customer_containers',{...args,p_tenant:other}),/Empresa invalida/);
+ await actor(driver);await denied(()=>sheetCommand('inventory_correct_customer_containers',args),/Solo el jefe/);
+});
+it('correccion de promo con varios articulos es atomica, sin venta ni duplicar patrimonio',async()=>{
+ const v=await comboFixture();await actor(owner);const secondProduct=crypto.randomUUID();await db.query("select public.inventory_create_product($1,$2,'Otro bidon',120,'unidad',true)",[tenant,secondProduct]);await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:secondProduct,quantity:1}])]);
+ await db.query("select public.owner_save_sale_combo($1,$2,$3,1,'Mixta',180,$4,true)",[tenant,crypto.randomUUID(),v.combo,JSON.stringify([{product_id:v.product,quantity:1},{product_id:secondProduct,quantity:1}])]);
+ const args={p_tenant:tenant,p_id:crypto.randomUUID(),p_customer:v.customer,p_combo:v.combo,p_version:2,p_source:'depot_ready',p_date:'2026-11-07',p_note:'Libreta anterior',p_items:[{product_id:v.product,expected:2,quantity:4},{product_id:secondProduct,expected:0,quantity:2}]};
+ await denied(()=>sheetCommand('inventory_correct_customer_combo',args),/suficientes/);expect((await db.query('select quantity from public.inventory_customer_containers where customer_id=$1 and product_id=$2',[v.customer,v.product])).rows[0].quantity).toBe(2);
+ args.p_items[1].quantity=1;const request=crypto.randomUUID();await sheetCommand('inventory_correct_customer_combo',args,{id:request});await sheetCommand('inventory_correct_customer_combo',args,{id:request});
+ expect((await db.query('select quantity from public.inventory_customer_containers where customer_id=$1 and product_id=$2',[v.customer,v.product])).rows[0].quantity).toBe(4);
+ expect((await db.query('select * from public.sales')).rows).toHaveLength(0);expect((await db.query("select * from public.inventory_operations where note like 'Promo Mixta:%' and device_recorded_at is not null")).rows).toHaveLength(2);
+});
+
+
+
+
+
 
 it('jefe usa combo en reparto propio y aprueba saldo sin exigir permiso de asistente',async()=>{
  const v=await comboFixture(false);await db.exec('reset role');await db.query('update public.inventory_trips set driver_id=$1 where tenant_id=$2 and id=$3',[owner,tenant,v.trip]);await actor(owner);

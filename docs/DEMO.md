@@ -536,3 +536,6 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 
 
 07/11/2026 - Historial de cliente identifica Registrado por y reparto; distingue al usuario conectado con (vos). Lee actor_id existente y perfiles bajo RLS; si no puede leer el nombre conserva referencia al usuario sin atribuirlo al jefe. Demo muestra autor y reparto de ventas ficticias. Sin migraciones ni cambios de cantidades.
+
+
+07/11/2026 - Planilla real: promociones disponibles para conteo historico y correccion por sus envases fisicos; no generan venta/deuda. Nuevas operaciones de planilla guardan hora/zona del dispositivo, conservando servidor y reintento estable. Historial anterior conserva hora servidor. Demo mantiene combos ficticios en entregas; este ingreso administrativo se usa desde cuenta real. Guia CORREGIR_BIDONES.md. Sin validacion integral de beta.
