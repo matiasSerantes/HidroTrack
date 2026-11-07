@@ -96,7 +96,7 @@ describe('panel conectado del titular', () => {
     client.rpc.mockResolvedValue({data:'ok',error:null});
     fireEvent.click(screen.getByText('Reintentar misma operación'));
     await screen.findByText('Envases asignados desde el depósito. El total propio no cambió.');
-    const writes=client.rpc.mock.calls.filter(([name])=>name==='inventory_assign_existing_containers');expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);
+    const writes=client.rpc.mock.calls.filter(([name,args])=>name==='owner_customer_sheet_command'&&args.p_action==='inventory_assign_existing_containers');expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);
   });
   it('ofrece inicio, menú lateral y navegación móvil con las secciones conectadas',async()=>{
     const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
