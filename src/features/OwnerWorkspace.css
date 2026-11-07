@@ -8,7 +8,7 @@
 .hd.owner-real .owner-license-strip button{flex-shrink:0}
 .hd.owner-real .connected-workspace .panel{background:#fff;border:1px solid #c6deed;border-radius:14px;padding:24px;margin:0 0 22px}
 .hd.owner-real .section-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}
-.hd.owner-real .connected-workspace label{display:block;color:var(--ink);font-size:13px;margin:0 0 12px}
+.hd.owner-real .connected-workspace label{display:block;color:var(--ink);font-size:14px;margin:0 0 12px}
 .hd.owner-real .connected-workspace .panel>label{max-width:420px;margin-bottom:20px}
 .hd.owner-real .connected-workspace input,.hd.owner-real .connected-workspace select{margin-top:6px;font-size:14px;background:#fff;color:var(--ink);border-color:#bdd6e6}
 .hd.owner-real .connected-workspace button{min-height:44px;background:#dff1fc;border:1px solid #85bcd9;color:#214f68;border-radius:9px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px #21526c12}
@@ -26,7 +26,7 @@
 .hd.owner-real .owner-stock>header{margin:0 0 18px}
 .hd.owner-real .stock-panel{scroll-margin-top:90px}
 .hd.owner-real .owner-drawer-scrim{display:none}
-.hd.owner-real .hd-quick-grid button small{font-size:11px}
+.hd.owner-real .hd-quick-grid button small{font-size:14px}
 @media(min-width:1500px){.hd.owner-real .connected-workspace{padding:40px 50px}}
 @media(max-width:1100px){.hd.owner-real .connected-workspace{padding:27px 24px}}
 @media(max-width:740px){.hd.owner-real .owner-drawer-scrim{display:block;position:fixed;inset:68px 0 0;z-index:19;border:0;border-radius:0;background:#153c4e60;backdrop-filter:blur(2px)}.hd.owner-real .connected-workspace{padding:24px 16px calc(95px + env(safe-area-inset-bottom,0px))}.hd.owner-real .owner-license-strip{align-items:flex-start;gap:10px;flex-wrap:wrap}.hd.owner-real .section-heading{align-items:flex-start;flex-wrap:wrap}}
@@ -34,7 +34,7 @@
 
 .hd.owner-real .customer-actions{display:flex;flex-wrap:wrap;gap:8px}.hd.owner-real .customer-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #85bcd9;border-radius:9px;padding:9px 12px;background:#dff1fc;color:#214f68}.hd.owner-real .customer-actions .customer-delete{color:#a53f43;border-color:#d9949c;background:#ffeaec}.hd.owner-real .customer-name-link{color:#087f87;font-weight:650;text-align:left}.hd.owner-real .customer-sheet-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.hd.owner-real .customer-sheet-grid>section{background:#f1f9fe;border:1px solid #c5e0ee;border-radius:14px;padding:20px}.hd.owner-real .owner-customer-sheet fieldset{border:0;padding:0;margin:20px 0;min-width:0}.hd.owner-real .customer-held-row{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #d1e6f0;margin-bottom:12px}.hd.owner-real .customer-held-row small{display:block;margin-top:6px;line-height:1.5}.hd.owner-real .customer-form>h3{grid-column:1/-1;margin:0}.hd.owner-real .owner-customer-sheet h3{font-size:18px}@media(max-width:740px){.hd.owner-real .customer-sheet-grid{grid-template-columns:1fr;gap:16px}.hd.owner-real .owner-customers-table,.hd.owner-real .owner-customers-table tbody{display:block;width:100%}.hd.owner-real .owner-customers-table thead{display:none}.hd.owner-real .owner-customers-table tr{display:block;border:1px solid #bedbea;background:#f3faff;border-radius:12px;margin:12px 0;padding:12px}.hd.owner-real .owner-customers-table td{display:block;width:100%;border:0;padding:6px;white-space:normal}.hd.owner-real .owner-customers-table .customer-actions button{flex:1}.hd.owner-real .customer-held-row{flex-wrap:wrap}.hd.owner-real .customer-sheet-grid>section{padding:16px}}
 
-.hd.owner-real .customer-archive-section{margin-top:30px;padding:20px;border:1px solid #edc5c8;border-radius:12px;background:#fff5f6}.hd.owner-real .customer-archive-section p{color:#76575c;font-size:13px;line-height:1.6}
+.hd.owner-real .customer-archive-section{margin-top:30px;padding:20px;border:1px solid #edc5c8;border-radius:12px;background:#fff5f6}.hd.owner-real .customer-archive-section p{color:#76575c;font-size:14px;line-height:1.6}
 
 .admin-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px}.admin-tenant{border-top:1px solid #355266;padding:24px 0}.admin-tenant h3{margin:0 0 8px}.admin-tenant .customer-form{margin-top:20px}.admin-tenant small{display:block}.admin-actions+.notice{margin-bottom:24px}
 .hd.owner-real .customer-search-tools{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:20px 0}.hd.owner-real .customer-search-tools label{flex:1;min-width:220px}.hd.owner-real .customer-debt-badge,.hd.owner-real .customer-balance-badge{display:inline-block;padding:9px 12px;border-radius:9px;background:#e5f5ff;border:1px solid #b3d9ed;color:#215568;font-weight:650}.hd.owner-real .customer-debt-badge{background:#fff2df;color:#874b17;border-color:#eac18d}.hd.owner-real .owner-closed-trips{border:1px solid #a1cee4;background:#eef9ff;padding:18px;border-radius:12px;margin:18px 0}@media(max-width:600px){.hd.owner-real .customer-search-tools{display:grid}.hd.owner-real .customer-search-tools label{min-width:0}.hd.owner-real .customer-search-tools button{width:100%;min-height:44px}}

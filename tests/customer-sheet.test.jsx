@@ -10,18 +10,20 @@ it('separa fecha historica de compra de la fecha de carga en el sistema',()=>{
  expect(screen.getByText('Cliente desde: 12/06/2019')).toBeTruthy();
  expect(screen.getByText(/Cargado en HidroTrack: 30\/10\/2026/)).toBeTruthy();
 });
-function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,customerSince,createdAt}={}){
+function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,customerSince,createdAt,history=false}={}){
   const calls=[],onLock=vi.fn();
   const records={products:[{id:'b20',name:'Bidón 20 litros',active:true,returnable:true},{id:'b12',name:'Bidón 12 litros',active:true,returnable:true}],inventory_customer_containers:[{product_id:'b20',quantity:2}],inventory_operations:[],dispensers:[{id:'available',name:'Frío calor',serial:'FC-1',ownership:'company',location:'depot',customer_id:null,monthly:0},{id:'private',name:'Equipo particular',serial:'P-1',ownership:'customer',location:'customer',customer_id:'client-a',mode:'customer_owned',monthly:0},{id:'other',name:'Equipo de otro cliente',ownership:'company',location:'customer',customer_id:'client-b',monthly:0}]};
+  records.user_profiles=history?[{user_id:'owner-a',full_name:'Jefe de prueba'},{user_id:'driver-a',full_name:'Chofer de prueba'}]:[];
+  if(history){records.inventory_operations=[{id:'movement-a',kind:'delivery',actor_id:'driver-a',trip_id:'route-a',created_at:'2026-11-07T12:00:00Z',note:'Entrega del chofer',items:[]},{id:'movement-b',kind:'opening_customer',actor_id:'owner-a',trip_id:null,created_at:'2026-11-07T11:00:00Z',note:'Conteo del jefe',items:[]}];}
   records.inventory_owned_stock=model?[{product_id:'model',depot_ready:unavailable?0:2}]:[];
-  records.inventory_truck_stock=[];records.inventory_trips=[];records.dispenser_assignments=[];
+  records.inventory_truck_stock=[];records.inventory_trips=history?[{id:'route-a',name:'Ruta del lunes',status:'closed'}]:[];records.dispenser_assignments=[];
   if(model)records.products.push({id:'model',name:'Dispenser básico',family:'dispenser',active:true,returnable:false});
   if(unavailable)records.dispensers.push({id:'broken',name:'Dispenser roto',serial:'R-1',ownership:'company',location:'depot',retired:true});
   if(noIndividual)records.dispensers=records.dispensers.filter(a=>a.id!=='available');
   const client={rpc:vi.fn(async(name,args)=>name==='owner_customer_rentals'?emptyRentals:{data:name==='owner_assign_rental_agreement'?args.p_equipment||args.p_id:'ok',error:null}),from:vi.fn(table=>{
-    const call={table,filters:[]};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table],error:fail?{message:'Sin conexión'}:null}).then(resolve,reject)};return chain;
+    const call={table,filters:[]};calls.push(call);const chain={select:()=>chain,eq:(key,value)=>{call.filters.push([key,value]);return chain;},in:(key,value)=>{call.filters.push([key,value]);return chain;},order:()=>chain,limit:()=>chain,then:(resolve,reject)=>Promise.resolve({data:records[table],error:fail?{message:'Sin conexión'}:null}).then(resolve,reject)};return chain;
   })};
-  render(<OwnerCustomerSheet client={client} tenantId="tenant-a" customer={{id:'client-a',name:'Cliente de prueba',address:'Calle 123',phone:'123',customer_since:customerSince,created_at:createdAt}} onClose={vi.fn()} onEdit={vi.fn()} onLock={onLock}/>);
+  render(<OwnerCustomerSheet client={client} tenantId="tenant-a" userId="owner-a" customer={{id:'client-a',name:'Cliente de prueba',address:'Calle 123',phone:'123',customer_since:customerSince,created_at:createdAt}} onClose={vi.fn()} onEdit={vi.fn()} onLock={onLock}/>);
   return {client,calls,records,setFailure:value=>{fail=value;}};
 }
 it('explica catálogo sin unidades y registra existencias antes de permitir asignar, sin duplicarlas',async()=>{
@@ -142,4 +144,10 @@ it('corrige total de bidones existentes sin repetir apertura',async()=>{
  fireEvent.change(screen.getByLabelText('Motivo de la correcci\u00f3n'),{target:{value:'Error de conteo'}});
  fireEvent.click(screen.getByText('Guardar cantidad correcta'));
  await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('inventory_correct_customer_containers',expect.objectContaining({p_customer:'client-a',p_product:'b20',p_expected:2,p_quantity:4,p_source:'depot_empty',p_note:'Error de conteo'})));
+});
+
+it('historial identifica quien registra y el reparto sin confundirlo con el usuario actual',async()=>{
+ const {calls}=fixture(false,{history:true});
+ await screen.findByText('Registrado por: Chofer de prueba');expect(screen.getByText('Registrado por: Jefe de prueba (vos)')).toBeTruthy();expect(screen.getByText('Reparto: Ruta del lunes')).toBeTruthy();
+ expect(calls.find(c=>c.table==='user_profiles').filters).toContainEqual(['user_id',['driver-a','owner-a']]);
 });

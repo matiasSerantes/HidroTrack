@@ -530,3 +530,9 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 
 
 07/11/2026 - Combos con precio especial para clientes: el jefe crea/edita/desactiva nombre, precio y composicion reutilizable. Atender cliente permite combos mas unidades sueltas, con stock fisico compartido del camion y envases completos. Asistentes requieren permiso promocional; historial conserva precio/composicion y reintentos estables. Demo permite crearlos y venderlos con datos ficticios. Implementacion y publicacion se detallan en NOTAS.md; guia COMBOS.md.
+
+
+07/11/2026 - Legibilidad: detalles, ayudas, tablas y controles antes de 10-13 px pasan a 14 px; etiquetas menores pasan a 12 px. Se conserva 16 px en campos moviles. Mismo criterio en demo y cuenta real, sin cambios de base. Publicacion se registra en NOTAS.md.
+
+
+07/11/2026 - Historial de cliente identifica Registrado por y reparto; distingue al usuario conectado con (vos). Lee actor_id existente y perfiles bajo RLS; si no puede leer el nombre conserva referencia al usuario sin atribuirlo al jefe. Demo muestra autor y reparto de ventas ficticias. Sin migraciones ni cambios de cantidades.
