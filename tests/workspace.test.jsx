@@ -198,3 +198,11 @@ it('muestra deuda directamente y permite buscar sin acentos y por direccion',asy
 it('un error de saldos no indica que el cliente no debe',async()=>{
  const {client}=clientFixture({balanceError:{message:'offline'}});render(<OwnerWorkspace client={client} userId="user-a"/>);await screen.findByText('María');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegación rápida móvil'})).getByRole('button',{name:'Ver clientes'}));await screen.findByText('Saldo sin verificar');expect(screen.queryByText('Sin deuda pendiente')).toBeNull();
 });
+
+it('direccion elegida en mapa se guarda junto al cliente sin volver a escribirla',async()=>{
+ const {client,calls}=clientFixture();vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,json:async()=>({features:[{geometry:{type:'Point',coordinates:[-58.38,-34.61]},properties:{street:'Calle de prueba',housenumber:'3453',city:'Localidad de prueba',countrycode:'AR'}}]})})));
+ try{
+ render(<OwnerWorkspace client={client} userId="user-a"/>);await screen.findByText('Mar\u00eda');fireEvent.click(within(screen.getByRole('navigation',{name:'Navegaci\u00f3n r\u00e1pida m\u00f3vil'})).getByRole('button',{name:'Ver clientes'}));fireEvent.click(screen.getByRole('button',{name:'Nuevo cliente'}));fireEvent.change(screen.getByLabelText('Nombre completo'),{target:{value:'Cliente nuevo'}});fireEvent.change(screen.getByLabelText('Direcci\u00f3n para buscar en el mapa'),{target:{value:'Calle de prueba 3453, Localidad de prueba'}});fireEvent.click(screen.getByRole('button',{name:'Buscar direcci\u00f3n en el mapa'}));fireEvent.click(await screen.findByRole('button',{name:/Calle de prueba 3453, Localidad de prueba/}));
+ expect(screen.getByLabelText('Direcci\u00f3n').value).toBe('Calle de prueba 3453, Localidad de prueba');fireEvent.click(screen.getByRole('button',{name:'Guardar cliente'}));await waitFor(()=>expect(calls.find(c=>c.operation==='insert')?.value).toMatchObject({name:'Cliente nuevo',address:'Calle de prueba 3453, Localidad de prueba',latitude:-34.61,longitude:-58.38}));
+ }finally{vi.unstubAllGlobals();}
+});
