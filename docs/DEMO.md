@@ -524,3 +524,6 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 02/11/2026 - La demo mantiene su mapa ficticio de asistentes. Cuenta real incorpora Mapa de asistentes y compartir GPS voluntario desde mapa visible del recorrido aceptado activo; no usa coordenadas demo como reales. Se?al reciente/progreso y parada seleccionada, sin afirmar presencia. Ver SEGUIMIENTO_ASISTENTES.md.
 
 02/11/2026 - Demo mantiene modalidades prestamo/alquiler y cuotas ficticias, sin facturacion remota. Cuenta real suma acuerdo de importe/condiciones editable por jefe, asignacion atomica y Cuotas de alquiler en planilla; cargo real manual con saldo/pago existentes. Ver ALQUILERES.md.
+
+
+07/11/2026 - Planilla real: Corregir cantidad de bidones permite fijar total actual, repetir el mismo dia y devolver diferencias al deposito. Conserva patrimonio, ventas y deuda mediante movimiento compensatorio y saldo esperado. No es una entrega ni venta. Demo conserva su circuito ficticio de entregas/devoluciones; este ajuste administrativo se valida en cuenta real. Guia: CORREGIR_BIDONES.md.

@@ -2,6 +2,20 @@ import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
+it('corrige conteo de bidones varias veces el mismo dia sin duplicar patrimonio ni ventas',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
+ await db.query("select public.catalog_create_item($1,$2,'Bidon',100,'unidad',true,'article')",[tenant,product]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive_empty',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:600}])]);
+ const change=(expected,quantity,id=crypto.randomUUID(),t=tenant)=>db.query("select public.inventory_correct_customer_containers($1,$2,$3,$4,$5,$6,'depot_empty',current_date,'Corregir conteo')",[t,id,customer,product,expected,quantity]);
+ const first=crypto.randomUUID();await change(0,2,first);await change(0,2,first);
+ await change(2,4);let stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];expect([Number(stock.total_owned),Number(stock.depot_empty),Number(stock.in_customers)]).toEqual([600,596,4]);
+ await denied(()=>change(2,5),/cantidad del cliente cambio/);await denied(()=>change(4,601),/suficientes/);
+ await change(4,1);await change(1,0);await change(0,2,first);stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];expect([Number(stock.total_owned),Number(stock.depot_empty),Number(stock.in_customers)]).toEqual([600,600,0]);
+ await denied(()=>change(0,3,first),/otros datos/);expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
+ await actor(otherOwner);await denied(()=>change(0,1),/Solo el jefe/);await denied(()=>change(0,1,crypto.randomUUID(),other),/Cliente no disponible/);
+});
+
+
 it('equipo individualizado conserva serie y acuerdo; reintentar asignacion no revierte precio editado',async()=>{
  await actor(owner);const equipment=crypto.randomUUID(),request=crypto.randomUUID(),agreement=crypto.randomUUID(),customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
  await db.query("select public.inventory_save_dispenser($1,$2,$3,'Frio calor','SERIE-PRUEBA','company','depot',null,null,null,0)",[tenant,crypto.randomUUID(),equipment]);

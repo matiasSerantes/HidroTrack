@@ -1,0 +1,15 @@
+import {useState,type FormEvent} from 'react';
+import {stockToday,isDispenserModel} from './OwnerStockIncident';
+
+type Product={id:string;name:string;active:boolean;returnable:boolean;family?:string};
+export function CustomerContainerCorrection({products,held,disabled,onSubmit}:{products:Product[];held:{product_id:string;quantity:number}[];disabled:boolean;onSubmit:(value:{product:string;expected:number;quantity:number;source:string;date:string;note:string})=>void}){
+ const [open,setOpen]=useState(false),[selected,setSelected]=useState(''),[error,setError]=useState('');
+ const choices=products.filter(p=>p.returnable&&!isDispenserModel(p)&&(p.active||held.some(h=>h.product_id===p.id&&Number(h.quantity)>0)));
+ const product=selected||choices[0]?.id||'',expected=Number(held.find(h=>h.product_id===product)?.quantity||0);
+ function submit(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();const f=new FormData(e.currentTarget),quantity=Number(f.get('quantity')),note=String(f.get('note')||'').trim();
+  if(!product||!Number.isInteger(quantity)||quantity<0||quantity>100000||quantity===expected||!note){setError('Indicá una cantidad diferente y el motivo de la corrección.');return;}
+  setError('');onSubmit({product,expected,quantity,source:String(f.get('source')),date:String(f.get('date')),note});
+ }
+ return <div><button className="primary" disabled={disabled||!choices.length} aria-expanded={open} onClick={()=>setOpen(v=>!v)}>Corregir cantidad de bidones</button>{open&&<form onSubmit={submit}><fieldset disabled={disabled}><p className="notice">Ingresá el total que tiene el cliente ahora, no la cantidad a sumar. Podés corregir varias veces en el mismo día. La diferencia se mueve entre depósito y cliente; no cambia el total propio, las ventas ni la deuda. Para una entrega real usá Atender cliente en el reparto.</p><label>Artículo a corregir<select value={product} onChange={e=>{setSelected(e.target.value);setError('');}}>{choices.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><p>Registrados actualmente: {expected} bidones</p><label>Total correcto en poder del cliente<input key={`${product}.${expected}`} name="quantity" type="number" min="0" max="100000" step="1" required inputMode="numeric" defaultValue={expected}/></label><label>Depósito para la diferencia<select name="source"><option value="depot_empty">Vacíos: descontar al sumar / devolver al reducir</option><option value="depot_ready">Llenos: descontar al sumar / devolver al reducir</option></select></label><label>Fecha de la corrección<input name="date" type="date" min="1900-01-01" max={stockToday()} defaultValue={stockToday()} required/></label><label>Motivo de la corrección<input name="note" maxLength={400} required placeholder="Me equivoqué al cargar el conteo"/></label>{error&&<p role="alert" className="stock-error">{error}</p>}<button className="primary">Guardar cantidad correcta</button><button type="button" onClick={()=>setOpen(false)}>Cancelar corrección</button></fieldset></form>}</div>;
+}
