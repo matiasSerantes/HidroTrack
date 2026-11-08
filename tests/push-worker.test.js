@@ -31,5 +31,5 @@ it('planificacion invalida no abre enlaces arbitrarios y click usa fecha y empre
 
 it('aviso de manana resume extraordinarias y primera hora sin exponer nombre',async()=>{
  const w=await worker();await w.message({type:'PUSH_SESSION',userId:'u'});await w.push({type:'next-day-planning',tenant_id:'10000000-0000-0000-0000-000000000001',date:'2026-11-09',customer_count:2,extra_count:1,first_extra_time:'18:30',customer:'Nombre privado',has_route:false});
- const body=w.showNotification.mock.calls[0][1].body;expect(body).toContain('1 visitas extraordinarias desde las 18:30');expect(body).not.toContain('Nombre privado');
+ const body=w.showNotification.mock.calls[0][1].body;expect(body).toContain('1 visita extraordinaria desde las 18:30');expect(body).not.toContain('Nombre privado');
 });
