@@ -1,7 +1,7 @@
 import {visitCycleDue} from '../domain/visitPlanning';
 import {lazy,Suspense,useEffect,useState} from 'react';
 import {hasPlanningPoint} from '../domain/planningMap';
-const PlanningMap=lazy(()=>import('./TripPlanningMap').catch(()=>({default:()=> <p role="alert">No pudimos cargar el mapa. Podés seguir eligiendo y ordenando clientes en la lista.</p>}))); 
+const PlanningMap=lazy(()=>import('./TripPlanningMap').catch(()=>({default:()=> <p role="alert">No pudimos cargar el mapa. Podés seguir eligiendo y ordenando clientes en la lista.</p>})));
 import type {SupabaseClient} from '@supabase/supabase-js';
 type Customer={id:string;name:string;address?:string;latitude?:number|null;longitude?:number|null};
 type Window={start_time:string;end_time:string};

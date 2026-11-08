@@ -47,3 +47,19 @@ Pruebas locales de servidor cubren aislamiento de propietarios/asistentes, guard
 Plantillas y orden activos; servicio diario activo, cron correcto cada minuto, limitado a 20:00-21:00 de Argentina por el despachador y por la cola. 45 migraciones instaladas y 53 tablas publicas con RLS. Receptor/controles publicados en AccountWorkspace-uDfJwI5m.js y sw.js. Prueba de cola fuera de horario devuelve cero, ultima ejecucion cron succeeded. Ninguna preferencia se activo ni se enviaron mensajes reales para probar. La recepcion con telefono bloqueado y QA visual autenticada en movil/PC quedan por comprobar con el usuario.
 
 Para deshabilitar el servicio entero en una incidencia, soporte puede poner private.planning_push_config.enabled=false mediante MCP; no cambia preferencias, datos de negocio ni los avisos de horarios. Un despliegue nuevo del esquema lo deja apagado por defecto hasta que se verifique el emisor/receptor y se habilite expresamente.
+
+## Semana por medio
+
+En Clientes > Planilla > Visitas y pedido habitual, mantener el dia habitual (por ejemplo Lunes), elegir Semana por medio en Frecuencia de visita, indicar la primera fecha en la que corresponde visitar y Guardar frecuencia. Se conserva lunes si/lunes no. Todas las semanas vuelve a la frecuencia semanal.
+
+Proxima fecha, seleccion de clientes al preparar el reparto, agenda de manana y recordatorio opt-in de las 20 respetan esa frecuencia. Cargar una plantilla o agregar una excepcion permite incluirlo manualmente; revisar antes de guardar. No se modifican repartos existentes.
+
+## Organizar en el mapa
+
+1. En Repartos, completar fecha y nombre del nuevo reparto.
+2. Tocar Abrir mapa para organizar el reparto. Solo se muestran puntos registrados; quien no tiene ubicacion sigue en la lista.
+3. Tocar un punto para agregar o quitar al cliente. Los elegidos se numeran segun el orden actual.
+4. Usar Subir/Bajar en la lista para cambiar el orden. El mapa se actualiza con la misma numeracion.
+5. Revisar horarios, clientes sin punto y excepciones; tocar Guardar reparto. Abrir o tocar el mapa no crea ni inicia un reparto.
+
+La linea del mapa une puntos como referencia del orden; no calcula calles, trafico ni la ruta mas corta. La navegacion del recorrido guardado sigue disponible por los botones existentes de Waze/Google Maps.
