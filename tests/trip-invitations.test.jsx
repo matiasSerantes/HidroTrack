@@ -70,3 +70,8 @@ it('no cambia de cliente ni pierde el reintento si la entrega se guardo pero se 
  fireEvent(window,new Event('focus'));await waitFor(()=>expect(screen.getByLabelText('Parada del recorrido').value).toBe('c1'));
  fireEvent.click(screen.getByRole('button',{name:'Reintentar misma entrega'}));await screen.findByText(/Entrega confirmada:/);const commands=client.rpc.mock.calls.filter(([n])=>n==='assistant_deliver').map(([,a])=>a);expect(commands[0]).toEqual(commands[1]);
 });
+
+it('responde a la version vigente de una nueva asignacion',async()=>{
+ const client={rpc:vi.fn(async(name,args)=>name==='assistant_trip_invitations'?{data:[{...invitation,generation:2}],error:null}:name==='assistant_answer_trip_version'?{data:'accepted',error:null}:{data:null,error:null})};
+ render(<AssistantTripInvitations client={client}/>);fireEvent.click(await screen.findByRole('button',{name:'Aceptar reparto'}));await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('assistant_answer_trip_version',expect.objectContaining({p_trip:'trip-a',p_generation:2,p_accept:true})));expect(client.rpc.mock.calls.some(([name])=>name==='assistant_answer_trip_invitation')).toBe(false);
+});
