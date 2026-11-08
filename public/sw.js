@@ -15,8 +15,9 @@ self.addEventListener('push',event=>event.waitUntil((async()=>{try{const payload
  }
  if(payload.type==='next-day-planning'){
   if(!validPlanning(payload.date,payload.tenant_id)||!Number.isInteger(payload.customer_count)||payload.customer_count<1)return;
+  const extras=Number.isInteger(payload.extra_count)&&payload.extra_count>0&&payload.extra_count<=payload.customer_count?payload.extra_count:0,firstTime=typeof payload.first_extra_time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(payload.first_extra_time)?payload.first_extra_time:null;
   const key=`planning:${current}:${payload.tenant_id}:${payload.date}`;if(await state(false,null,key))return;
-  await self.registration.showNotification('HidroTrack · Prepará mañana',{body:`Mañana tenés ${payload.customer_count} clientes con visita habitual. ${payload.has_route?'Revisá el reparto que ya preparaste.':'Revisá los clientes y armá el recorrido.'}`,tag:`planning-${payload.tenant_id}-${payload.date}`,renotify:false,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',data:{type:'next-day-planning',tenantId:payload.tenant_id,date:payload.date}});
+  await self.registration.showNotification('HidroTrack · Prepará mañana',{body:`Mañana tenés ${payload.customer_count} clientes para visitar. ${extras?`${extras} visitas extraordinarias${firstTime?` desde las ${firstTime}`:''}. `:''}${payload.has_route?'Revisá el reparto que ya preparaste.':'Revisá los clientes y armá el recorrido.'}`,tag:`planning-${payload.tenant_id}-${payload.date}`,renotify:false,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',data:{type:'next-day-planning',tenantId:payload.tenant_id,date:payload.date}});
   await state(true,true,key);return;
  }
  if(await state(false,null,`resolved:${current}:${payload.trip_id}:${payload.customer_id}`))return;

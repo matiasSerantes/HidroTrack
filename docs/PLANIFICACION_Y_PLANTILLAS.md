@@ -63,3 +63,13 @@ Proxima fecha, seleccion de clientes al preparar el reparto, agenda de manana y 
 5. Revisar horarios, clientes sin punto y excepciones; tocar Guardar reparto. Abrir o tocar el mapa no crea ni inicia un reparto.
 
 La linea del mapa une puntos como referencia del orden; no calcula calles, trafico ni la ruta mas corta. La navegacion del recorrido guardado sigue disponible por los botones existentes de Waze/Google Maps.
+
+## Visita extraordinaria con hora
+
+1. Clientes > Planilla > Generar visita extraordinaria.
+2. Indicar fecha, hora opcional (18 y 30 significa 18:30), productos y cantidades. Guardar visita pendiente.
+3. Mi jornada y Repartos muestran la agenda de hoy/manana con cliente, hora, pedido y estado. Preparar reparto abre esa fecha y muestra los pedidos pendientes junto a los clientes habituales.
+4. Guardar el reparto y asignar el pedido desde Visitas extraordinarias > Reparto de esa fecha > Asignar visita al reparto. Hacerlo antes de registrar la carga, para que la sugerencia incluya sus cantidades. Agregar el cliente al reparto por si solo no asigna el pedido.
+5. En el celular, activar los recordatorios y el Aviso de las 20 con permiso. Ese aviso diario incluye los pedidos extraordinarios de manana aunque no haya visitas habituales. Muestra cantidad y primera hora acordada; al abrir HidroTrack se ven los nombres y todos los horarios. El telefono puede demorar la notificacion.
+
+Guardar un pedido no activa avisos sin consentimiento, no crea repartos ni genera ventas. Esta mejora no agrega una alarma independiente a la hora de cada pedido; los recordatorios de horario durante recorridos conservan su funcionamiento existente. Cancelados y visitas ya resueltas dejan de aparecer en la agenda.

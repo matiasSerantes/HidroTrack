@@ -28,3 +28,8 @@ it('planificacion se muestra una vez por cuenta empresa y dia, independiente de 
 it('planificacion invalida no abre enlaces arbitrarios y click usa fecha y empresa',async()=>{
  const w=await worker(),tenant='10000000-0000-0000-0000-000000000001';await w.message({type:'PUSH_SESSION',userId:'u'});await w.push({type:'next-day-planning',tenant_id:tenant,date:'2026-02-31',customer_count:3});expect(w.showNotification).not.toHaveBeenCalled();await w.click({type:'next-day-planning',tenantId:tenant,date:'2026-10-28',url:'https://malicious.test'});const url=new URL(w.openWindow.mock.calls[0][0]);expect(url.origin).toBe('https://example.test');expect(url.searchParams.get('planificar')).toBe('2026-10-28');expect(url.searchParams.get('empresa')).toBe(tenant);
 });
+
+it('aviso de manana resume extraordinarias y primera hora sin exponer nombre',async()=>{
+ const w=await worker();await w.message({type:'PUSH_SESSION',userId:'u'});await w.push({type:'next-day-planning',tenant_id:'10000000-0000-0000-0000-000000000001',date:'2026-11-09',customer_count:2,extra_count:1,first_extra_time:'18:30',customer:'Nombre privado',has_route:false});
+ const body=w.showNotification.mock.calls[0][1].body;expect(body).toContain('1 visitas extraordinarias desde las 18:30');expect(body).not.toContain('Nombre privado');
+});

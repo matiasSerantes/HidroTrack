@@ -3,6 +3,19 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('extraordinaria con hora se reintenta sin duplicar, conserva stock y se oculta al cancelar',async()=>{
+ const v=await deliveryFixture();await actor(owner);const id=crypto.randomUUID(),items=JSON.stringify([{product_id:v.product,quantity:2}]);
+ const request=()=>db.query("select public.owner_request_extra_visit_at($1,$2,$3,current_date+1,$4,'18:30','Pedido por telefono')",[tenant,id,v.customer,items]);await request();await request();
+ expect((await db.query('select requested_time from public.owner_extra_visit_agenda where id=$1',[id])).rows[0].requested_time).toBe('18:30:00');
+ await denied(()=>db.query("select public.owner_request_extra_visit_at($1,$2,$3,current_date+1,$4,'08:00','Pedido por telefono')",[tenant,id,v.customer,items]),/otros datos/);
+ await actor(otherOwner);expect((await db.query('select * from public.owner_extra_visit_agenda')).rows).toHaveLength(0);
+ await actor(owner);await db.query("select public.owner_manage_extra_visit($1,$2,$3,'cancelled',null)",[tenant,crypto.randomUUID(),id]);expect((await db.query('select * from public.owner_extra_visit_agenda')).rows).toHaveLength(0);
+});
+it('aviso de las 20 incluye extraordinaria sin dia habitual, con hora y sin nombres',async()=>{
+ const c=await planningFixture();await db.query('delete from public.customer_schedules where tenant_id=$1',[tenant]);const p=crypto.randomUUID();await db.query("select public.inventory_create_product($1,$2,'Agua',100,'unidad',true)",[tenant,p]);
+ await db.query("select public.owner_request_extra_visit_at($1,$2,$3,current_date+1,$4,'08:30','Extra')",[tenant,crypto.randomUUID(),c,JSON.stringify([{product_id:p,quantity:2}])]);
+ const jobs=await planningAt('20:00');expect(jobs).toHaveLength(1);expect(jobs[0]).toMatchObject({customer_count:1,extra_count:1,first_extra_time:'08:30'});expect(JSON.stringify(jobs)).not.toContain('Cliente A');
+});
 it('recordatorio de manana omite semana libre y vuelve a contar al pasar a semanal',async()=>{
  const customer=await planningFixture();await db.query('select public.owner_set_customer_visit_cycle($1,$2,2,current_date-6)',[tenant,customer]);expect(await planningAt('20:00')).toHaveLength(0);
  await actor(owner);await db.query('select public.owner_set_customer_visit_cycle($1,$2,1,null)',[tenant,customer]);const jobs=await planningAt('20:01');expect(jobs).toHaveLength(1);expect(jobs[0].customer_count).toBe(1);

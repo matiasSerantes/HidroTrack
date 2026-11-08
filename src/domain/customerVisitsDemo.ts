@@ -1,10 +1,11 @@
 import {demoDay,pendingDemoRecovery,uid,type DemoProgramState} from './programDemo';
 export const visitWeekdays=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-export type ExtraVisit={id:string;clientId:string;date:string;productId:string;quantity:number;note:string;status:'pending'|'assigned'|'completed';tripId?:string};
+export type ExtraVisit={time?:string;id:string;clientId:string;date:string;productId:string;quantity:number;note:string;status:'pending'|'assigned'|'completed';tripId?:string};
 export type DispenserChange={id:string;clientId:string;tripId:string;previousProductId:string;previousSerial:string;productId:string;serial:string;condition:'good'|'damaged';date:string};
 export function createExtraVisit(s:DemoProgramState,input:Omit<ExtraVisit,'id'|'status'>,actor:string){
  if(!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede generar una visita adicional.');
  if(!s.clients.some(c=>c.id===input.clientId&&c.active)||pendingDemoRecovery(s,input.clientId))throw new Error('El cliente no está habilitado para nuevas entregas.');
+ if(input.time&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time))throw new Error('Elegí una hora válida.');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(input.date)||input.date<demoDay||new Date(input.date+'T12:00:00Z').toISOString().slice(0,10)!==input.date)throw new Error('Elegí una fecha válida desde el día de la demo.');
  if(!Number.isInteger(input.quantity)||input.quantity<1||input.quantity>100000||!s.products.some(p=>p.id===input.productId&&p.active&&p.kind==='sale'))throw new Error('Elegí un producto y una cantidad válida.');
  return {...s,extraVisits:[...(s.extraVisits||[]),{...input,id:uid(),status:'pending' as const}]};

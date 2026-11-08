@@ -14,7 +14,7 @@ Deno.serve(async(req:Request)=>{
  for(let offset=0;offset<claimed.data.length;offset+=5){await Promise.all(claimed.data.slice(offset,offset+5).map(async job=>{
   const valid=await server.rpc('push_planning_job_still_valid',{p_id:job.id,p_claim:job.claim_token});let result='cancelled';
   if(!valid.error&&valid.data===true){try{
-   await webpush.sendNotification({endpoint:job.endpoint,keys:job.keys},JSON.stringify({type:'next-day-planning',id:job.id,user_id:job.user_id,tenant_id:job.tenant_id,date:job.date,customer_count:job.customer_count,has_route:job.has_route,expires_at:job.expires_at}),{TTL:300,urgency:'high',timeout:5000});
+   await webpush.sendNotification({endpoint:job.endpoint,keys:job.keys},JSON.stringify({type:'next-day-planning',id:job.id,user_id:job.user_id,tenant_id:job.tenant_id,date:job.date,customer_count:job.customer_count,extra_count:job.extra_count,first_extra_time:job.first_extra_time,has_route:job.has_route,expires_at:job.expires_at}),{TTL:300,urgency:'high',timeout:5000});
    result='sent';sent++;
   }catch(e){const code=(e as {statusCode?:number}).statusCode;result=code===404||code===410?'gone':'retry';if(result==='retry')retried++;else cancelled++;}}
   else if(valid.error){result='retry';retried++;}else cancelled++;
