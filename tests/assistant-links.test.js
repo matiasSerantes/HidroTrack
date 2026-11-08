@@ -3,6 +3,35 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('total propio se corrige sin quitar envases a clientes y el reintento no duplica',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Bidon',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive_empty',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:600}])]);
+ await db.query("select public.inventory_assign_existing_containers($1,$2,$3,$4,'depot_empty',current_date,'Conteo')",[tenant,crypto.randomUUID(),customer,JSON.stringify([{product_id:product,quantity:2}])]);
+ const id=crypto.randomUUID(),args=[tenant,id,product,600,590];const adjust=()=>db.query("select public.inventory_set_owned_total($1,$2,$3,$4,$5,'depot_empty',current_date,'Cantidad inicial equivocada')",args);await adjust();await adjust();
+ const stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];expect([Number(stock.total_owned),Number(stock.depot_empty),Number(stock.in_customers)]).toEqual([590,588,2]);
+ await denied(()=>db.query("select public.inventory_set_owned_total($1,$2,$3,600,580,'depot_empty',current_date,'Viejo')",[tenant,crypto.randomUUID(),product]),/inventario cambio/);
+ await denied(()=>db.query("select public.inventory_set_owned_total($1,$2,$3,590,1,'depot_empty',current_date,'No alcanza')",[tenant,crypto.randomUUID(),product]),/insuficiente|disponible|suficientes/);
+});
+it('deudas sucesivas y pago a cuenta distribuyen saldo sin stock y con aislamiento',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ const first=crypto.randomUUID(),secondCharge=crypto.randomUUID(),clock='2026-11-07T15:16:17Z',zone='America/Argentina/Buenos_Aires';
+ const charge=(id,amount)=>db.query("select public.owner_add_customer_charge($1,$2,$3,$4,current_date,'Saldo de libreta',null,null,1,$5,$6)",[tenant,id,customer,amount,clock,zone]);
+ await charge(first,100);await charge(first,100);await charge(secondCharge,200);
+ const request=crypto.randomUUID(),pay=()=>db.query("select public.owner_pay_customer_balance($1,$2,$3,150,'cash',current_date,'Abono',$4,$5) receipt",[tenant,request,customer,clock,zone]);expect((await pay()).rows[0].receipt).toMatchObject({paid:150,remaining:150});expect((await pay()).rows[0].receipt).toMatchObject({paid:150,remaining:150});
+ expect((await db.query('select sum(balance)::text balance from public.customer_sale_balances where customer_id=$1',[customer])).rows[0].balance).toBe('150.00');expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
+ expect((await db.query("select * from public.customer_activity where record_type='charge'")).rows).toHaveLength(2);
+ await denied(()=>db.query("select public.owner_pay_customer_balance($1,$2,$3,151,'cash',current_date,'',$4,$5)",[tenant,crypto.randomUUID(),customer,clock,zone]),/supera/);
+ await actor(otherOwner);expect((await db.query('select * from public.customer_activity')).rows).toHaveLength(0);await denied(()=>charge(crypto.randomUUID(),1),/Solo el jefe/);
+});
+it('horario sin cierre significa fin de dia y se puede quitar',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query("select public.customer_set_visit_window($1,$2,'08:00',null)",[tenant,customer]);expect((await db.query('select end_time from public.customer_visit_windows where customer_id=$1',[customer])).rows[0].end_time).toBe('23:59:59');
+ await db.query('select public.customer_set_visit_window($1,$2,null,null)',[tenant,customer]);expect((await db.query('select * from public.customer_visit_windows')).rows).toHaveLength(0);
+});
+
+
+
 it('promo habitual sugiere sus bidones y no crea venta, cobro ni envases',async()=>{
  const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID(),combo=crypto.randomUUID();
  await db.query("select public.inventory_create_product($1,$2,'Bidon 12',100,'unidad',true)",[tenant,product]);await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:10}])]);await db.query("select public.owner_save_sale_combo($1,$2,$3,0,'Dos de 12',150,$4,true)",[tenant,crypto.randomUUID(),combo,JSON.stringify([{product_id:product,quantity:2}])]);

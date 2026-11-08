@@ -13,10 +13,10 @@ it('separa fecha historica de compra de la fecha de carga en el sistema',()=>{
 });
 function fixture(fail=false,{model=false,unavailable=false,noIndividual=false,customerSince,createdAt,history=false,combos=false}={}){
   const calls=[],onLock=vi.fn();
-  const records={products:[{id:'b20',name:'Bidón 20 litros',active:true,returnable:true},{id:'b12',name:'Bidón 12 litros',active:true,returnable:true}],inventory_customer_containers:[{product_id:'b20',quantity:2}],inventory_operations:[],dispensers:[{id:'available',name:'Frío calor',serial:'FC-1',ownership:'company',location:'depot',customer_id:null,monthly:0},{id:'private',name:'Equipo particular',serial:'P-1',ownership:'customer',location:'customer',customer_id:'client-a',mode:'customer_owned',monthly:0},{id:'other',name:'Equipo de otro cliente',ownership:'company',location:'customer',customer_id:'client-b',monthly:0}]};
+  const records={products:[{id:'b20',name:'Bidón 20 litros',active:true,returnable:true},{id:'b12',name:'Bidón 12 litros',active:true,returnable:true}],inventory_customer_containers:[{product_id:'b20',quantity:2}],customer_activity:[],dispensers:[{id:'available',name:'Frío calor',serial:'FC-1',ownership:'company',location:'depot',customer_id:null,monthly:0},{id:'private',name:'Equipo particular',serial:'P-1',ownership:'customer',location:'customer',customer_id:'client-a',mode:'customer_owned',monthly:0},{id:'other',name:'Equipo de otro cliente',ownership:'company',location:'customer',customer_id:'client-b',monthly:0}]};
   records.sale_combos=combos?[{id:'promo-a',name:'Promo doble',active:true,version:1,price:100,items:[{product_id:'b20',quantity:2}]}]:[];
   records.user_profiles=history?[{user_id:'owner-a',full_name:'Jefe de prueba'},{user_id:'driver-a',full_name:'Chofer de prueba'}]:[];
-  if(history){records.inventory_operations=[{id:'movement-a',kind:'delivery',actor_id:'driver-a',trip_id:'route-a',created_at:'2026-11-07T12:00:00Z',note:'Entrega del chofer',items:[]},{id:'movement-b',kind:'opening_customer',actor_id:'owner-a',trip_id:null,created_at:'2026-11-07T11:00:00Z',note:'Conteo del jefe',items:[]}];}
+  if(history){records.customer_activity=[{id:'movement-a',kind:'delivery',actor_id:'driver-a',trip_id:'route-a',created_at:'2026-11-07T12:00:00Z',note:'Entrega del chofer',items:[]},{id:'movement-b',kind:'opening_customer',actor_id:'owner-a',trip_id:null,created_at:'2026-11-07T11:00:00Z',note:'Conteo del jefe',items:[]}];}
   records.inventory_owned_stock=model?[{product_id:'model',depot_ready:unavailable?0:2}]:[];
   records.inventory_truck_stock=[];records.inventory_trips=history?[{id:'route-a',name:'Ruta del lunes',status:'closed'}]:[];records.dispenser_assignments=[];
   if(model)records.products.push({id:'model',name:'Dispenser básico',family:'dispenser',active:true,returnable:false});
@@ -65,7 +65,7 @@ it('consulta la ficha por empresa y cliente y separa equipos propios del cliente
   expect(screen.queryByText('Equipo de otro cliente')).toBeNull();
   expect(screen.getByText(/Propiedad del cliente/)).toBeTruthy();
   expect(calls.every(c=>c.filters.some(([key,value])=>key==='tenant_id'&&value==='tenant-a'))).toBe(true);
-  for(const table of ['inventory_customer_containers','inventory_operations'])expect(calls.find(c=>c.table===table).filters).toContainEqual(['customer_id','client-a']);
+  for(const table of ['inventory_customer_containers','customer_activity'])expect(calls.find(c=>c.table===table).filters).toContainEqual(['customer_id','client-a']);
 });
 it('registra envases anteriores del cliente en una sola apertura con varios artículos',async()=>{
   const {client}=fixture();await screen.findByText('2 para devolver');

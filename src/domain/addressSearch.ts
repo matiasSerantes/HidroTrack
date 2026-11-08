@@ -18,3 +18,12 @@ export function parseAddressResults(data:unknown):AddressResult[]{
  }
  return results;
 }
+
+// A number typed by the user is retained only when the chosen street matches.
+export function selectedAddressText(result:AddressResult,query:string){
+ if(result.hasNumber)return {label:result.label,numberFromQuery:false};
+ const street=result.label.split(',')[0].trim(),normal=(v:string)=>v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const first=query.match(/^\s*(\d{1,6}[a-z]?)\s*[, ]\s*(.+)$/i),last=query.split(',')[0].match(/^(.+?)\s+(\d{1,6}[a-z]?)\s*$/i);
+ const number=first&&(normal(first[2])===normal(street)||normal(first[2]).startsWith(normal(street)+' '))?first[1]:last&&normal(last[1])===normal(street)?last[2]:'';
+ return {label:number?result.label.replace(street,`${street} ${number}`):result.label,numberFromQuery:!!number};
+}

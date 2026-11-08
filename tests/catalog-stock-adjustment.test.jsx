@@ -16,3 +16,9 @@ it('retira solo del estado elegido y rechaza cantidades superiores al saldo',()=
 it('dispenser se suma disponible y no como vacio',()=>{
  const submit=setup({...product,family:'dispenser'});expect(screen.queryByLabelText('Estado de las unidades')).toBeNull();fireEvent.change(screen.getByLabelText('Unidades a sumar'),{target:{value:'1'}});fireEvent.click(screen.getByText('Guardar ajuste de unidades'));expect(submit).toHaveBeenCalledWith(expect.objectContaining({args:expect.objectContaining({p_kind:'receive'})}));
 });
+
+it('corrige el total esperado en lugar de sumar la cantidad ingresada',()=>{
+ const submit=vi.fn();render(<CatalogStockAdjustment tenantId="t" product={product} ready={0} empty={574} owned={600} ownerId="owner" locked={false} onSubmit={submit} onCancel={()=>{}}/>);
+ fireEvent.change(screen.getByLabelText('Ajuste de cantidad'),{target:{value:'total'}});fireEvent.change(screen.getByLabelText('Total propio correcto'),{target:{value:'590'}});fireEvent.change(screen.getByLabelText('Motivo del ajuste'),{target:{value:'Conteo inicial'}});fireEvent.click(screen.getByText('Guardar ajuste de unidades'));
+ expect(submit).toHaveBeenCalledWith(expect.objectContaining({name:'inventory_set_owned_total',args:expect.objectContaining({p_expected:600,p_total:590,p_source:'depot_empty'})}));
+});

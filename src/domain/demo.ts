@@ -1,6 +1,6 @@
 import { deliveryDate } from './route';
 import { exampleAssets, type CustomerAsset } from './customerAssets';
-export type Customer = { id: string; name: string; address: string; phone: string; days: string; quantity: number; active?: boolean; notes?: string; assignedTo?: 'owner' | 'driver'; lat?: number; lng?: number; city?: string; neighborhood?: string; assets?: CustomerAsset[] };
+export type Customer = { phone2?:string;phone3?:string;delivery_notes?:string; id: string; name: string; address: string; phone: string; days: string; quantity: number; active?: boolean; notes?: string; assignedTo?: 'owner' | 'driver'; lat?: number; lng?: number; city?: string; neighborhood?: string; assets?: CustomerAsset[] };
 export type Delivery = { createdAt?: string; id: string; customerId: string; quantity: number; returned: number; amountCents: number; paidCents: number; method: 'Efectivo' | 'Transferencia' | 'Cuenta corriente' };
 export type DemoState = { customers: Customer[]; order: string[]; deliveries: Delivery[]; locationVersion?: number; routeVersion?: number };
 export const initialState: DemoState = {

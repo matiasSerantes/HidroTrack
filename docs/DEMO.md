@@ -545,3 +545,5 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 
 
 07/11/2026 - Promociones en pedido habitual: cantidad de combos por cliente y expansion a articulos fisicos para carga del jefe/asistente; pedidos extraordinarios reemplazan el habitual. Atender cliente recuerda promos habituales sin registrar entrega automatica. Habito no modifica ventas/deudas/envases. Demo permite configurarlo y sugerir su carga ficticia. Guia COMBOS.md; publicacion en NOTAS.md.
+
+07/11/2026 - Carga real: tres telefonos, indicaciones y altura escrita al elegir calle. Cuenta real permite deudas sucesivas, pagos a cuenta e historial financiero; Catalogo corrige total propio conservando asignaciones, inicio muestra deuda acumulada y horario sin cierre significa fin del dia. Demo de contactos disponible en formulario de clientes; movimientos financieros nuevos se usan en cuenta real. Nuevas visitas alternadas y simplificacion de repartos aun pendientes. Ver docs/PEDIDOS_CARGA_2026-11-07.md y NOTAS.md para estado de publicacion.

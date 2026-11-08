@@ -1,5 +1,5 @@
 import {lazy,Suspense,useEffect,useRef,useState} from 'react';
-import {addressSearchUrl,parseAddressResults,type AddressResult} from '../domain/addressSearch';
+import {addressSearchUrl,parseAddressResults,selectedAddressText,type AddressResult} from '../domain/addressSearch';
 import './CustomerLocationPicker.css';
 const LocationMap=lazy(()=>import('./CustomerLocationMap'));
 export type CustomerPoint={lat:number;lng:number};
@@ -21,14 +21,15 @@ export function CustomerLocationPicker({initial,demo=false,disabled=false,onBusy
  function select(p:CustomerPoint){setPoint(p);if(lat.current)lat.current.value=String(p.lat);if(lng.current)lng.current.value=String(p.lng);setError('');}
  function chooseAddress(result:AddressResult){
   const field=container.current?.closest('form')?.elements.namedItem('address');
+  const selected=selectedAddressText(result,query);
   let filled=false,truncated=false;
   if(field instanceof HTMLInputElement){
-   const limit=field.maxLength>0?field.maxLength:200,value=result.label.slice(0,limit);
-   truncated=value.length<result.label.length;field.value=value;
+   const limit=field.maxLength>0?field.maxLength:200,value=selected.label.slice(0,limit);
+   truncated=value.length<selected.label.length;field.value=value;
    field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}));filled=true;
   }
-  select(result);setQuery(result.label.slice(0,300));setShow(true);setResults(null);
-  setNotice(`${filled?'Dirección completada':'Ubicación aproximada'}: ${result.label}. ${!result.hasNumber?'El resultado no incluye altura: completá el número de puerta en Dirección. ':''}${truncated?'El texto se acortó para entrar en el campo: revisalo arriba. ':''}Podés editar la dirección y ajustar el punto de la puerta antes de guardar el cliente.`);
+  select(result);setQuery(selected.label.slice(0,300));setShow(true);setResults(null);
+  setNotice(`${filled?'Dirección completada':'Ubicación aproximada'}: ${selected.label}. ${selected.numberFromQuery?'La altura se conservó de lo que escribiste; el mapa solo encontró la calle. Verificá la puerta. ':''}${!result.hasNumber&&!selected.numberFromQuery?'El resultado no incluye altura: completá el número de puerta en Dirección. ':''}${truncated?'El texto se acortó para entrar en el campo: revisalo arriba. ':''}Podés editar la dirección y ajustar el punto de la puerta antes de guardar el cliente.`);
  }
  function syncCoordinates(){const a=lat.current?.value,b=lng.current?.value;if(a&&b&&Number.isFinite(Number(a))&&Number.isFinite(Number(b))&&Math.abs(Number(a))<=90&&Math.abs(Number(b))<=180)setPoint({lat:Number(a),lng:Number(b)});}
  function locate(){

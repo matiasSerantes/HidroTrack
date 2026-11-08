@@ -16,7 +16,7 @@ it('registra pago parcial y total, muestra fecha y medio y reduce saldo sin crea
  expect(screen.getByText(/Pagado:/).textContent).toContain('600');expect(screen.getByText(/400,00.*Transferencia/)).toBeTruthy();expect(screen.getByText(/Fecha del pago:/)).toBeTruthy();
  expect(client.rpc).toHaveBeenCalledWith('commerce_record_payment',expect.objectContaining({p_sale:'sale',p_amount:400,p_method:'transfer',p_trip:null}));
  expect(filters).toContainEqual(['payments','tenant_id','t']);expect(filters).toContainEqual(['payments','sales.customer_id','c']);
- await pay('600','cash');await waitFor(()=>expect(screen.getByText('Sin deuda pendiente')).toBeTruthy());expect(screen.queryByRole('button',{name:'Registrar pago'})).toBeNull();expect(screen.getByText(/600,00.*Efectivo/)).toBeTruthy();expect(client.rpc.mock.calls.every(([name])=>name==='commerce_record_payment')).toBe(true);
+ await pay('600','cash');await waitFor(()=>expect(screen.getByText('Deuda totalmente saldada')).toBeTruthy());expect(screen.queryByRole('button',{name:'Registrar pago'})).toBeNull();expect(screen.getByText(/600,00.*Efectivo/)).toBeTruthy();expect(client.rpc.mock.calls.every(([name])=>name==='commerce_record_payment')).toBe(true);
 });
 it('reintenta un pago incierto con el mismo identificador y valores',async()=>{
  const {client}=fixture({charges:[debt],lost:true});await pay();await screen.findByText('Conexión interrumpida');expect(screen.getByLabelText('Monto del pago ($)').closest('fieldset').disabled).toBe(true);
