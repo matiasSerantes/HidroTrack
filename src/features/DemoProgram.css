@@ -30,3 +30,5 @@
 .hd small{overflow-wrap:anywhere}.hd .customer-held-row>div{min-width:0}.hd .customer-held-row small{font-size:14px;line-height:1.65}
 
 .customer-contact-fields{grid-column:1/-1;display:grid;gap:10px}.customer-contact-fields>div{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.customer-contact-fields label{flex:1;min-width:180px}.customer-contact-fields button{min-height:44px}.customer-contact-details{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.customer-contact-details a{padding:10px 14px;border:1px solid #9fcce4;border-radius:9px;color:#175971;background:#e8f6ff;overflow-wrap:anywhere}.customer-form textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #bdd6e6;border-radius:10px;font:inherit;min-width:0}
+
+.trip-planning-map{margin:16px 0;padding:12px;background:#edf8ff;border:1px solid #abd6ed;border-radius:14px}.trip-planning-map>button{margin-bottom:12px}.trip-planning-map .planner-point-number{background:transparent;border:0;box-shadow:none;color:white;font-weight:700;font-size:14px}.trip-planning-map .planner-point-number:before{display:none}

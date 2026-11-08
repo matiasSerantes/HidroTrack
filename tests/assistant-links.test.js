@@ -308,6 +308,7 @@ async function exchange(v,{id=crypto.randomUUID(),send=crypto.randomUUID(),state
  await db.query("select public.inventory_exchange_dispenser($1,$2,$3,$4,$5,case when $8::uuid is not null then current_date else current_date-1 end,$6,$7,'Cambio de prueba',$8)",[tenant,id,send,v.assignment,v.replacement,state,state==='broken'?'customer':null,trip]);return {id,send};
 }
 beforeAll(async()=>{
+ await db.exec("set timezone='America/Argentina/Buenos_Aires'");
  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
  create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
