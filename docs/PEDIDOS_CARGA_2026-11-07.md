@@ -19,8 +19,10 @@ Prioridad: uso real y carga de información. Comprobaciones dirigidas a cada cam
 
 Estados y publicaciones verificadas se registran en NOTAS.md. No marcar el lote entero terminado por haber publicado solo una parte.
 
-Bloques implementados: contactos/indicaciones, altura escrita, cargos sucesivos y pago a cuenta, total de deuda, correccion de total propio, horario sin cierre y frecuencia semana por medio. Pendientes de este lote: simplificacion de repartos y cambio de chofer.
+Bloques implementados: contactos/indicaciones, altura escrita, cargos sucesivos y pago a cuenta, total de deuda, correccion de total propio, horario sin cierre y frecuencia semana por medio. Repartos separado y cambio de chofer antes de iniciar implementados; publicacion y limites de validacion en NOTAS.md.
 
 08/11/2026 - Mapa integrado de planificacion implementado; estado de publicacion en NOTAS.md.
 
 08/11/2026 - Agenda extraordinaria hoy/manana, hora y resumen diario opt-in implementados. No agrega alarma independiente por pedido. Estado de publicacion en NOTAS.md.
+
+08/11/2026 - Bloques de este lote implementados. Mantener validacion visual/uso en telefono y revision integral beta separadas; no declarar el proyecto completo por cerrar estos pedidos.

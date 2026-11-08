@@ -2,7 +2,7 @@ import {useEffect,useRef} from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {hasPlanningPoint,type PlanningPoint} from '../domain/planningMap';
-export default function TripPlanningMap({customers,order,disabled,onSelect}:{customers:PlanningPoint[];order:string[];disabled:boolean;onSelect:(id:string)=>void}){
+export default function TripPlanningMap({customers,order,disabled,onSelect,readOnly=false}:{customers:PlanningPoint[];order:string[];disabled:boolean;readOnly?:boolean;onSelect:(id:string)=>void}){
  const node=useRef<HTMLDivElement>(null),map=useRef<L.Map|null>(null),layer=useRef<L.LayerGroup|null>(null),fitted=useRef(false),callback=useRef(onSelect),locked=useRef(disabled);callback.current=onSelect;locked.current=disabled;
  useEffect(()=>{if(!node.current)return;const m=L.map(node.current).setView([-34.6037,-58.3816],12);map.current=m;L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(m);layer.current=L.layerGroup().addTo(m);const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(()=>m.invalidateSize());observer?.observe(node.current);return()=>{observer?.disconnect();m.remove();map.current=null;layer.current=null;fitted.current=false;};},[]);
  useEffect(()=>{if(!map.current||!layer.current)return;const group=layer.current;group.clearLayers();const bounds:L.LatLngTuple[]=[];
@@ -14,5 +14,5 @@ export default function TripPlanningMap({customers,order,disabled,onSelect}:{cus
   if(bounds.length&&!fitted.current){map.current.fitBounds(L.latLngBounds(bounds),{padding:[35,35],maxZoom:17});fitted.current=true;}
  },[customers,order]);
  function fit(){const points=customers.filter(hasPlanningPoint).map(c=>[c.latitude!,c.longitude!] as L.LatLngTuple);if(points.length)map.current?.fitBounds(L.latLngBounds(points),{padding:[35,35],maxZoom:17});}
- return <section className="trip-planning-map"><button type="button" onClick={fit}>Ver todos los puntos</button><div ref={node} style={{height:'min(55vh,420px)',minHeight:280,width:'100%',borderRadius:12}} role="region" aria-label="Mapa para seleccionar clientes del nuevo reparto"/><p>La numeración sigue el orden elegido. La línea une los puntos como referencia; no calcula el camino por las calles. Tocá un cliente para agregarlo o quitarlo.</p></section>;
+ return <section className="trip-planning-map"><button type="button" onClick={fit}>Ver todos los puntos</button><div ref={node} style={{height:'min(55vh,420px)',minHeight:280,width:'100%',borderRadius:12}} role="region" aria-label="Mapa para seleccionar clientes del nuevo reparto"/><p>La numeración sigue el orden elegido. La línea une los puntos como referencia; no calcula el camino por las calles. {readOnly?'Recorrido guardado, solo consulta.':'Tocá un cliente para agregarlo o quitarlo.'}</p></section>;
 }

@@ -3,6 +3,21 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('reasigna solo plan, revoca acceso anterior y nueva invitacion requiere respuesta vigente',async()=>{
+ const trip=await assigned(),firstReply=crypto.randomUUID();await actor(driver);await answer(trip,true,firstReply);await actor(owner);const request=crypto.randomUUID();const change=()=>db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,request,trip,driver,owner]);await change();await change();
+ await actor(driver);await denied(()=>db.query('select public.assistant_open_trip($1,$2)',[tenant,trip]),/acceso|aceptado/);await actor(owner);
+ await db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,crypto.randomUUID(),trip,owner,driver]);await actor(driver);const invitations=(await db.query('select public.assistant_trip_invitations() items')).rows[0].items;expect(invitations[0]).toMatchObject({state:'pending',generation:2});
+ await denied(()=>db.query('select public.assistant_answer_trip_version($1,$2,true,$3,1)',[tenant,trip,crypto.randomUUID()]),/invitacion cambio/);
+ await denied(()=>db.query('select public.assistant_answer_trip_version($1,$2,true,$3,2)',[tenant,trip,firstReply]),/reutilizada/);
+ await db.query('select public.assistant_answer_trip_version($1,$2,true,$3,2)',[tenant,trip,crypto.randomUUID()]);expect((await db.query('select public.assistant_open_trip($1,$2) detail',[tenant,trip])).rows[0].detail.stops).toHaveLength(1);
+});
+it('otro asistente recibe invitacion pendiente y el anterior ya no la ve',async()=>{
+ const trip=await assigned();await actor(driver);await answer(trip);await db.exec('reset role');await db.query('update public.licenses set driver_limit=3 where tenant_id=$1',[tenant]);await actor(owner);await link(tenant,second);
+ await db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,crypto.randomUUID(),trip,driver,second]);await actor(driver);expect((await db.query('select public.assistant_trip_invitations() items')).rows[0].items).toHaveLength(0);await actor(second);expect((await db.query('select public.assistant_trip_invitations() items')).rows[0].items[0]).toMatchObject({state:'pending',generation:2});await denied(()=>db.query('select public.assistant_open_trip($1,$2)',[tenant,trip]),/aceptado|acceso/);
+});
+it('cambio de chofer rechaza reparto cargado y jefe ajeno sin mover stock',async()=>{
+ const v=await deliveryFixture();await actor(owner);await denied(()=>db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,crypto.randomUUID(),v.trip,driver,owner]),/antes de cargar/);await actor(otherOwner);await denied(()=>db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,crypto.randomUUID(),v.trip,driver,owner]),/Solo el jefe/);
+});
 it('extraordinaria con hora se reintenta sin duplicar, conserva stock y se oculta al cancelar',async()=>{
  const v=await deliveryFixture();await actor(owner);const id=crypto.randomUUID(),items=JSON.stringify([{product_id:v.product,quantity:2}]);
  const request=()=>db.query("select public.owner_request_extra_visit_at($1,$2,$3,current_date+1,$4,'18:30','Pedido por telefono')",[tenant,id,v.customer,items]);await request();await request();

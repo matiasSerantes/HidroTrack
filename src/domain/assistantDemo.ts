@@ -55,3 +55,9 @@ export function registerDemoAssistant(s:DemoProgramState,name:string,email:strin
   const account={id:uid(),name,email};
   return {account,state:{...s,assistantAccounts:[...assistantAccounts(s),account]}};
 }
+
+export function changeDemoTripDriver(state:DemoProgramState,actor:string,tripId:string,driverId:string){
+ owner(state,actor);const next=structuredClone(state),trip=next.trips.find(t=>t.id===tripId),driver=next.members.find(m=>m.id===driverId&&m.active);
+ if(!trip||trip.stage!=='planned'||Object.values(trip.load).some(v=>v>0)||Object.values(trip.stock).some(v=>v>0)||!driver||driver.id===trip.driverId)throw new Error('Elegí otro chofer habilitado antes de iniciar y cargar.');
+ trip.driverId=driverId;trip.acceptance=driver.role==='owner'?undefined:'pending';next.notices.unshift({id:uid(),recipientId:driverId,read:false,text:`Te asignaron el reparto ${trip.name}. ${driver.role==='driver'?'Aceptá la invitación antes de cargar.':'Ahora lo realizás vos.'}`});return next;
+}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import './TripInvitations.css';
 
-type Invitation={tenant_id:string;trip_id:string;name:string;date:string;status:string;state:'pending'|'accepted'|'rejected'|'revoked';company:string;chief:string;driver?:string};
+type Invitation={generation?:number;tenant_id:string;trip_id:string;name:string;date:string;status:string;state:'pending'|'accepted'|'rejected'|'revoked';company:string;chief:string;driver?:string};
 type RoutePointer={tenant:string;trip:string;stop?:string};
 export const assistantRouteKey=(userId:string)=>`hidrotrack:assistant-route:${userId}`;
 function restoreRoute(userId?:string):RoutePointer|null{if(!userId)return null;try{const value=JSON.parse(localStorage.getItem(assistantRouteKey(userId))||'null');if(value&&typeof value.tenant==='string'&&typeof value.trip==='string'&&value.tenant.length<=100&&value.trip.length<=100)return {tenant:value.tenant,trip:value.trip,...(typeof value.stop==='string'&&value.stop.length<=100?{stop:value.stop}:{})};}catch{}return null;}
@@ -36,9 +36,9 @@ export function AssistantTripInvitations({client,userId}:{client:SupabaseClient;
    finally{if(active)setPreviewLoading(false);}
   })();return()=>{active=false;};},[client,selected?.tenant,selected?.trip,selectedAllowed,pulse,deliveryLocked]);
  async function answer(i:Invitation,accept:boolean){
-  if(busy||deliveryLocked)return;const key=`${i.tenant_id}:${i.trip_id}:${accept}`;if(request.current?.key!==key)request.current={key,id:crypto.randomUUID()};
+  if(busy||deliveryLocked)return;const key=`${i.tenant_id}:${i.trip_id}:${i.generation??1}:${accept}`;if(request.current?.key!==key)request.current={key,id:crypto.randomUUID()};
   setBusy(true);setError('');setNotice('');
-  try{const r=await client.rpc('assistant_answer_trip_invitation',{p_tenant:i.tenant_id,p_trip:i.trip_id,p_accept:accept,p_request:request.current.id});if(r.error)throw r.error;
+  try{const r=await client.rpc(i.generation?'assistant_answer_trip_version':'assistant_answer_trip_invitation',{p_tenant:i.tenant_id,p_trip:i.trip_id,p_accept:accept,p_request:request.current.id,...(i.generation?{p_generation:i.generation}:{})});if(r.error)throw r.error;
    request.current=null;setPreview(null);setSelected(null);setNotice(r.data==='accepted'?'Aceptaste el reparto. Ya podés abrir el recorrido.':r.data==='rejected'?'Rechazaste la invitación. El jefe puede ver tu respuesta.':'La invitación ya no está disponible.');refresh();
   }catch{setError('No pudimos confirmar la respuesta. Actualizá las invitaciones antes de reintentar.');refresh();}
   finally{setBusy(false);}

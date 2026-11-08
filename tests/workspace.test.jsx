@@ -99,7 +99,7 @@ describe('panel conectado del titular', () => {
     const writes=client.rpc.mock.calls.filter(([name,args])=>name==='owner_customer_sheet_command'&&args.p_action==='inventory_assign_existing_containers');expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);
   });
   it('ofrece inicio, menú lateral y navegación móvil con las secciones conectadas',async()=>{
-    const {client}=clientFixture();render(<OwnerWorkspace client={client} userId="user-a"/>);
+    const {client}=clientFixture();client.rpc.mockImplementation(async name=>name==='owner_trip_invitations'?{data:[],error:null}:{data:null,error:{message:'Contrato no simulado'}});render(<OwnerWorkspace client={client} userId="user-a"/>);
     await screen.findByText('María');
     expect(screen.getByRole('heading',{name:'Mi jornada'})).toBeTruthy();
     const menu=screen.getByRole('navigation',{name:'Secciones del jefe'});
@@ -113,7 +113,7 @@ describe('panel conectado del titular', () => {
     expect(screen.getByRole('heading',{name:'Catálogo'})).toBeTruthy();
     expect(screen.getByRole('button',{name:'Abrir navegación'}).getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(within(menu).getByRole('button',{name:'Repartos y camión'}));
-    await screen.findByRole('heading',{name:'1. Preparar reparto'});
+    fireEvent.click(await screen.findByRole('button',{name:'Nuevo reparto'}));await screen.findByRole('heading',{name:'1. Preparar reparto'});
     const mobile=screen.getByRole('navigation',{name:'Navegación rápida móvil'});
     fireEvent.click(within(mobile).getByRole('button',{name:'Ver clientes'}));
     expect(screen.getByRole('heading',{name:'Clientes de tu reparto'})).toBeTruthy();

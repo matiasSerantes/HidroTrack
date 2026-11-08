@@ -73,3 +73,21 @@ La linea del mapa une puntos como referencia del orden; no calcula calles, trafi
 5. En el celular, activar los recordatorios y el Aviso de las 20 con permiso. Ese aviso diario incluye los pedidos extraordinarios de manana aunque no haya visitas habituales. Muestra cantidad y primera hora acordada; al abrir HidroTrack se ven los nombres y todos los horarios. El telefono puede demorar la notificacion.
 
 Guardar un pedido no activa avisos sin consentimiento, no crea repartos ni genera ventas. Esta mejora no agrega una alarma independiente a la hora de cada pedido; los recordatorios de horario durante recorridos conservan su funcionamiento existente. Cancelados y visitas ya resueltas dejan de aparecer en la agenda.
+
+## Pantallas de Repartos
+
+- Repartos y camion abre Mis recorridos, con nombre, fecha, estado, Nuevo reparto y Abrir.
+- Nuevo reparto muestra solo el formulario de preparacion y las plantillas. Guardar abre el detalle del reparto creado.
+- Abrir muestra solo ese reparto: clientes, mapa, carga/stock, plantilla y controles del recorrido o rendicion que correspondan. Volver a repartos regresa a la lista.
+- Pedidos, solicitudes y avisos abre las bandejas generales. No se mezclan con el formulario de un nuevo reparto.
+- Los recorridos finalizados siguen en la lista y conservan historial. Los ultimos cierres/PDF propios tambien tienen acceso desde la lista. Eliminar esta bloqueado en recorridos en marcha.
+
+## Cambiar chofer antes de salir
+
+1. Repartos y camion > Abrir el reparto sin iniciar.
+2. Cambiar chofer > Nuevo chofer del reparto: elegir otro asistente habilitado o el titular.
+3. Guardar nuevo chofer. Clientes, orden y pedidos se conservan; no se mueve stock.
+4. El anterior pierde acceso. El nuevo asistente acepta la invitacion desde su cuenta antes de cargar. Si el jefe toma el reparto, no necesita invitacion.
+5. Actualizar inventario para consultar la respuesta antes de registrar carga.
+
+El servidor rechaza el cambio si ya se cargo o inicio el reparto, hubo actividad, se retiro el reparto o el chofer actual cambio mientras se editaba. Una respuesta vieja no acepta la invitacion de una nueva asignacion. Si se pierde la confirmacion, Reintentar mismo cambio de chofer conserva la solicitud sin duplicarla.
