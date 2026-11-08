@@ -34,7 +34,7 @@ it('planilla muestra horario 24h y distingue fecha habitual de visita confirmada
  await screen.findByText('Podés pasar de 08:30 a 18:30');expect(screen.getByText(/no confirma una visita ni un recorrido/)).toBeTruthy();
 });
 it('mañana informa reparto existente y abre la fecha correcta sin crear uno automaticamente',async()=>{
- const prepare=vi.fn(),client={from:table=>{const data=table==='customer_schedules'?[{customer_id:'c'}]:table==='customers'?[{id:'c'}]:[{name:'Ruta mañana'}];const chain={select:()=>chain,eq:()=>chain,order:()=>chain,in:()=>chain,range:()=>chain,then:resolve=>Promise.resolve({data,error:null}).then(resolve)};return chain;}};
+ const prepare=vi.fn(),client={from:table=>{const data=table==='customer_schedule_cycles'?[{customer_id:'c'}]:table==='customers'?[{id:'c'}]:[{name:'Ruta mañana'}];const chain={select:()=>chain,eq:()=>chain,order:()=>chain,in:()=>chain,range:()=>chain,then:resolve=>Promise.resolve({data,error:null}).then(resolve)};return chain;}};
  render(<NextDayPlanning client={client} tenantId="t" disabled={false} onPrepare={prepare}/>);
  await screen.findByText(/Ya hay repartos preparados: Ruta mañana/);expect(prepare).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Ver clientes y preparar mañana'}));expect(prepare).toHaveBeenCalledWith(addVisitDays(argentinaClock().date,1));
 });

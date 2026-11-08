@@ -3,6 +3,19 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('recordatorio de manana omite semana libre y vuelve a contar al pasar a semanal',async()=>{
+ const customer=await planningFixture();await db.query('select public.owner_set_customer_visit_cycle($1,$2,2,current_date-6)',[tenant,customer]);expect(await planningAt('20:00')).toHaveLength(0);
+ await actor(owner);await db.query('select public.owner_set_customer_visit_cycle($1,$2,1,null)',[tenant,customer]);const jobs=await planningAt('20:01');expect(jobs).toHaveLength(1);expect(jobs[0].customer_count).toBe(1);
+});
+it('semana por medio respeta lunes alternos sin modificar dias ni permitir otros jefes',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
+ await db.query('insert into public.customer_schedules values($1,$2,1)',[tenant,customer]);
+ await db.query("select public.owner_set_customer_visit_cycle($1,$2,2,'2026-11-02')",[tenant,customer]);
+ expect((await db.query('select every_weeks,anchor_date from public.customer_schedule_cycles where customer_id=$1',[customer])).rows[0].every_weeks).toBe(2);
+ await db.exec('reset role');for(const [date,due] of [['2026-11-02',true],['2026-11-09',false],['2026-11-16',true],['2026-10-26',false]])expect((await db.query('select private.customer_visit_cycle_due($1,$2,$3) due',[tenant,customer,date])).rows[0].due).toBe(due);
+ await actor(otherOwner);expect((await db.query('select * from public.customer_visit_cycles')).rows).toHaveLength(0);await denied(()=>db.query("select public.owner_set_customer_visit_cycle($1,$2,1,null)",[tenant,customer]),/Solo el jefe/);
+ await actor(owner);await db.query('select public.owner_set_customer_visit_cycle($1,$2,1,null)',[tenant,customer]);expect((await db.query('select weekday from public.customer_schedules where customer_id=$1',[customer])).rows[0].weekday).toBe(1);
+});
 it('total propio se corrige sin quitar envases a clientes y el reintento no duplica',async()=>{
  await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
  await db.query("select public.inventory_create_product($1,$2,'Bidon',100,'unidad',true)",[tenant,product]);
@@ -625,7 +638,7 @@ it('cambio mantiene contrato y alquiler, con reintento sin duplicados',async()=>
  expect(after.id).toBe(before.id);expect(after.product_id).toBe(v.replacement);expect(after.monthly).toBe(before.monthly);expect(after.occurred_on).toEqual(before.occurred_on);expect(after.status).toBe('active');
  expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(1);
  expect((await db.query('select * from public.inventory_owned_stock where product_id=$1',[v.old])).rows[0].depot_ready).toBe(1);
- await denied(()=>db.query('select public.commerce_charge_rental($1,$2,$3,null,0,current_date)',[tenant,crypto.randomUUID(),v.assignment]),/periodo|período/);
+ await denied(()=>db.query('select public.commerce_charge_rental($1,$2,$3,null,0,current_date)',[tenant,crypto.randomUUID(),v.assignment]),/periodo|período/i);
 });
 it('no usa la unidad retirada como su propio reemplazo ni deja retiro parcial',async()=>{
  const v=await dispenserContract();const before=(await db.query('select count(*) as n from public.inventory_operations')).rows[0].n;

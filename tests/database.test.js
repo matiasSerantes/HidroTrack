@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 // No sustituye las pruebas de integración contra Supabase Auth/PostgREST.
 const db = new PGlite();
 beforeAll(async () => {
+  await db.exec("set timezone='America/Argentina/Buenos_Aires'");
   await db.exec(`
     create role anon nologin;
     create role authenticated nologin;
