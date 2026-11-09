@@ -555,3 +555,6 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 08/11/2026 - Visitas extraordinarias con hora opcional; agenda hoy/manana y selector de clientes incluyen pedidos pendientes. Cuenta real conecta emisor opt-in de las 20 con resumen de extraordinarias/primera hora; no aviso automatico al crear cada pedido. Demo de planilla permite fecha/hora ficticias sin enviar notificaciones. Publicacion en NOTAS.md.
 
 08/11/2026 - Cuenta real: Repartos abre listado; Nuevo reparto muestra solo preparacion y Abrir muestra detalle de un solo reparto. Volver devuelve a lista; pedidos/solicitudes separados. Cambiar chofer antes de cargar/iniciar, conservando ruta; asistente nuevo acepta invitacion versionada. Demo usa mismo bloqueo antes de iniciar y exige nueva aceptacion. Servidor instalado sin reasignar datos reales para QA. Publicacion en NOTAS.md.
+
+### Editar llenos y vacios del deposito
+Como jefe, abrir Catalogo y Editar llenos y vacios en un producto. Escribir ambos conteos y confirmar. La demo conserva clientes y camiones. Productos sin estado vacio muestran Editar disponibles. El asistente no puede editar este conteo. Guia: CONTEO_DEPOSITO.md.

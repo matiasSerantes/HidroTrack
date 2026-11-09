@@ -550,3 +550,6 @@ El usuario aclara que cada jefe acuerda el alquiler por dispenser y puede editar
 
 
 07/11/2026 - Combos con precio especial para clientes: el jefe crea/edita/desactiva nombre, precio y composicion reutilizable. Atender cliente permite combos mas unidades sueltas, con stock fisico compartido del camion y envases completos. Asistentes requieren permiso promocional; historial conserva precio/composicion y reintentos estables. Demo permite crearlos y venderlos con datos ficticios. Implementacion y publicacion se detallan en NOTAS.md; guia COMBOS.md.
+
+## 09/11/2026 - Conteo por estado en deposito
+Boton por articulo para editar llenos y vacios (disponibles en productos sin vacios), con fecha, motivo y confirmacion. Guardar diferencias atomicas e idempotentes, comparar saldos esperados, conservar clientes/camiones e impedir acceso de asistentes. Demo funcional. Ver CONTEO_DEPOSITO.md.

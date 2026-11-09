@@ -1166,3 +1166,16 @@ it('claim viejo no desactiva dispositivo despues de otro reclamo y reintentos so
  await db.query("select public.push_finish_planning_job($1,$2,'gone')",[first.id,first.claim_token]);expect((await db.query('select active from private.web_push_subscriptions')).rows[0].active).toBe(true);
  expect(await planningAt('20:06')).toHaveLength(1);expect(await planningAt('20:09')).toHaveLength(0);
 });
+
+it('conteo de llenos y vacios es atomico, idempotente y exclusivo del jefe',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,product=crypto.randomUUID();
+ await db.query("select public.inventory_create_product($1,$2,'Bidon conteo',100,'unidad',true)",[tenant,product]);
+ await db.query("select public.inventory_record_stock($1,$2,'receive_empty',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:product,quantity:600}])]);
+ await db.query("select public.inventory_assign_existing_containers($1,$2,$3,$4,'depot_empty',current_date,'Conteo')",[tenant,crypto.randomUUID(),customer,JSON.stringify([{product_id:product,quantity:2}])]);
+ const id=crypto.randomUUID(),count=(actorId=id,er=0,ee=598,r=500,e=98)=>db.query("select public.inventory_set_depot_counts($1,$2,$3,$4,$5,$6,$7,current_date,'Conteo fisico')",[tenant,actorId,product,er,ee,r,e]);
+ await count();await count();let stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];expect([Number(stock.depot_ready),Number(stock.depot_empty),Number(stock.in_customers),Number(stock.total_owned)]).toEqual([500,98,2,600]);
+ await denied(()=>count(id,0,598,501,97),/otros datos/);await denied(()=>count(crypto.randomUUID(),0,598,480,110),/cambi/);
+ await count(crypto.randomUUID(),500,98,480,110);stock=(await db.query('select * from public.inventory_owned_stock where product_id=$1',[product])).rows[0];expect([Number(stock.depot_ready),Number(stock.depot_empty),Number(stock.in_customers),Number(stock.total_owned)]).toEqual([480,110,2,592]);
+ await actor(driver);await denied(()=>count(crypto.randomUUID(),480,110,1,1),/Solo el jefe/);await actor(otherOwner);await denied(()=>count(crypto.randomUUID(),480,110,1,1),/Solo el jefe/);
+ await actor(owner);await denied(()=>count(crypto.randomUUID(),480,110,-1,1),/cantidades/);
+});
