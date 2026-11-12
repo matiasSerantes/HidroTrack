@@ -558,3 +558,5 @@ La demo conserva acciones sincronicas y un unico dialogo para cargar, atender o 
 
 ### Editar llenos y vacios del deposito
 Como jefe, abrir Catalogo y Editar llenos y vacios en un producto. Escribir ambos conteos y confirmar. La demo conserva clientes y camiones. Productos sin estado vacio muestran Editar disponibles. El asistente no puede editar este conteo. Guia: CONTEO_DEPOSITO.md.
+
+12/11/2026 - Frecuencia con botones semanal, Cada 15 dias (semana por medio) y Cada 21 dias (tres semanas), tanto en real como demo. Elegir fecha de referencia y Guardar frecuencia de visita. Se conservan dias habituales y clientes existentes. Proxima visita, filtro de reparto y aviso diario respetan tres semanas. Estado de publicacion en NOTAS.md.

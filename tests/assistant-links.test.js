@@ -3,6 +3,11 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('cada tres semanas conserva lunes y el aviso diario respeta el ciclo',async()=>{
+ const customer=await planningFixture();await db.query('select public.owner_set_customer_visit_cycle($1,$2,3,current_date-6)',[tenant,customer]);expect(await planningAt('20:00')).toHaveLength(0);
+ await actor(owner);await db.query('select public.owner_set_customer_visit_cycle($1,$2,3,current_date-20)',[tenant,customer]);expect((await planningAt('20:01'))[0].customer_count).toBe(1);await actor(owner);
+ await denied(()=>db.query('select public.owner_set_customer_visit_cycle($1,$2,3,null)',[tenant,customer]),/invalida/);await actor(otherOwner);await denied(()=>db.query('select public.owner_set_customer_visit_cycle($1,$2,3,current_date)',[tenant,customer]),/Solo el jefe/);
+});
 it('reasigna solo plan, revoca acceso anterior y nueva invitacion requiere respuesta vigente',async()=>{
  const trip=await assigned(),firstReply=crypto.randomUUID();await actor(driver);await answer(trip,true,firstReply);await actor(owner);const request=crypto.randomUUID();const change=()=>db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,request,trip,driver,owner]);await change();await change();
  await actor(driver);await denied(()=>db.query('select public.assistant_open_trip($1,$2)',[tenant,trip]),/acceso|aceptado/);await actor(owner);

@@ -91,3 +91,7 @@ Guardar un pedido no activa avisos sin consentimiento, no crea repartos ni gener
 5. Actualizar inventario para consultar la respuesta antes de registrar carga.
 
 El servidor rechaza el cambio si ya se cargo o inicio el reparto, hubo actividad, se retiro el reparto o el chofer actual cambio mientras se editaba. Una respuesta vieja no acepta la invitacion de una nueva asignacion. Si se pierde la confirmacion, Reintentar mismo cambio de chofer conserva la solicitud sin duplicarla.
+
+## Botones de frecuencia (12/11/2026)
+
+Clientes > Planilla > Visitas y pedido habitual > Frecuencia de visita: elegir Todas las semanas, Cada 15 dias o Cada 21 dias. Cada 15 conserva la regla acordada de semana por medio (dos semanas, no intervalo literal de 15 dias); Cada 21 equivale a tres semanas. Elegir la primera fecha y Guardar frecuencia de visita. Los botones de lunes a domingo se mantienen y determinan los dias. La fecha proxima, el selector de clientes del reparto y el aviso diario respetan esa frecuencia. Cambiarla no modifica repartos ya creados ni registra ventas.
