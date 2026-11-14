@@ -3,6 +3,14 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('mensual genera una fila sin dias elegidos y calendario respeta fin de mes',async()=>{
+ await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;await db.query("select public.owner_set_customer_visit_cycle($1,$2,0,'2026-01-31')",[tenant,c]);expect((await db.query('select weekday,every_weeks from public.customer_schedule_cycles where customer_id=$1',[c])).rows).toEqual([{weekday:0,every_weeks:0}]);
+ await db.exec('reset role');expect((await db.query("select private.monthly_customer_visit_date('2026-02-01','2026-01-31')::text d")).rows[0].d).toBe('2026-02-28');expect((await db.query("select private.customer_visit_cycle_due($1,$2,'2026-03-31') due",[tenant,c])).rows[0].due).toBe(true);expect((await db.query("select private.customer_visit_cycle_due($1,$2,'2026-03-28') due",[tenant,c])).rows[0].due).toBe(false);
+ await actor(owner);await db.query('insert into public.customer_schedules values($1,$2,1)',[tenant,c]);expect((await db.query('select weekday from public.customer_schedule_cycles where customer_id=$1',[c])).rows).toEqual([{weekday:0}]);await db.query('select public.owner_set_customer_visit_cycle($1,$2,1,null)',[tenant,c]);expect((await db.query('select weekday from public.customer_schedule_cycles where customer_id=$1',[c])).rows).toEqual([{weekday:1}]);
+});
+it('recordatorio mensual funciona sin dia semanal asignado',async()=>{
+ const c=await planningFixture();await db.query('delete from public.customer_schedules where tenant_id=$1',[tenant]);await db.query('select public.owner_set_customer_visit_cycle($1,$2,0,current_date+1)',[tenant,c]);expect((await planningAt('20:00'))[0].customer_count).toBe(1);
+});
 it('planilla autorizada del chofer incluye nombre del telefono adicional',async()=>{
  const v=await deliveryFixture();await actor(owner);await db.query("update public.customers set phone2='222',phone2_name='Contacto ficticio' where tenant_id=$1 and id=$2",[tenant,v.customer]);await actor(driver);expect((await visitDetail(v)).customer).toMatchObject({phone2:'222',phone2_name:'Contacto ficticio',phone3_name:''});await actor(otherOwner);await denied(()=>db.query('select public.assistant_customer_visit($1,$2,$3)',[tenant,v.trip,v.customer]),/acceso|asignado|aceptado|reparto/i);
 });
