@@ -6,7 +6,7 @@ import type {SupabaseClient} from '@supabase/supabase-js';
 import {currency,parseMoney} from '../domain/demo';
 import './AssistantVisit.css';
 type Product={id:string;name:string;price:number;returnable:boolean;active:boolean;ready:number;held:number};
-type Detail={combos?:SaleCombo[];customer:{phone?:string;phone2?:string;phone3?:string;delivery_notes?:string;id:string;name:string;pending_recovery:boolean};version:number;outcome:string;balance:number;products:Product[];equipment:{name:string;mode:string;monthly:number}[]};
+type Detail={combos?:SaleCombo[];customer:{phone?:string;phone2?:string;phone3?:string;phone2_name?:string;phone3_name?:string;delivery_notes?:string;id:string;name:string;pending_recovery:boolean};version:number;outcome:string;balance:number;products:Product[];equipment:{name:string;mode:string;monthly:number}[]};
 type Receipt={id:string;total:number;paid:number;remaining:number;credit_status:string};
 type Command={p_combos?:{id:string;version:number;quantity:number}[];p_tenant:string;p_id:string;p_trip:string;p_customer:string;p_version:number;p_items:{product_id:string;quantity:number;returned:number}[];p_expected_total:number;p_paid:number;p_method:string|null;p_note:string};
 export function AssistantVisit({client,tenantId,tripId,customerId,resolved,disabled=false,onLock,onChanged,owner=false}:{client:SupabaseClient;tenantId:string;tripId:string;customerId:string;resolved:boolean;disabled?:boolean;owner?:boolean;onLock:(locked:boolean)=>void;onChanged:()=>void}){

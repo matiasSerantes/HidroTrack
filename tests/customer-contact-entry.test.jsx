@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import {cleanup,render,screen,fireEvent,waitFor} from '@testing-library/react';
 import {afterEach,it,expect,vi} from 'vitest';
-import {CustomerContactFields,readContactPatch} from '../src/features/CustomerContactFields';
+import {CustomerContactFields,CustomerContactDetails,readContactPatch} from '../src/features/CustomerContactFields';
 import {CustomerAccountEntries} from '../src/features/CustomerAccountEntries';
 import {selectedAddressText} from '../src/domain/addressSearch';
 import {matchesCustomer} from '../src/domain/customerSearch';
@@ -32,4 +32,11 @@ it('reintenta deuda incierta con el mismo importe, fecha e identificador',async(
  fireEvent.click(screen.getByRole('button',{name:'Reintentar mismo movimiento de cuenta'}));
  await waitFor(()=>expect(saved).toHaveBeenCalled());expect(client.rpc.mock.calls[0]).toEqual(client.rpc.mock.calls[1]);
  expect(client.rpc.mock.calls[0][1]).toMatchObject({p_amount:1200,p_customer:'c',p_product:null,p_combo:null});
+});
+
+it('al quitar un contacto conserva unido nombre y numero del siguiente',()=>{
+ render(<form><CustomerContactFields initial={{phone:'111',phone2:'222',phone2_name:'Ana',phone3:'333',phone3_name:'Luis'}}/></form>);fireEvent.click(screen.getByText('Quitar número 2'));expect(screen.getByLabelText('Teléfono 2').value).toBe('333');expect(screen.getByLabelText('Nombre del contacto 2').value).toBe('Luis');const patch=readContactPatch(new FormData(document.querySelector('form')),{phone2:'222',phone2_name:'Ana',phone3:'333',phone3_name:'Luis'});expect(patch).toEqual({phone2:'333',phone3:'',phone2_name:'Luis',phone3_name:''});
+});
+it('agregar otro numero permite nombrarlo y la planilla identifica a la persona',()=>{
+ const view=render(<form><CustomerContactFields initial={{phone:'111'}}/></form>);fireEvent.click(screen.getByText('Agregar otro número'));fireEvent.change(screen.getByLabelText('Teléfono 2'),{target:{value:'222'}});fireEvent.change(screen.getByLabelText('Nombre del contacto 2'),{target:{value:'Ana, hija'}});expect(readContactPatch(new FormData(document.querySelector('form')))).toMatchObject({phone2:'222',phone2_name:'Ana, hija'});view.unmount();render(<CustomerContactDetails customer={{phone:'111',phone2:'222',phone2_name:'Ana, hija'}}/>);expect(screen.getByRole('link',{name:'Ana, hija · 222'}).getAttribute('href')).toBe('tel:222');
 });

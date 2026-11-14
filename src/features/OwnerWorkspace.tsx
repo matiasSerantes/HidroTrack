@@ -21,7 +21,7 @@ import { OwnerCustomerSheet } from './OwnerCustomerSheet';
 import { OwnerOverview, OwnerShell, ownerViewTitle, type OwnerView } from './OwnerShell';
 
 type Membership = { tenant_id: string; role: string };
-type Customer = {phone2?:string;phone3?:string;delivery_notes?:string;latitude?:number|null;longitude?:number|null;created_at?:string;customer_since?:string|null; id: string; name: string; address: string; phone: string };
+type Customer = {phone2?:string;phone3?:string;phone2_name?:string;phone3_name?:string;delivery_notes?:string;latitude?:number|null;longitude?:number|null;created_at?:string;customer_since?:string|null; id: string; name: string; address: string; phone: string };
 type License = { kind: string; status: string; expires_at: string | null };
 type Workspace = { ownerName: string; tenantName: string; license: License; customers: Customer[] };
 
@@ -75,7 +75,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
         async function loadCustomers(){
           const rows:Customer[]=[];
           for(let offset=0;;offset+=500){
-            const result=await client.from('customers').select('id, name, address, phone, phone2, phone3, delivery_notes, latitude, longitude, created_at, customer_since').eq('tenant_id',tenantId).eq('active',true).order('name').order('id').range(offset,offset+499);
+            const result=await client.from('customers').select('id, name, address, phone, phone2, phone3, phone2_name, phone3_name, delivery_notes, latitude, longitude, created_at, customer_since').eq('tenant_id',tenantId).eq('active',true).order('name').order('id').range(offset,offset+499);
             if(result.error||!Array.isArray(result.data))throw new Error('No pudimos consultar todos los clientes.');
             rows.push(...result.data);if(result.data.length<500)return {data:rows,error:null};
           }
@@ -104,7 +104,7 @@ export function OwnerWorkspace({ client, userId }: { client: SupabaseClient; use
       const point=readCustomerLocation(data);
       const values={name,address,phone,...readContactPatch(data,editing||undefined),customer_since:customerSince,...(point?{latitude:point.lat,longitude:point.lng}:editing?.latitude!=null?{latitude:null,longitude:null}:{})};
       const request=editing?client.from('customers').update(values).eq('tenant_id',tenantId).eq('id',editing.id):client.from('customers').insert({tenant_id:tenantId,...values});
-      const result=await request.select('id, name, address, phone, phone2, phone3, delivery_notes, latitude, longitude, created_at, customer_since').single();
+      const result=await request.select('id, name, address, phone, phone2, phone3, phone2_name, phone3_name, delivery_notes, latitude, longitude, created_at, customer_since').single();
       if (result.error) throw result.error;
       setWorkspace(current => current ? { ...current, customers: [...current.customers.filter(c=>c.id!==result.data.id), result.data].sort((a, b) => a.name.localeCompare(b.name, 'es')) } : null);
       setShowForm(false);setEditing(null);setSelectedCustomer(null); setNotice('Cliente guardado en tu reparto.');

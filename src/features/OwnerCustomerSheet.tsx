@@ -16,7 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { parseMoney, currency } from '../domain/demo';
 import {isDispenserModel,stockToday} from './OwnerStockIncident';
 
-type Customer = {phone2?:string;phone3?:string;delivery_notes?:string;latitude?:number|null;longitude?:number|null;created_at?:string;customer_since?:string|null;id:string;name:string;address:string;phone:string};
+type Customer = {phone2?:string;phone3?:string;phone2_name?:string;phone3_name?:string;delivery_notes?:string;latitude?:number|null;longitude?:number|null;created_at?:string;customer_since?:string|null;id:string;name:string;address:string;phone:string};
 type Product = {price?:number;family?:string;id:string;name:string;active:boolean;returnable:boolean};
 type Asset = {retired?:boolean;id:string;name:string;serial:string;ownership:string;location:string;customer_id:string|null;mode:string|null;monthly:number};
 type ModelAssignment={id:string;product_id:string;customer_id:string;mode:string;monthly:number;status:string;occurred_on:string;last_exchange_on?:string|null;last_operation?:string};

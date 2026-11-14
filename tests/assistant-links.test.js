@@ -3,6 +3,9 @@ import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, afterAll, beforeEach, afterEach, it, expect } from 'vitest';
 const db=new PGlite();
 
+it('planilla autorizada del chofer incluye nombre del telefono adicional',async()=>{
+ const v=await deliveryFixture();await actor(owner);await db.query("update public.customers set phone2='222',phone2_name='Contacto ficticio' where tenant_id=$1 and id=$2",[tenant,v.customer]);await actor(driver);expect((await visitDetail(v)).customer).toMatchObject({phone2:'222',phone2_name:'Contacto ficticio',phone3_name:''});await actor(otherOwner);await denied(()=>db.query('select public.assistant_customer_visit($1,$2,$3)',[tenant,v.trip,v.customer]),/acceso|asignado|aceptado|reparto/i);
+});
 it('cada tres semanas conserva lunes y el aviso diario respeta el ciclo',async()=>{
  const customer=await planningFixture();await db.query('select public.owner_set_customer_visit_cycle($1,$2,3,current_date-6)',[tenant,customer]);expect(await planningAt('20:00')).toHaveLength(0);
  await actor(owner);await db.query('select public.owner_set_customer_visit_cycle($1,$2,3,current_date-20)',[tenant,customer]);expect((await planningAt('20:01'))[0].customer_count).toBe(1);await actor(owner);
