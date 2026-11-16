@@ -13,7 +13,7 @@ export function receiptPdfLines(r:DemoTripReceipt,role:'owner'|'driver'){
  return lines;
 }
 export function createTripReceiptPdf(r:DemoTripReceipt,role:'owner'|'driver'):Uint8Array{
- return createTextReceiptPdf(receiptPdfLines(r,role),`${role==='owner'?'Copia del jefe':'Copia del asistente'} - DEMO`);
+ return createTextReceiptPdf(receiptPdfLines(r,role),`${role==='owner'?'Copia del jefe':'Copia del chofer'} - DEMO`);
 }
 export function downloadTripReceipt(r:DemoTripReceipt,role:'owner'|'driver'){
  downloadPdf(createTripReceiptPdf(r,role),`hidrotrack-${r.tripId}-${role}.pdf`);

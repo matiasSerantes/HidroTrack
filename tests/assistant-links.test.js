@@ -27,7 +27,7 @@ it('reasigna solo plan, revoca acceso anterior y nueva invitacion requiere respu
  await denied(()=>db.query('select public.assistant_answer_trip_version($1,$2,true,$3,2)',[tenant,trip,firstReply]),/reutilizada/);
  await db.query('select public.assistant_answer_trip_version($1,$2,true,$3,2)',[tenant,trip,crypto.randomUUID()]);expect((await db.query('select public.assistant_open_trip($1,$2) detail',[tenant,trip])).rows[0].detail.stops).toHaveLength(1);
 });
-it('otro asistente recibe invitacion pendiente y el anterior ya no la ve',async()=>{
+it('otro chofer recibe invitacion pendiente y el anterior ya no la ve',async()=>{
  const trip=await assigned();await actor(driver);await answer(trip);await db.exec('reset role');await db.query('update public.licenses set driver_limit=3 where tenant_id=$1',[tenant]);await actor(owner);await link(tenant,second);
  await db.query('select public.owner_change_trip_driver($1,$2,$3,$4,$5)',[tenant,crypto.randomUUID(),trip,driver,second]);await actor(driver);expect((await db.query('select public.assistant_trip_invitations() items')).rows[0].items).toHaveLength(0);await actor(second);expect((await db.query('select public.assistant_trip_invitations() items')).rows[0].items[0]).toMatchObject({state:'pending',generation:2});await denied(()=>db.query('select public.assistant_open_trip($1,$2)',[tenant,trip]),/aceptado|acceso/);
 });
@@ -130,7 +130,7 @@ it('correccion de promo con varios articulos es atomica, sin venta ni duplicar p
 
 
 
-it('jefe usa combo en reparto propio y aprueba saldo sin exigir permiso de asistente',async()=>{
+it('jefe usa combo en reparto propio y aprueba saldo sin exigir permiso de chofer',async()=>{
  const v=await comboFixture(false);await db.exec('reset role');await db.query('update public.inventory_trips set driver_id=$1 where tenant_id=$2 and id=$3',[owner,tenant,v.trip]);await actor(owner);
  expect((await visitDetail(v)).combos[0].id).toBe(v.combo);expect(await deliverCombo(v)).toMatchObject({total:250,remaining:150,credit_status:'approved'});
 });
@@ -496,7 +496,7 @@ it('el jefe elimina un plan sin borrar clientes ni movimientos y el reintento es
  expect((await db.query('select active from public.route_stops where trip_id=$1',[trip])).rows[0].active).toBe(false);
  expect((await db.query('select count(*)::int n from public.customers where tenant_id=$1',[tenant])).rows[0].n).toBe(1);
 });
-it('asistente y otro jefe no pueden eliminar recorridos ajenos',async()=>{
+it('chofer y otro jefe no pueden eliminar recorridos ajenos',async()=>{
  const trip=await assigned();await actor(driver);
  await denied(()=>db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]),/Solo el jefe/);
  await actor(otherOwner);await denied(()=>db.query('select public.owner_remove_trip($1,$2)',[tenant,trip]),/Solo el jefe/);
@@ -535,7 +535,7 @@ it('confirma reintentos de plantilla y reparto aunque el cliente haya sido dado 
  expect((await db.query("select public.owner_create_ordered_trip($1,$2,$3,'Semanal',current_date,$4) as id",[tenant,trip,owner,[c]])).rows[0].id).toBe(trip);
  expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
 });
-it('plantilla conserva orden, no crea ventas ni carga y niega otro jefe/asistente',async()=>{
+it('plantilla conserva orden, no crea ventas ni carga y niega otro jefe/chofer',async()=>{
  await actor(owner);const c=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id;
  const secondCustomer=(await db.query("insert into public.customers(tenant_id,name,address) values($1,'Cliente C','Direccion C') returning id",[tenant])).rows[0].id;
  const id=crypto.randomUUID();await db.query("select public.owner_save_route_template($1,$2,'Lunes',$3)",[tenant,id,[secondCustomer,c]]);
@@ -649,7 +649,7 @@ it('solicitud extraordinaria es idempotente y no registra stock ni venta',async(
  expect((await db.query('select * from public.inventory_operations')).rows).toHaveLength(0);
  expect((await db.query('select * from public.sales')).rows).toHaveLength(0);
 });
-it('asistente y otro jefe no pueden leer o crear pedidos de la empresa',async()=>{
+it('chofer y otro jefe no pueden leer o crear pedidos de la empresa',async()=>{
  const v=await extraVisit();await actor(driver);expect((await db.query('select * from public.extra_visit_requests')).rows).toHaveLength(0);
  await denied(()=>db.query("select public.owner_request_extra_visit($1,$2,$3,current_date,$4,'')",[tenant,crypto.randomUUID(),v.customer,v.items]),/Acceso denegado/);
  await actor(otherOwner);expect((await db.query('select * from public.extra_visit_requests')).rows).toHaveLength(0);
@@ -706,7 +706,7 @@ it('no permite devolucion fechada antes del ultimo cambio',async()=>{
  const v=await dispenserContract();await exchange(v);
  await denied(()=>db.query('select public.inventory_return_dispenser_model($1,$2,$3,current_date-2)',[tenant,crypto.randomUUID(),v.assignment]),/fecha es anterior/);
 });
-it('otro jefe y asistente no pueden cambiar ni leer historial de dispenser',async()=>{
+it('otro jefe y chofer no pueden cambiar ni leer historial de dispenser',async()=>{
  const v=await dispenserContract();await exchange(v);await actor(driver);await denied(()=>exchange(v),/Solo el jefe/);expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(0);
  await actor(otherOwner);await denied(()=>exchange(v),/Solo el jefe/);expect((await db.query('select * from public.dispenser_exchanges')).rows).toHaveLength(0);
 });
@@ -763,7 +763,7 @@ it('costos y snapshots solo jefe de la empresa sin escritura directa',async()=>{
  await denied(()=>db.query('select public.owner_set_filling_costs($1,true,$2)',[tenant,JSON.stringify([{product_id:v.product,unit_cost:-1}])]),/Costo o producto/);
 });
 
-it('apertura del asistente incluye solo stock de su camion aceptado sin deposito ni precios',async()=>{
+it('apertura del chofer incluye solo stock de su camion aceptado sin deposito ni precios',async()=>{
  const trip=await assigned();await actor(driver);await answer(trip);await actor(owner);
  const product=crypto.randomUUID(),otherTrip=crypto.randomUUID();
  await db.query("select public.inventory_create_product($1,$2,'Agua camion',100,'unidad',true)",[tenant,product]);
@@ -1020,7 +1020,7 @@ async function initialLoadFixture(){
  return {trip,product,equipment,date,id:crypto.randomUUID(),refill:crypto.randomUUID()};
 }
 async function confirmAssistantLoad(v,items=[{product_id:v.product,quantity:4}],fill=true){return db.query("select public.assistant_confirm_load($1,$2,$3,$4,$5,$6,$7,'Carga revisada') as id",[tenant,v.id,v.refill,v.trip,JSON.stringify(items),v.date,fill]);}
-it('asistente aceptado carga una vez, rellena solo faltantes y conserva costo historico privado',async()=>{
+it('chofer aceptado carga una vez, rellena solo faltantes y conserva costo historico privado',async()=>{
  const v=await initialLoadFixture();const options=(await db.query('select public.assistant_load_options($1,$2) as data',[tenant,v.trip])).rows[0].data;
  expect(options.products.find(p=>p.id===v.product)).toMatchObject({ready:2,empties:10,suggested:3});expect(JSON.stringify(options)).not.toContain('unit_cost');expect(JSON.stringify(options)).not.toContain('price');
  await confirmAssistantLoad(v);await confirmAssistantLoad(v);await denied(()=>confirmAssistantLoad(v,[{product_id:v.product,quantity:5}]),/ID de carga/);await denied(()=>confirmAssistantLoad({...v,id:crypto.randomUUID(),refill:crypto.randomUUID()}),/Carga ya confirmada/);
@@ -1053,7 +1053,7 @@ async function submitAssistantClose(v,q,{id=v.closeId??crypto.randomUUID(),cash=
  return (await db.query('select public.assistant_submit_close($1,$2,$3,$4,$5,$6,$7,$8) as result',[tenant,id,v.trip,JSON.stringify(q),cash,transfer,JSON.stringify(stock),note])).rows[0].result;
 }
 async function reviewAssistantClose(id,approve=true,note='Recibido y revisado'){return db.query('select public.trip_review_close($1,$2,$3,$4) as result',[tenant,id,approve,note]);}
-it('rendicion del asistente no devuelve stock hasta aprobar; reintentos no duplican cierre ni aviso',async()=>{
+it('rendicion del chofer no devuelve stock hasta aprobar; reintentos no duplican cierre ni aviso',async()=>{
  const v={...await deliveryFixture(),closeId:crypto.randomUUID()};await deliverVisit(v);const q=await assistantCloseQuote(v);expect(q).toMatchObject({cash:100,transfer:0,sales:200,pending_visits:0});await submitAssistantClose(v,q);await submitAssistantClose(v,q);
  expect((await preview(v.trip)).rows[0].result).toMatchObject({trip:{status:'submitted'},stock:[{ready:3,empties:1}]});await denied(()=>deliverVisit({...v,id:crypto.randomUUID()}),/no activo|activo/);
  await actor(owner);expect((await db.query("select * from public.owner_notifications where kind='trip_closure'")).rows).toHaveLength(1);await reviewAssistantClose(v.closeId);await reviewAssistantClose(v.closeId);expect((await db.query("select * from public.inventory_operations where trip_id=$1 and kind='close'",[v.trip])).rows).toHaveLength(1);
@@ -1084,7 +1084,7 @@ it('eliminar y purgar reparto realizado deja identicos cobros ventas stock y com
  const after=(await db.query("select (select count(*) from public.sales) sales,(select count(*) from public.payments) payments,(select jsonb_agg(to_jsonb(x) order by x.product_id) from public.inventory_owned_stock x) stock,(select snapshot from public.assistant_trip_close_snapshots where id=$1) receipt",[v.closeId])).rows;
  expect(after).toEqual(before);
 });
-it('comprobante aprobado ofrece copia completa al jefe y proyeccion minima al propio asistente',async()=>{
+it('comprobante aprobado ofrece copia completa al jefe y proyeccion minima al propio chofer',async()=>{
  const v=await approvedAssistantReceipt();const ownerReceipt=(await db.query('select public.trip_close_receipt($1,$2) as r',[tenant,v.closeId])).rows[0].r;expect(ownerReceipt).toMatchObject({role:'owner',receipt:{id:v.closeId,sales:200,declared_transfer:0,declared_cash:100}});
  await actor(driver);const r=(await db.query('select public.trip_close_receipt($1,$2) as r',[tenant,v.closeId])).rows[0].r;expect(r).toMatchObject({role:'driver',receipt:{id:v.closeId,declared_cash:100,closure_state:'approved'}});for(const key of ['sales','transfer','declared_transfer','cash','revision','request','unit_cost'])expect(r.receipt).not.toHaveProperty(key);expect((await db.query('select public.assistant_close_receipts() as h')).rows[0].h).toHaveLength(1);await denied(()=>preview(v.trip),/acceso finalizado/);
  await actor(second);expect((await db.query('select public.assistant_close_receipts() as h')).rows[0].h).toHaveLength(0);await denied(()=>db.query('select public.trip_close_receipt($1,$2)',[tenant,v.closeId]),/no disponible/);await actor(otherOwner);await denied(()=>db.query('select public.trip_close_receipt($1,$2)',[tenant,v.closeId]),/no disponible/);
@@ -1119,7 +1119,7 @@ it('equipo por serie muestra carga y regreso vinculados sin inventar un cambio',
  await db.query("select public.inventory_save_dispenser($1,$2,$3,'Equipo identificado','EQ-TEST','company','truck',null,$4,null,0)",[tenant,crypto.randomUUID(),asset,v.trip]);const before=await ownerCloseQuote(v);expect(before.equipment_count).toBe(1);expect(before.equipment_detail.serialized[0]).toMatchObject({kind:'loaded',serial:'EQ-TEST'});
  await db.query("select public.inventory_save_dispenser($1,$2,$3,'Equipo identificado','EQ-TEST','company','depot',null,null,null,0)",[tenant,crypto.randomUUID(),asset]);await recordAssistantVisit(v);const q=await ownerCloseQuote(v);expect(q.equipment_count).toBe(0);expect(q.equipment_detail.serialized.map(e=>e.kind).sort()).toEqual(['loaded','returned']);await finishOwner(v,q);
 });
-it('comprobante del asistente comparte detalle sin cliente alquiler responsable ni costos',async()=>{
+it('comprobante del chofer comparte detalle sin cliente alquiler responsable ni costos',async()=>{
  const v=await equipmentTripFixture(true);await actor(driver);await recordAssistantVisit(v);const q=await assistantCloseQuote(v);expect(q.equipment_detail.models).toHaveLength(1);const closeId=crypto.randomUUID();await submitAssistantClose({...v,closeId},q);await actor(owner);await reviewAssistantClose(closeId);await actor(driver);const r=(await db.query('select public.trip_close_receipt($1,$2) as r',[tenant,closeId])).rows[0].r.receipt;expect(r.equipment_detail).toEqual(q.equipment_detail);const detail=JSON.stringify(r.equipment_detail);for(const field of ['customer_id','monthly','involved_id','unit_cost',v.customer])expect(detail).not.toContain(field);await denied(()=>db.query('select private.trip_equipment_close_detail($1,$2)',[tenant,v.trip]),/permission denied/);
 });
 it('rendicion antigua sin detalle se aprueba sin reconstruir movimientos nuevos',async()=>{
@@ -1128,7 +1128,7 @@ it('rendicion antigua sin detalle se aprueba sin reconstruir movimientos nuevos'
 
 async function windowFixture(){const v=await deliveryFixture();await actor(owner);await db.query("select public.customer_set_visit_window($1,$2,'16:00','17:00')",[tenant,v.customer]);await db.exec('reset role');await db.exec("update private.web_push_config set enabled=true,public_key=repeat('A',87)");await actor(driver);await db.query('select public.push_subscribe($1::jsonb)',[JSON.stringify({endpoint:'https://fcm.googleapis.com/fcm/send/ficticio',keys:{p256dh:'A'.repeat(87),auth:'B'.repeat(22)}})]);return v;}
 async function claimAt(time){await db.exec('reset role');return (await db.query("select public.push_claim_visit_notifications(20,(current_date+$1::time) at time zone 'America/Argentina/Buenos_Aires') as jobs",[time])).rows[0].jobs;}
-it('horario se muestra en ruta aceptada y asistente no puede editar horarios',async()=>{
+it('horario se muestra en ruta aceptada y chofer no puede editar horarios',async()=>{
  const v=await windowFixture();const route=(await preview(v.trip)).rows[0].result;expect(route.stops[0]).toMatchObject({visit_start:'16:00',visit_end:'17:00',reminder_dismissed:false});await denied(()=>db.query("select public.customer_set_visit_window($1,$2,'18:00','19:00')",[tenant,v.customer]),/Solo el jefe/);await actor(owner);await denied(()=>db.query("select public.customer_set_visit_window($1,$2,'17:00','16:00')",[tenant,v.customer]),/horario/);
 });
 it('cron genera aviso a las 15, luego 15:30 sin duplicar por minuto y solo para destinatario',async()=>{
@@ -1208,4 +1208,9 @@ it('reprogramacion exige hora y no permite datos horarios en no compro',async()=
  const v=await deliveryFixture();
  await denied(()=>db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'absent','later_today',(now() at time zone 'America/Argentina/Buenos_Aires')::date,'',null)",[tenant,crypto.randomUUID(),v.trip,v.customer]),/hora/);
  await denied(()=>db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'no_purchase',null,null,'','17:00')",[tenant,crypto.randomUUID(),v.trip,v.customer]),/reprograma/);
+});
+
+it('contactos adicionales llegan a la planilla autorizada y la promo permite condiciones vacias',async()=>{
+ const v=await deliveryFixture();await actor(owner);await db.query("update public.customers set phone6='666',phone6_name='Contacto seis' where tenant_id=$1 and id=$2",[tenant,v.customer]);await actor(driver);expect((await visitDetail(v)).customer).toMatchObject({phone6:'666',phone6_name:'Contacto seis'});
+ await actor(owner);const id=crypto.randomUUID();const offer=()=>db.query("select public.promotion_offer($1,$2,null,'Persona prueba','Calle 100','','',(now() at time zone 'America/Argentina/Buenos_Aires')::date,(now() at time zone 'America/Argentina/Buenos_Aires')::date,$3) id",[tenant,id,JSON.stringify([{product_id:v.product,quantity:1}])]);expect((await offer()).rows[0].id).toBe(id);await offer();
 });

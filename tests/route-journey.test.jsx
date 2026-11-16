@@ -39,7 +39,7 @@ it('recorre carga, entrega con retorno y pago parcial, rendicion y aprobacion si
       case 'assistant_submit_close': {
         expect(delivered).toBe(true); expect(args.p_cash).toBe(100);
         expect(args.p_stock).toEqual([{product_id:'p',ready:2,empties:1}]);
-        closure={...summary(),id:args.p_id,tenant_id:'a',company:'Empresa ficticia',closure_state:'submitted',declared_cash:100,declared_transfer:0,declared_stock:args.p_stock,driver:'Asistente ficticio'};
+        closure={...summary(),id:args.p_id,tenant_id:'a',company:'Empresa ficticia',closure_state:'submitted',declared_cash:100,declared_transfer:0,declared_stock:args.p_stock,driver:'Chofer ficticio'};
         status='submitted'; return {data:closure,error:null};
       }
       case 'owner_assistant_close_inbox': return {data:[closure],error:null};
@@ -78,9 +78,9 @@ it('recorre carga, entrega con retorno y pago parcial, rendicion y aprobacion si
   await screen.findByText(/Rendición enviada/);
   view.unmount();
   render(<OwnerAssistantClosures client={client} tenantId="a" disabled={false} onLock={()=>{}} onDone={()=>{}}/>);
-  await screen.findByText('Asistente ficticio · 2026-10-26');
+  await screen.findByText('Chofer ficticio · 2026-10-26');
   fireEvent.click(screen.getByText('Ruta de prueba integral · Por revisar'));
-  fireEvent.click(screen.getByLabelText('Revisé caja y mercadería con el asistente.'));
+  fireEvent.click(screen.getByLabelText('Revisé caja y mercadería con el chofer.'));
   fireEvent.click(screen.getByRole('button',{name:'Confirmar revisión de rendición'}));
   await screen.findByText('Reparto aprobado y cerrado. El stock volvió al depósito.');
   await screen.findByText('Ruta de prueba integral · Aprobada');

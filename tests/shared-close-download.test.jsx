@@ -5,7 +5,7 @@ import {AssistantReceiptHistory,ReceiptDownload} from '../src/features/SharedClo
 import {downloadSharedClosePdf} from '../src/domain/sharedCloseReceiptPdf';
 vi.mock('../src/domain/sharedCloseReceiptPdf',()=>({downloadSharedClosePdf:vi.fn()}));
 afterEach(()=>{cleanup();vi.clearAllMocks();});
-const receipt={id:'c',tenant_id:'a',company:'Empresa ficticia',driver:'Asistente ficticio',trip:{id:'r',name:'Ruta ficticia',date:'2026-10-25',status:'closed'},closure_state:'approved',declared_cash:100};
+const receipt={id:'c',tenant_id:'a',company:'Empresa ficticia',driver:'Chofer ficticio',trip:{id:'r',name:'Ruta ficticia',date:'2026-10-25',status:'closed'},closure_state:'approved',declared_cash:100};
 it('historial consulta solo recibos propios al abrir y revalida la descarga por ID',async()=>{
  const client={rpc:vi.fn(async name=>name==='assistant_close_receipts'?{data:[receipt],error:null}:{data:{role:'driver',receipt},error:null})};render(<AssistantReceiptHistory client={client}/>);expect(client.rpc).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Ver mis comprobantes'}));fireEvent.click(await screen.findByRole('button',{name:'Descargar mi PDF'}));await waitFor(()=>expect(downloadSharedClosePdf).toHaveBeenCalledWith(receipt,'driver'));expect(client.rpc.mock.calls).toEqual([['assistant_close_receipts'],['trip_close_receipt',{p_tenant:'a',p_id:'c'}]]);
 });

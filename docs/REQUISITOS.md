@@ -553,3 +553,10 @@ El usuario aclara que cada jefe acuerda el alquiler por dispenser y puede editar
 
 ## 09/11/2026 - Conteo por estado en deposito
 Boton por articulo para editar llenos y vacios (disponibles en productos sin vacios), con fecha, motivo y confirmacion. Guardar diferencias atomicas e idempotentes, comparar saldos esperados, conservar clientes/camiones e impedir acceso de asistentes. Demo funcional. Ver CONTEO_DEPOSITO.md.
+
+
+## Ajustes de carga y choferes (16/11/2026)
+- Hasta seis telefonos por cliente; contactos adicionales con nombre opcional. No se exige usar todos.
+- Busqueda por calle/altura primero, con localidad para desambiguar; puerta ajustable si la cartografia no incluye numeracion.
+- Condiciones/precio pactado opcionales en promociones a personas que aun no son clientes.
+- Mostrar chofer en interfaz; movimientos con nombre del autor, sufijo empleado solo si es chofer, sin vos.

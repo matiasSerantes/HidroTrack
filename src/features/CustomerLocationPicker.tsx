@@ -1,5 +1,5 @@
 import {lazy,Suspense,useEffect,useRef,useState} from 'react';
-import {addressSearchUrl,parseAddressResults,selectedAddressText,type AddressResult} from '../domain/addressSearch';
+import {addressSearchUrl,parseAddressResults,selectedAddressText,prioritizeAddressResults,type AddressResult} from '../domain/addressSearch';
 import './CustomerLocationPicker.css';
 const LocationMap=lazy(()=>import('./CustomerLocationMap'));
 export type CustomerPoint={lat:number;lng:number};
@@ -43,7 +43,7 @@ export function CustomerLocationPicker({initial,demo=false,disabled=false,onBusy
   const address=query.trim()||[value('address'),value('locality')].filter(Boolean).join(', ');
   let url:string;try{url=addressSearchUrl(address);}catch(e){setError((e as Error).message);return;}
   setQuery(address);requesting.current=true;setSearching(true);const controller=new AbortController();abort.current=controller;const timer=window.setTimeout(()=>controller.abort(),12000);
-  try{const response=await fetch(url,{signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});if(!response.ok)throw new Error();const found=parseAddressResults(await response.json());if(mounted.current){setResults(found);setNotice(found.length?'Elegí el resultado correcto y ajustá el punto exacto en el mapa.':'No encontramos esa dirección. Agregá localidad y provincia, o marcá el punto manualmente.');}}
+  try{const response=await fetch(url,{signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer'});if(!response.ok)throw new Error();const found=prioritizeAddressResults(parseAddressResults(await response.json()),address);if(mounted.current){setResults(found);setNotice(found.length?'Primero mostramos coincidencias de calle y altura. Confirmá el domicilio y ajustá la puerta si hace falta.':'No encontramos esa dirección. Agregá localidad y provincia, o marcá el punto manualmente.');}}
   catch{if(mounted.current)setError('No pudimos buscar la dirección. Revisá la conexión o marcá el punto en el mapa. Tu ubicación guardada no cambió.');}
   finally{window.clearTimeout(timer);requesting.current=false;if(mounted.current)setSearching(false);}
  }

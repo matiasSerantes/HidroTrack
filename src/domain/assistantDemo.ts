@@ -18,7 +18,7 @@ export function answerTripInvitation(state:DemoProgramState,actor:string,tripId:
 function owner(s:DemoProgramState,actor:string){if(!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede administrar su equipo.');}
 export function changeAssistantPlan(s:DemoProgramState,plan:keyof typeof assistantPlans,actor:string){
   owner(s,actor);
-  if(s.members.filter(m=>m.role==='driver'&&m.active).length>assistantPlans[plan].limit)throw new Error('Quitá asistentes antes de elegir un plan con menos lugares.');
+  if(s.members.filter(m=>m.role==='driver'&&m.active).length>assistantPlans[plan].limit)throw new Error('Quitá choferes antes de elegir un plan con menos lugares.');
   return {...s,assistantPlan:plan};
 }
 export const assistantShareId=(account:{id:string})=>`HT-${account.id.toUpperCase()}`;
@@ -34,9 +34,9 @@ export function validateDemoPassword(password:string,confirmation:string){
 }
 export function linkAssistant(s:DemoProgramState,email:string,actor:string){
   owner(s,actor);const value=email.trim().toLowerCase();const account=assistantAccounts(s).find(a=>a.email===value||assistantShareId(a).toLowerCase()===value);
-  if(!account)throw new Error('No existe ese ID o correo en la demo. El asistente debe crear primero su cuenta.');
-  if(s.members.some(m=>m.id===account.id&&m.active))throw new Error('Este asistente ya está en tu equipo.');
-  if(s.members.filter(m=>m.role==='driver'&&m.active).length>=assistantPlans[assistantPlan(s)].limit)throw new Error('Tu licencia no tiene lugares disponibles para otro asistente.');
+  if(!account)throw new Error('No existe ese ID o correo en la demo. El chofer debe crear primero su cuenta.');
+  if(s.members.some(m=>m.id===account.id&&m.active))throw new Error('Este chofer ya está en tu equipo.');
+  if(s.members.filter(m=>m.role==='driver'&&m.active).length>=assistantPlans[assistantPlan(s)].limit)throw new Error('Tu licencia no tiene lugares disponibles para otro chofer.');
   const next=structuredClone(s);next.assistantAccounts=assistantAccounts(s);next.otherEmployerLinks=otherEmployerLinks(s);
   const member=next.members.find(m=>m.id===account.id);
   if(member)member.active=true;else next.members.push({...account,role:'driver',active:true});
@@ -44,7 +44,7 @@ export function linkAssistant(s:DemoProgramState,email:string,actor:string){
 }
 export function unlinkAssistant(s:DemoProgramState,id:string,actor:string){
   owner(s,actor);
-  if(!s.members.some(m=>m.id===id&&m.role==='driver'&&m.active))throw new Error('Asistente no vinculado.');
+  if(!s.members.some(m=>m.id===id&&m.role==='driver'&&m.active))throw new Error('Chofer no vinculado.');
   if(s.trips.some(t=>t.driverId===id&&t.stage!=='approved'))throw new Error('Reasigná o cerrá sus recorridos y rendiciones antes de quitarlo.');
   return {...s,assistantAccounts:assistantAccounts(s),otherEmployerLinks:otherEmployerLinks(s),members:s.members.map(m=>m.id===id?{...m,active:false,promotionAllowed:false}:m)};
 }

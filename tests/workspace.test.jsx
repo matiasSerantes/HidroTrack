@@ -149,7 +149,7 @@ describe('panel conectado del titular', () => {
   it('no consulta información comercial para un chofer', async () => {
     const { client, calls } = clientFixture({ role: 'driver' });
     render(<OwnerWorkspace client={client} userId="user-a"/>);
-    await screen.findByRole('heading',{name:'Tu espacio de asistente'});
+    await screen.findByRole('heading',{name:'Tu espacio de chofer'});
     await screen.findByText('Correo: self@example.test');
     expect(calls.map(call => call.table)).toEqual(['tenant_members','user_profiles']);
     expect(calls.find(c=>c.table==='user_profiles').filters).toEqual([['user_id','user-a']]);
@@ -157,7 +157,7 @@ describe('panel conectado del titular', () => {
   it('muestra el alta pendiente sin autoconceder un rol', async () => {
     const { client, calls } = clientFixture({ members: false });
     render(<OwnerWorkspace client={client} userId="user-a"/>);
-    await screen.findByRole('heading',{name:'Tu espacio de asistente'});
+    await screen.findByRole('heading',{name:'Tu espacio de chofer'});
     expect(calls.every(call => call.operation === 'read')).toBe(true);
   });
   it.each([

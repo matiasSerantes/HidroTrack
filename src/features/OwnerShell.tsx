@@ -8,7 +8,7 @@ export type OwnerView = 'assistants' | 'promotions' | 'overview' | 'customers' |
 const navigation = [
   ['overview', 'Mi jornada', LayoutDashboard], ['customers', 'Clientes', Users],
   ['catalog', 'Catálogo', Package], ['stock', 'Stock', Truck],
-  ['trips', 'Repartos y camión', Route], ['fleet','Mapa de asistentes',MapPin], ['assistants','Mis asistentes',Users], ['promotions','Promociones',Sparkles],
+  ['trips', 'Repartos y camión', Route], ['fleet','Mapa de choferes',MapPin], ['assistants','Mis choferes',Users], ['promotions','Promociones',Sparkles],
 ] as const;
 export const ownerViewTitle = (view: OwnerView) => view==='dispensers'?'Catálogo':navigation.find(([id]) => id === view)![1];
 

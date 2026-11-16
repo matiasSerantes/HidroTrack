@@ -2,7 +2,7 @@
 import {cleanup,render,screen,fireEvent,waitFor} from '@testing-library/react';
 import {afterEach,it,expect,vi} from 'vitest';
 import {CustomerLocationPicker,readCustomerLocation} from '../src/features/CustomerLocationPicker';
-import {addressSearchUrl,parseAddressResults} from '../src/domain/addressSearch';
+import {addressSearchUrl,parseAddressResults,normalizeAddressQuery,prioritizeAddressResults} from '../src/domain/addressSearch';
 vi.mock('../src/features/CustomerLocationMap',()=>({default:({initial,onSelect,disabled})=><section aria-label="Mapa de prueba"><output>{initial?`${initial.lat},${initial.lng}`:'Sin punto'}</output><button type="button" disabled={disabled} onClick={()=>onSelect({lat:-34.6091,lng:-58.3833})}>Ajustar puerta</button></section>}));
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 const payload={features:[{geometry:{type:'Point',coordinates:[-58.3832,-34.609]},properties:{street:'Avenida de Mayo',housenumber:'1200',city:'Buenos Aires',country:'Argentina',countrycode:'AR'}}]};
@@ -29,4 +29,10 @@ it('campo direccion vacio se completa solo al elegir el resultado, no al buscar'
 });
 it('seleccion sin altura avisa completarla y respeta longitud maxima del campo',async()=>{
  const feature=structuredClone(payload.features[0]);delete feature.properties.housenumber;feature.properties.street='Calle de prueba '+ 'a'.repeat(210);vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,json:async()=>({features:[feature]})})));setup();fireEvent.click(screen.getByRole('button',{name:'Buscar direcci\u00f3n en el mapa'}));fireEvent.click(await screen.findByRole('button',{name:/Calle de prueba/}));expect(screen.getByLabelText('Direcci\u00f3n').value.length).toBe(200);expect(screen.getByText(/El resultado no incluye altura:/).textContent).toContain('no incluye altura');expect(screen.getByText(/El resultado no incluye altura:/).textContent).toContain('se acort\u00f3');
+});
+
+it('prioriza calle y altura exactas y conserva calles con nombre numerico',()=>{
+ expect(normalizeAddressQuery('3453, El Chasque, Boulogne')).toBe('El Chasque 3453, Boulogne');expect(normalizeAddressQuery('9 de Julio 1200, CABA')).toBe('9 de Julio 1200, CABA');
+ const base={lat:-34,lng:-58},other={...base,label:'Otra calle 3453',street:'Otra calle',number:'3453',hasNumber:true},wrong={...base,label:'El Chasque 3454',street:'El Chasque',number:'3454',hasNumber:true},street={...base,label:'El Chasque',street:'El Chasque',hasNumber:false},exact={...base,label:'El Chasque 3453',street:'El Chasque',number:'3453',hasNumber:true};
+ expect(prioritizeAddressResults([other,wrong,street,exact],'3453, El Chasque, Boulogne')).toEqual([exact,street,wrong,other]);
 });

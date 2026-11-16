@@ -6,9 +6,9 @@ import {CustomerAccountEntries} from '../src/features/CustomerAccountEntries';
 import {selectedAddressText} from '../src/domain/addressSearch';
 import {matchesCustomer} from '../src/domain/customerSearch';
 afterEach(cleanup);
-it('guarda hasta tres teléfonos y permite retirar uno sin dejar el valor anterior',()=>{
+it('guarda hasta seis teléfonos y permite retirar uno sin dejar el valor anterior',()=>{
  render(<form><CustomerContactFields initial={{phone:'111',phone2:'222',phone3:'333',delivery_notes:'Timbre B'}}/></form>);
- expect(screen.queryByRole('button',{name:'Agregar otro número'})).toBeNull();
+ expect(screen.getByRole('button',{name:'Agregar otro número'})).toBeTruthy();
  fireEvent.click(screen.getByRole('button',{name:'Quitar número 2'}));
  const form=new FormData(document.querySelector('form'));
  expect(readContactPatch(form,{phone2:'222',phone3:'333'})).toEqual({phone2:'333',phone3:'',delivery_notes:'Timbre B'});
@@ -39,4 +39,12 @@ it('al quitar un contacto conserva unido nombre y numero del siguiente',()=>{
 });
 it('agregar otro numero permite nombrarlo y la planilla identifica a la persona',()=>{
  const view=render(<form><CustomerContactFields initial={{phone:'111'}}/></form>);fireEvent.click(screen.getByText('Agregar otro número'));fireEvent.change(screen.getByLabelText('Teléfono 2'),{target:{value:'222'}});fireEvent.change(screen.getByLabelText('Nombre del contacto 2'),{target:{value:'Ana, hija'}});expect(readContactPatch(new FormData(document.querySelector('form')))).toMatchObject({phone2:'222',phone2_name:'Ana, hija'});view.unmount();render(<CustomerContactDetails customer={{phone:'111',phone2:'222',phone2_name:'Ana, hija'}}/>);expect(screen.getByRole('link',{name:'Ana, hija · 222'}).getAttribute('href')).toBe('tel:222');
+});
+
+it('agrega hasta seis contactos, los conserva al quitar uno y no exige los restantes',()=>{
+ render(<form><CustomerContactFields initial={{phone:'111'}}/></form>);
+ for(let i=2;i<=6;i++){fireEvent.click(screen.getByRole('button',{name:'Agregar otro número'}));fireEvent.change(screen.getByLabelText(`Teléfono ${i}`),{target:{value:String(i).repeat(3)}});fireEvent.change(screen.getByLabelText(`Nombre del contacto ${i}`),{target:{value:`Persona ${i}`}});}
+ expect(screen.queryByRole('button',{name:'Agregar otro número'})).toBeNull();
+ const patch=readContactPatch(new FormData(document.querySelector('form')));expect(patch).toMatchObject({phone6:'666',phone6_name:'Persona 6'});
+ fireEvent.click(screen.getByRole('button',{name:'Quitar número 4'}));expect(screen.getByLabelText('Teléfono 4').value).toBe('555');expect(screen.getByLabelText('Nombre del contacto 4').value).toBe('Persona 5');
 });

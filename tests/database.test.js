@@ -334,7 +334,7 @@ describe('stock transaccional PostgreSQL', () => {
     await rejected(()=>deliver(op()),'visita ya resuelta');
     expect((await db.query('select * from public.sales')).rows).toHaveLength(1);
   });
-  it('el jefe retira paradas sin borrar historial y el asistente no las modifica',async()=>{
+  it('el jefe retira paradas sin borrar historial y el chofer no las modifica',async()=>{
     await readyCommerce(); await rejected(()=>db.query('select public.route_edit_stop($1,$2,$3,$4,2,false,1)',[tenant,op(),trip,customer]),'Solo el jefe');
     await as(owner); const id=op();
     await db.query('select public.route_edit_stop($1,$2,$3,$4,2,false,1)',[tenant,id,trip,customer]);
@@ -465,8 +465,8 @@ describe('stock transaccional PostgreSQL', () => {
     await rejected(()=>db.exec(`insert into public.user_profiles(user_id,full_name) values('${stranger}','Intruso')`),/permission denied/);
     await as(stranger); expect((await db.query('select * from public.user_profiles')).rows).toHaveLength(1);
     await db.exec('reset role');
-    await db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2)",['20000000-0000-0000-0000-000000000004',{full_name:'Nuevo asistente',role:'owner'}]);
-    expect((await db.query("select full_name from public.user_profiles where user_id='20000000-0000-0000-0000-000000000004'")).rows[0].full_name).toBe('Nuevo asistente');
+    await db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2)",['20000000-0000-0000-0000-000000000004',{full_name:'Nuevo chofer',role:'owner'}]);
+    expect((await db.query("select full_name from public.user_profiles where user_id='20000000-0000-0000-0000-000000000004'")).rows[0].full_name).toBe('Nuevo chofer');
     expect((await db.query("select * from public.tenant_members where user_id='20000000-0000-0000-0000-000000000004'")).rows).toHaveLength(0);
   });
 
@@ -510,7 +510,7 @@ describe('stock transaccional PostgreSQL', () => {
     expect(Number((await db.query('select ready from public.inventory_truck_stock')).rows[0].ready)).toBe(5);
   });
 
-  it('aísla empresas, impide escritura directa y no permite cargar al asistente otro reparto', async () => {
+  it('aísla empresas, impide escritura directa y no permite cargar al chofer otro reparto', async () => {
     await post('receive',items(10)); await createTrip();
     await rejected(() => db.exec(`insert into public.inventory_movements(tenant_id,operation_id,product_id,unit_price,truck_ready) values('${tenant}','${op()}','${product}',0,100)`), /permission denied/);
     await as(stranger);

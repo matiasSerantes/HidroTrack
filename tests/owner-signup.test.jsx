@@ -13,7 +13,7 @@ it('alta de empresa reintenta sin cambiar nombre y entra al panel tras confirmar
  let created=false,attempts=0;const client={auth:{getUser:vi.fn(async()=>({data:{user:{id:'u',user_metadata:{signup_kind:'owner',company_name:'Empresa ficticia'}}},error:null})),signOut:vi.fn()},rpc:vi.fn(async(name)=>{if(name==='owner_signup_status')return {data:created?{state:'ready',tenant_id:'t'}:{state:'new',mode:'trial',days:30,driver_limit:1},error:null};if(++attempts===1)return {data:null,error:{message:'Respuesta perdida'}};created=true;return {data:'t',error:null};})};
  render(<OwnerSignupGate client={client} userId="u"><main>Panel de jefe</main></OwnerSignupGate>);await screen.findByText(/Prueba gratuita de 30 días/);fireEvent.click(screen.getByRole('button',{name:'Crear mi empresa'}));await screen.findByText('Respuesta perdida');expect(screen.getByLabelText('Nombre de mi empresa').disabled).toBe(true);fireEvent.click(screen.getByRole('button',{name:'Reintentar alta de empresa'}));await screen.findByText('Panel de jefe');const calls=client.rpc.mock.calls.filter(([n])=>n==='owner_create_workspace');expect(calls).toHaveLength(2);expect(calls[0][1]).toEqual({p_company:'Empresa ficticia'});expect(calls[1][1]).toEqual(calls[0][1]);
 });
-it('cuenta asistente no ejecuta el alta de jefe',async()=>{
+it('cuenta chofer no ejecuta el alta de jefe',async()=>{
  const client={auth:{getUser:vi.fn(async()=>({data:{user:{id:'u',user_metadata:{}}},error:null}))},rpc:vi.fn()};render(<OwnerSignupGate client={client} userId="u"><main>Cuenta existente</main></OwnerSignupGate>);await screen.findByText('Cuenta existente');expect(client.rpc).not.toHaveBeenCalled();
 });
 it('jefe existente entra sin crear otra empresa o reiniciar licencia',async()=>{

@@ -15,7 +15,7 @@ export function canOfferPromotion(s:DemoProgramState,actor:string){
 }
 export function setPromotionPermission(state:DemoProgramState,actor:string,memberId:string,allowed:boolean){
   owner(state,actor);const s=structuredClone(state),member=s.members.find(m=>m.id===memberId&&m.active&&m.role==='driver');
-  if(!member)throw new Error('Asistente no vinculado.');
+  if(!member)throw new Error('Chofer no vinculado.');
   member.promotionAllowed=allowed;return s;
 }
 export function createPromotion(state:DemoProgramState,actor:string,input:{name:string;address:string;phone:string;terms:string;followUp:string;items:Record<string,number>;tripId?:string}) {
@@ -23,7 +23,7 @@ export function createPromotion(state:DemoProgramState,actor:string,input:{name:
   const isOwner=state.members.some(m=>m.id===actor&&m.active&&m.role==='owner');
   const trip=isOwner?undefined:state.trips.find(t=>t.id===input.tripId&&t.driverId===actor&&t.stage==='active'&&t.acceptance!=='pending'&&t.acceptance!=='rejected');
   if(!isOwner&&!trip)throw new Error('Necesitás tu recorrido activo para entregar una promoción.');
-  if(!input.name.trim()||!input.address.trim()||!input.terms.trim())throw new Error('Completá nombre, dirección y condiciones de la promoción.');
+  if(!input.name.trim()||!input.address.trim())throw new Error('Completá nombre y dirección de la promoción.');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(input.followUp)||!Number.isFinite(Date.parse(input.followUp))||new Date(input.followUp).toISOString().slice(0,10)!==input.followUp||input.followUp<demoDay)throw new Error('Elegí una fecha de seguimiento desde el día de la demo.');
   const s=structuredClone(state),items:Record<string,number>={};
   for(const [id,q] of Object.entries(input.items)){

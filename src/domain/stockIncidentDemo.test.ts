@@ -9,12 +9,12 @@ it('la rotura disminuye el patrimonio y los envases del cliente conservando deud
   expect(after.clients[0].debt).toBe(before.clients[0].debt);
   expect(after.stockEvents?.[0]).toMatchObject(input);expect(after.stockEvents?.[0].registeredAt).toBeTruthy();
 });
-it('la rotura en camión identifica al asistente sin descontar del depósito',()=>{
+it('la rotura en camión identifica al chofer sin descontar del depósito',()=>{
   const before=seedProgram(),after=recordDemoStock(before,{...input,source:'truck_ready',tripId:'t1',customerId:undefined,involvedKind:'driver',involvedId:'luz'});
   expect(after.products[0].depot).toBe(before.products[0].depot);
   expect(after.trips[0].stock.b20).toBe(before.trips[0].stock.b20-1);
 });
-it('rechaza cantidades imposibles, fechas futuras, personas ajenas y ajustes de asistentes',()=>{
+it('rechaza cantidades imposibles, fechas futuras, personas ajenas y ajustes de choferes',()=>{
   const s=seedProgram();
   expect(()=>recordDemoStock(s,{...input,quantity:9999})).toThrow(/insuficientes/);
   expect(()=>recordDemoStock(s,{...input,date:'2026-10-20'})).toThrow(/Fecha/);

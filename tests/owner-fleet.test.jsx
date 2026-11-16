@@ -16,7 +16,7 @@ it('consulta su empresa, muestra progreso y retira puntos al perder acceso',asyn
  let items=[{...item,updated_at:new Date().toISOString()}];const rpc=vi.fn(async()=>({data:{server_now:new Date().toISOString(),items},error:null}));
  render(<OwnerFleet client={{rpc}} tenantId="company"/>);
  expect(await screen.findByText('Puntos: 1')).toBeTruthy();expect(screen.getByText('2 de 10 clientes atendidos')).toBeTruthy();expect(rpc).toHaveBeenCalledWith('owner_live_trip_positions',{p_tenant:'company'});
- items=[];fireEvent.click(screen.getByRole('button',{name:'Actualizar ubicaciones'}));expect(await screen.findByText('Todavía no hay asistentes con un reparto activo aceptado.')).toBeTruthy();expect(screen.queryByLabelText('Mapa simulado')).toBeNull();
+ items=[];fireEvent.click(screen.getByRole('button',{name:'Actualizar ubicaciones'}));expect(await screen.findByText('Todavía no hay choferes con un reparto activo aceptado.')).toBeTruthy();expect(screen.queryByLabelText('Mapa simulado')).toBeNull();
 });
 it('no muestra ubicacion vieja como actual ni revela parada sin señal reciente',async()=>{
  const rpc=vi.fn(async()=>({data:{server_now:new Date().toISOString(),items:[{...item,updated_at:new Date(Date.now()-120000).toISOString()}]},error:null}));render(<OwnerFleet client={{rpc}} tenantId="company"/>);

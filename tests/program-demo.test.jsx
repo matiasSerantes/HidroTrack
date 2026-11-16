@@ -9,7 +9,7 @@ import { mapPositionKey } from '../src/domain/demoJourney';
 afterEach(() => { cleanup(); localStorage.clear(); });
 function enter(assistant = false) {
   render(<DemoProgram onExit={() => {}}/>);
-  if (assistant) fireEvent.click(screen.getByText('Lucía · asistente'));
+  if (assistant) fireEvent.click(screen.getByText('Lucía · chofer'));
   fireEvent.click(screen.getByText('Continuar'));
   fireEvent.change(screen.getByLabelText('Código del autenticador'), { target: { value: '123456' } });
   fireEvent.click(screen.getByText('Entrar a la demostración'));
@@ -25,7 +25,7 @@ describe('recorridos navegables de la demo', () => {
     expect(screen.getByText('San Martín 100')).toBeTruthy();expect(screen.getByText('San Martín 900')).toBeTruthy();
     expect(screen.queryByText('Belgrano 200')).toBeNull();
   });
-  it('finaliza el jefe y la espera del asistente conserva solo informacion personal',()=>{
+  it('finaliza el jefe y la espera del chofer conserva solo informacion personal',()=>{
     const s=seedProgram();s.trips[0].stops.forEach(p=>{p.status='visited';});localStorage.setItem(DEMO_KEY,JSON.stringify(s));enter();
     expect(screen.getByRole('heading',{name:'Ganancia y gastos del mes'})).toBeTruthy();
     expect(screen.getByRole('heading',{name:'Repartos activos'})).toBeTruthy();
@@ -35,7 +35,7 @@ describe('recorridos navegables de la demo', () => {
     expect(screen.getByRole('button',{name:'Descargar PDF del jefe'})).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'luz'}});
     expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
-    expect(screen.queryByRole('button',{name:'Descargar PDF del asistente'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'Descargar PDF del chofer'})).toBeNull();
     expect(screen.queryByRole('button',{name:'Descargar PDF del jefe'})).toBeNull();
   });
   it('muestra carga sugerida mientras el jefe arma el recorrido',()=>{
@@ -120,7 +120,7 @@ describe('recorridos navegables de la demo', () => {
   });
   it('registra cuenta personal y mantiene espera privada al recargar',()=>{
     render(<DemoProgram onExit={()=>{}}/>);
-    fireEvent.click(screen.getByRole('button',{name:'Crear mi cuenta de asistente · demo'}));
+    fireEvent.click(screen.getByRole('button',{name:'Crear mi cuenta de chofer · demo'}));
     fireEvent.change(screen.getByLabelText('Tu nombre de ejemplo'),{target:{value:'Cuenta de prueba'}});
     fireEvent.change(screen.getByLabelText('Tu correo ficticio'),{target:{value:'prueba@example.com'}});
     fireEvent.click(screen.getByRole('button',{name:'Crear cuenta de ejemplo'}));
@@ -131,8 +131,8 @@ describe('recorridos navegables de la demo', () => {
   });
   it('vincula una cuenta existente, espera y abre el recorrido recién asignado',()=>{
     enter();fireEvent.click(screen.getByRole('button',{name:'Mi equipo',exact:true}));
-    fireEvent.click(screen.getByRole('button',{name:'Agregar asistente o empleado'}));
-    fireEvent.change(screen.getByLabelText('ID o correo de la cuenta del asistente'),{target:{value:'HT-SOFIA'}});
+    fireEvent.click(screen.getByRole('button',{name:'Agregar chofer o empleado'}));
+    fireEvent.change(screen.getByLabelText('ID o correo de la cuenta del chofer'),{target:{value:'HT-SOFIA'}});
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Guardar en la demo'}));
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'sofia'}});
     expect(screen.getByRole('heading',{name:'En espera de recorrido'})).toBeTruthy();
@@ -327,7 +327,7 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Abrir notificaciones' }));
     expect(within(screen.getByRole('dialog')).getByText(/visita registrada en Elena/)).toBeTruthy();
   });
-  it('el asistente solicita un cliente y el jefe puede aprobarlo', () => {
+  it('el chofer solicita un cliente y el jefe puede aprobarlo', () => {
     enter(true);
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegación de la demo' })).getByRole('button', { name: 'Clientes', exact: true }));
     fireEvent.click(screen.getByText('Solicitar alta'));
@@ -390,7 +390,7 @@ describe('recorridos navegables de la demo', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(JSON.parse(localStorage.getItem(DEMO_KEY)).sales).toHaveLength(1);
   });
-  it('el asistente marca ausencias y continúa en el mapa sin crear ventas', async () => {
+  it('el chofer marca ausencias y continúa en el mapa sin crear ventas', async () => {
     enter(true);
     fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
     await screen.findByText('Tu ubicación actual · DEMO');
@@ -428,17 +428,17 @@ describe('recorridos navegables de la demo', () => {
     const loan = screen.getByRole('region', { name: 'Envases y equipos de Martín Acosta' });
     expect(within(loan).getByText('PRESTAMO-DEMO-03 · En préstamo · sin cargo')).toBeTruthy();
   });
-  it('el jefe recibe en su mapa el punto del asistente y los cambios de otra pestaña', async () => {
+  it('el jefe recibe en su mapa el punto del chofer y los cambios de otra pestaña', async () => {
     enter(true);
-    expect(screen.queryByRole('button', { name: 'Ver asistentes en el mapa' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Ver choferes en el mapa' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
     await screen.findByText('Tu ubicación actual · DEMO');
     fireEvent.click(screen.getByRole('button', { name: 'Simular avance' }));
     const key = mapPositionKey('luz', 't1');
     expect(JSON.parse(localStorage.getItem(key)).currentClientId).toBe('c1');
     fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'), { target: { value: 'owner' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ver asistentes en el mapa' }));
-    await screen.findByRole('region', { name: 'Mapa del jefe con repartos y ubicación de asistentes' });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver choferes en el mapa' }));
+    await screen.findByRole('region', { name: 'Mapa del jefe con repartos y ubicación de choferes' });
     expect(screen.getByRole('button', { name: 'Centrar a Lucía' })).toBeTruthy();
     expect(screen.getByText(/Elena Duarte · actualizado/)).toBeTruthy();
     const next = { ...JSON.parse(localStorage.getItem(key)), currentClientId: 'c2', lat: -34.6095, lng: -58.3842, updatedAt: Date.now(), sharing: true };
@@ -466,7 +466,7 @@ describe('recorridos navegables de la demo', () => {
     expect(saved.trips[0].stops.some(p => p.clientId === 'c5')).toBe(false);
     expect(saved.clients.some(c => c.id === 'c5' && c.active)).toBe(true);
   });
-  it('el asistente ve su cuadra sin controles del jefe ni clientes ajenos a su asignación', async () => {
+  it('el chofer ve su cuadra sin controles del jefe ni clientes ajenos a su asignación', async () => {
     enter(true);
     fireEvent.click(screen.getByRole('button', { name: 'Abrir reparto', exact: true }));
     await screen.findByText('Tu ubicación actual · DEMO');

@@ -9,7 +9,7 @@ import { canOfferPromotion, createPromotion, decidePromotion, recoverPromotion, 
 afterEach(()=>{cleanup();localStorage.clear();});
 const input={name:'Persona demo',address:'Dirección de ejemplo',phone:'',terms:'Prueba por una semana; condiciones de ejemplo.',followUp:'2026-10-26',items:{b20:2,frio:1}};
 const start=()=>createPromotion(seedProgram(),'owner',input);
-it('solo el jefe habilita; asistente usa su camión, notifica y pierde permiso al revocar',()=>{
+it('solo el jefe habilita; chofer usa su camión, notifica y pierde permiso al revocar',()=>{
   const base=seedProgram();expect(canOfferPromotion(base,'luz')).toBe(false);
   expect(()=>setPromotionPermission(base,'luz','luz',true)).toThrow(/jefe/);
   const permitted=setPromotionPermission(base,'owner','luz',true);
@@ -26,7 +26,7 @@ it('solo el jefe habilita; asistente usa su camión, notifica y pierde permiso a
   expect(()=>createPromotion(revoked,'luz',{...input,tripId:'t1'})).toThrow(/habilitarte/);
   expect(revoked.promotions).toEqual(next.promotions);
 });
-it('asistente ve solo sus promociones y no puede decidir su continuidad',()=>{
+it('chofer ve solo sus promociones y no puede decidir su continuidad',()=>{
   let state=setPromotionPermission(start(),'owner','luz',true);
   state=createPromotion(state,'luz',{...input,name:'Su propia promoción',tripId:'t1'});
   render(<DemoPromotions state={state} actor="luz" onChange={()=>{}}/>);
@@ -76,13 +76,13 @@ it('formulario crea una promoción y permite aceptar desde su ficha',()=>{
   render(<Example/>);fireEvent.click(screen.getByText('Nueva promoción'));
   fireEvent.change(screen.getByLabelText('Nombre de la persona'),{target:{value:input.name}});
   fireEvent.change(screen.getByLabelText('Dirección'),{target:{value:input.address}});
-  fireEvent.change(screen.getByLabelText('Condiciones y precio acordados para la prueba'),{target:{value:input.terms}});
+  fireEvent.change(screen.getByLabelText('Condiciones y precio acordados para la prueba (opcional)'),{target:{value:input.terms}});
   fireEvent.change(screen.getByLabelText('Entregar Bidón 20 litros'),{target:{value:'2'}});
   fireEvent.click(screen.getByText('Registrar entrega de prueba'));
   expect(screen.getByText('En prueba')).toBeTruthy();fireEvent.click(screen.getByText('Acepta · pasar a cliente'));
   expect(screen.getByText('Convertida en cliente')).toBeTruthy();
 });
-it('muestra el apartado al jefe y lo oculta al cambiar a asistente',()=>{
+it('muestra el apartado al jefe y lo oculta al cambiar a chofer',()=>{
   render(<DemoProgram onExit={()=>{}}/>);
   fireEvent.click(screen.getByText('Continuar'));
   fireEvent.change(screen.getByLabelText('Código del autenticador'),{target:{value:'123456'}});
@@ -92,3 +92,5 @@ it('muestra el apartado al jefe y lo oculta al cambiar a asistente',()=>{
   fireEvent.change(screen.getByLabelText('Cambiar rol de demostración'),{target:{value:'luz'}});
   expect(screen.queryByRole('button',{name:'Promociones',exact:true})).toBeNull();
 });
+
+it('permite una promocion sin condiciones escritas',()=>{expect(createPromotion(seedProgram(),'owner',{...input,terms:''}).promotions[0].terms).toBe('');});

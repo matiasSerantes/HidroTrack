@@ -21,7 +21,7 @@ describe('demo completa: operaciones conectadas', () => {
     expect(()=>loadTrip(received,'t1',{b20:7},true,'luz')).toThrow(/Solo el jefe/);
     expect(()=>loadTrip(loaded,'t1',{b20:1},true,'owner')).toThrow(/todavía no comenzó/);
   });
-  it('eliminar conserva registros y rechaza artículos con unidades o usuarios asistentes',()=>{
+  it('eliminar conserva registros y rechaza artículos con unidades o usuarios choferes',()=>{
     const state=seedProgram();state.products.push({id:'empty',name:'Bidón sin stock',unit:'unidad',price:0,returnable:true,depot:0,active:true,kind:'sale'});
     const next=archiveDemoProduct(state,'empty','owner');
     expect(next.products).toHaveLength(state.products.length);expect(next.products.find(p=>p.id==='empty')?.active).toBe(false);

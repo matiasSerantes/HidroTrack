@@ -7,7 +7,7 @@ it('copias reales distinguen efectivo de ventas y transferencias sin multiplicar
  const owner=sharedCloseReceiptLines(h,'owner').join('\n'),driver=sharedCloseReceiptLines(h,'driver').join('\n');expect(owner).toContain('11.800,75');expect(owner).toContain('7.000,00');expect(driver).toContain('8.300,25');expect(driver).not.toContain('3.500,50');expect(driver).not.toContain('VENTAS Y COBROS');expect(driver).toContain('16:00:00');expect(driver).toContain('Bidón 20 litros: 30');expect(driver).toContain('Vacíos: 20');expect(driver).not.toContain('DEMO');
  mkdirSync('output/pdf',{recursive:true});for(const role of ['owner','driver'])writeFileSync(`output/pdf/cierre-compartido-${role}-prueba.pdf`,createSharedClosePdf(h,role));
 });
-it('copia del asistente se genera con respuesta sin ventas ni transferencias',()=>{
+it('copia del chofer se genera con respuesta sin ventas ni transferencias',()=>{
  const {sales,declared_transfer,...driver}=h;expect(()=>createSharedClosePdf(driver,'driver')).not.toThrow();expect(()=>createSharedClosePdf(driver,'owner')).toThrow();for(const patch of [{closure_state:'submitted'},{closed_at:null},{declared_cash:NaN},{stock:[{...h.stock[0],ready:100}]}])expect(()=>createSharedClosePdf({...h,...patch},'driver')).toThrow();
 });
 it('pagina nombres extensos y escapa los caracteres del formato PDF',()=>{

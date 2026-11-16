@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { OwnerPromotions } from '../src/features/OwnerPromotions';
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
 function fixture({failOnce=false}={}){
-  const records={products:[{id:'water',name:'Bidón',returnable:true,family:'article',active:true}],promotions:[],inventory_owned_stock:[{product_id:'water',depot_ready:10}],inventory_operations:[],tenant_members:[{user_id:'driver',role:'driver',promotion_allowed:false}],user_profiles:[{user_id:'driver',full_name:'Asistente de prueba'}],promotion_events:[],promotion_notifications:[]};
+  const records={products:[{id:'water',name:'Bidón',returnable:true,family:'article',active:true}],promotions:[],inventory_owned_stock:[{product_id:'water',depot_ready:10}],inventory_operations:[],tenant_members:[{user_id:'driver',role:'driver',promotion_allowed:false}],user_profiles:[{user_id:'driver',full_name:'Chofer de prueba'}],promotion_events:[],promotion_notifications:[]};
   const filters=[];
   const client={from:vi.fn(table=>{const chain={select:()=>chain,eq:(key,value)=>{filters.push([table,key,value]);return chain;},not:()=>chain,order:()=>chain,range:()=>chain,then:resolve=>Promise.resolve({data:structuredClone(records[table]||[]),error:null}).then(resolve)};return chain;}),rpc:vi.fn(async(name,args)=>{
     if(failOnce){failOnce=false;return {error:{message:'Sin confirmación de red'}};}
@@ -20,7 +20,7 @@ function fixture({failOnce=false}={}){
   const converted=vi.fn();const view=render(<OwnerPromotions client={client} tenantId="tenant" userId="owner" onConverted={converted}/>);
   return {client,records,filters,converted,view};
 }
-async function fill(){await screen.findByText('Ofrecer promoción');fireEvent.click(screen.getByText('Ofrecer promoción'));fireEvent.change(screen.getByLabelText('Nombre'),{target:{value:'Persona de prueba'}});fireEvent.change(screen.getByLabelText('Dirección'),{target:{value:'Calle demo'}});fireEvent.change(screen.getByLabelText('Condiciones y precio pactados'),{target:{value:'Prueba acordada'}});fireEvent.change(screen.getByLabelText('Entregar Bidón'),{target:{value:'2'}});}
+async function fill(){await screen.findByText('Ofrecer promoción');fireEvent.click(screen.getByText('Ofrecer promoción'));fireEvent.change(screen.getByLabelText('Nombre'),{target:{value:'Persona de prueba'}});fireEvent.change(screen.getByLabelText('Dirección'),{target:{value:'Calle demo'}});fireEvent.change(screen.getByLabelText('Condiciones y precio pactados (opcional)'),{target:{value:'Prueba acordada'}});fireEvent.change(screen.getByLabelText('Entregar Bidón'),{target:{value:'2'}});}
 it('registra la promoción por RPC con fecha y cantidad; aísla consultas por empresa',async()=>{
   const {client,filters}=fixture();await fill();fireEvent.click(screen.getByText('Registrar promoción'));
   await screen.findByText('Persona de prueba');expect(client.rpc).toHaveBeenCalledWith('promotion_offer',expect.objectContaining({p_tenant:'tenant',p_trip:null,p_items:[{product_id:'water',quantity:2}],p_name:'Persona de prueba'}));
@@ -34,8 +34,8 @@ it('ante respuesta incierta reintenta exactamente los mismos IDs y datos',async(
 it('permiso individual y aviso leído usan la RPC y el identificador del aviso',async()=>{
   const {client,records}=fixture();await screen.findByText('Ofrecer promoción');
   records.promotion_notifications.push({id:'notification',promotion_id:'historical',read_at:null});
-  fireEvent.click(screen.getByLabelText('Permitir ofrecer promociones a Asistente de prueba'));
-  await screen.findByText('Permiso del asistente actualizado.');
+  fireEvent.click(screen.getByLabelText('Permitir ofrecer promociones a Chofer de prueba'));
+  await screen.findByText('Permiso del chofer actualizado.');
   expect(client.rpc).toHaveBeenCalledWith('promotion_set_permission',expect.objectContaining({p_user:'driver',p_allowed:true}));
   fireEvent.click(screen.getByText('Marcar leído'));await screen.findByText('Aviso marcado como leído.');
   expect(client.rpc).toHaveBeenCalledWith('promotion_read_notification',{p_tenant:'tenant',p_id:'notification'});
@@ -58,4 +58,8 @@ it('rechaza y registra devoluciones con cantidades y fecha por la RPC correspond
   fireEvent.change(screen.getByLabelText('Devuelve dañado'),{target:{value:'1'}});
   fireEvent.click(screen.getByText('Registrar devolución'));
   await waitFor(()=>expect(client.rpc).toHaveBeenLastCalledWith('promotion_recover',expect.objectContaining({p_items:[{product_id:'water',good:1,damaged:1}]})));
+});
+
+it('condiciones y precio se pueden omitir al registrar una prueba',async()=>{
+ const {client}=fixture();await fill();const terms=screen.getByLabelText('Condiciones y precio pactados (opcional)');expect(terms.required).toBe(false);fireEvent.change(terms,{target:{value:''}});fireEvent.click(screen.getByText('Registrar promoción'));await waitFor(()=>expect(client.rpc).toHaveBeenCalledWith('promotion_offer',expect.objectContaining({p_terms:''})));
 });

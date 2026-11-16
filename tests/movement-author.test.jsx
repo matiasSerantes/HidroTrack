@@ -11,3 +11,9 @@ it('no atribuye al usuario actual una accion sin autor o con perfil historico in
  expect(screen.getByText('Reparto: Nombre no disponible')).toBeTruthy();
  rerender(<CustomerMovementAuthor {...props}/>);expect(screen.getByText('Registrado por: Usuario no identificado')).toBeTruthy();expect(screen.queryByText(/Vos/)).toBeNull();
 });
+
+it('muestra empleado solo para chofer, sin vos para el jefe o para el autor actual',()=>{
+ const props={profiles:[{user_id:'j',full_name:'Jefe',role:'owner'},{user_id:'c',full_name:'Chofer',role:'driver'}],trips:[],userId:'j'};
+ const {rerender}=render(<CustomerMovementAuthor {...props} actorId="j"/>);expect(screen.getByText('Registrado por: Jefe')).toBeTruthy();
+ rerender(<CustomerMovementAuthor {...props} userId="c" actorId="c"/>);expect(screen.getByText('Registrado por: Chofer (empleado)')).toBeTruthy();expect(screen.queryByText(/\(vos\)/i)).toBeNull();
+});

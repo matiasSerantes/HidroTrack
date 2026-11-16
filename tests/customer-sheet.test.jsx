@@ -150,7 +150,7 @@ it('corrige total de bidones existentes sin repetir apertura',async()=>{
 
 it('historial identifica quien registra y el reparto sin confundirlo con el usuario actual',async()=>{
  const {calls}=fixture(false,{history:true});
- await screen.findByText('Registrado por: Chofer de prueba');expect(screen.getByText('Registrado por: Jefe de prueba (vos)')).toBeTruthy();expect(screen.getByText('Reparto: Ruta del lunes')).toBeTruthy();
+ await screen.findByText('Registrado por: Chofer de prueba');expect(screen.getByText('Registrado por: Jefe de prueba')).toBeTruthy();expect(screen.getByText('Reparto: Ruta del lunes')).toBeTruthy();
  expect(calls.find(c=>c.table==='user_profiles').filters).toContainEqual(['user_id',['driver-a','owner-a']]);
 });
 

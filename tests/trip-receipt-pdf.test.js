@@ -10,7 +10,7 @@ describe('comprobante PDF de cierre',()=>{
   s.trips[0].stops.forEach(p=>{p.status='visited';});const closed=approveClose(closeTrip(s,'t1',s.trips[0].stock,''),'t1');
   expect(closed.trips[0].receipt).toMatchObject({cash:830000,transfer:350000,sold:700000});
  });
- it('crea copia del jefe y del asistente sin exponer totales del jefe en la segunda',()=>{
+ it('crea copia del jefe y del chofer sin exponer totales del jefe en la segunda',()=>{
   const owner=receiptPdfLines(receipt,'owner').join('\n'),driver=receiptPdfLines(receipt,'driver').join('\n');
   expect(owner).toContain('Cobrado por transferencia');expect(owner).toContain('16:00:00');expect(driver).not.toContain('VENTAS Y COBROS');expect(driver).toContain('EFECTIVO A RENDIR');expect(driver).toContain('FC-021');
   const bytes=createTripReceiptPdf(receipt,'owner'),text=new TextDecoder().decode(bytes);expect(text.startsWith('%PDF-1.4')).toBe(true);expect(text).toContain('startxref');

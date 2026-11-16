@@ -103,7 +103,7 @@ export function seedProgram(): DemoProgramState {
       { id: 't1', name: 'Ballester · mañana', driverId: 'luz', stops: ['c1', 'c2', 'c3'].map(stop), stage: 'active', load: { b20: 40, b12: 20, soda: 30, cajon: 8, frio: 1, bomba: 2 }, stock: { b20: 40, b12: 20, soda: 30, cajon: 8, frio: 1, bomba: 2 }, empties: {}, declared: {}, closeNote: '' },
       { id: 't2', name: 'San Andrés · mañana', driverId: 'nico', stops: ['c4', 'c6'].map(stop), stage: 'planned', load: {}, stock: {}, empties: {}, declared: {}, closeNote: '' },
     ], sales: [], depotEmpties: { b20: 32, b12: 18, soda: 45, cajon: 6 },
-    requests: [{ id: 'req1', kind: 'customer', title: 'Alta de cliente · Florencia Demo', authorId: 'nico', status: 'pending', client: { id: 'c8', name: 'Florencia Demo', address: 'Mitre 280', locality: 'San Andrés', block: 'mitre-200', x: 67, y: 61, active: true, debt: 0, held: {}, rentals: [], usual: '2 bidones de 20 L', note: 'Solicitud de ejemplo creada por un asistente.' } }],
+    requests: [{ id: 'req1', kind: 'customer', title: 'Alta de cliente · Florencia Demo', authorId: 'nico', status: 'pending', client: { id: 'c8', name: 'Florencia Demo', address: 'Mitre 280', locality: 'San Andrés', block: 'mitre-200', x: 67, y: 61, active: true, debt: 0, held: {}, rentals: [], usual: '2 bidones de 20 L', note: 'Solicitud de ejemplo creada por un chofer.' } }],
     notices: [{ id: 'n1', text: 'Nicolás solicitó el alta de un cliente. Revisá las aprobaciones.', read: false }],
   });
 }
@@ -235,7 +235,7 @@ export function closeTrip(state: DemoProgramState, tripId: string, declared: Rec
 export function approveClose(state: DemoProgramState, tripId: string) {
   const s = structuredClone(state), t = s.trips.find(x => x.id === tripId);
   if (!t || t.stage !== 'submitted') throw new Error('La rendición no está pendiente de aprobación.');
-  if (s.products.some(p => (t.declared[p.id] || 0) !== (t.stock[p.id] || 0))) throw new Error('Hay diferencias: observá la rendición para que el asistente la revise.');
+  if (s.products.some(p => (t.declared[p.id] || 0) !== (t.stock[p.id] || 0))) throw new Error('Hay diferencias: observá la rendición para que el chofer la revise.');
   for (const p of s.products) { p.depot += t.declared[p.id] || 0; s.depotEmpties[p.id] = (s.depotEmpties[p.id] || 0) + (t.empties[p.id] || 0); }
   for(const change of s.dispenserChanges||[]){if(change.tripId===t.id&&change.condition==='good'){const product=s.products.find(p=>p.id===change.previousProductId);if(product)product.depot+=1;}}
   t.receipt=buildDemoTripReceipt(s,t);

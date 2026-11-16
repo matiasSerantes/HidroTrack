@@ -16,7 +16,7 @@ it('cancelar confirmación y saldos inválidos no envían cambios',()=>{
  const input=screen.getByLabelText('Llenos en depósito');fireEvent.change(input,{target:{value:'3'}});fireEvent.submit(input.closest('form'));expect(submit).not.toHaveBeenCalled();
  fireEvent.change(input,{target:{value:'-1'}});fireEvent.submit(input.closest('form'));expect(submit).not.toHaveBeenCalled();expect(screen.getByRole('alert').textContent).toContain('Revisá');
 });
-it('demo conserva clientes y camiones, y prohíbe al asistente modificar el depósito',()=>{
+it('demo conserva clientes y camiones, y prohíbe al chofer modificar el depósito',()=>{
  const state=seedProgram(),product=state.products.find(p=>p.returnable&&p.kind==='sale');const empty=state.depotEmpties[product.id]||0;
  const next=setDemoDepotCounts(state,'owner',product.id,product.depot,empty,product.depot-1,empty+1);
  expect(next.clients).toEqual(state.clients);expect(next.trips).toEqual(state.trips);expect(next.products.find(p=>p.id===product.id).depot).toBe(product.depot-1);expect(next.depotEmpties[product.id]).toBe(empty+1);

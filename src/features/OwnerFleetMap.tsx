@@ -13,5 +13,5 @@ export default function OwnerFleetMap({items,selectedId,onSelect}:{items:FleetIt
   if(bounds.length&&!fitted.current){instance.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:17});fitted.current=true;}
  },[items,selectedId]);
  useEffect(()=>{const item=items.find(i=>i.trip_id===selectedId);if(item&&hasRoutePoint(item))map.current?.setView([item.latitude!,item.longitude!],17);},[selectedId,items]);
- return <div ref={node} className="owner-fleet-map" role="region" aria-label="Mapa de ubicaciones recientes de asistentes"/>;
+ return <div ref={node} className="owner-fleet-map" role="region" aria-label="Mapa de ubicaciones recientes de choferes"/>;
 }

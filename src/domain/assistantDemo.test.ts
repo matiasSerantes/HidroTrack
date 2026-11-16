@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {seedProgram} from './programDemo';
 import {assistantAccounts,assignedAssistantTrips,changeAssistantPlan,linkAssistant,otherEmployerLinks,registerDemoAssistant,unlinkAssistant} from './assistantDemo';
 
-describe('cuenta de asistente y vínculo con el jefe · demo',()=>{
+describe('cuenta de chofer y vínculo con el jefe · demo',()=>{
  it('registra una cuenta independiente que espera sin crear membresía ni licencia',()=>{
   const {state,account}=registerDemoAssistant(seedProgram(),'Cuenta ficticia','NUEVA@example.com');
   expect(account.email).toBe('nueva@example.com');expect(state.members.some(m=>m.id===account.id)).toBe(false);
