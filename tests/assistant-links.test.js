@@ -1195,3 +1195,17 @@ it('conteo de llenos y vacios es atomico, idempotente y exclusivo del jefe',asyn
  await actor(driver);await denied(()=>count(crypto.randomUUID(),480,110,1,1),/Solo el jefe/);await actor(otherOwner);await denied(()=>count(crypto.randomUUID(),480,110,1,1),/Solo el jefe/);
  await actor(owner);await denied(()=>count(crypto.randomUUID(),480,110,-1,1),/cantidades/);
 });
+
+it('reprogramacion guarda hora, conserva reintento y limita acceso al recorrido',async()=>{
+ const v=await deliveryFixture(),id=crypto.randomUUID();
+ const call=(hour='18:30')=>db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'absent','later_today',(now() at time zone 'America/Argentina/Buenos_Aires')::date,'',$5::time) result",[tenant,id,v.trip,v.customer,hour]);
+ await call();await call();expect((await db.query('select public.assistant_open_trip($1,$2) d',[tenant,v.trip])).rows[0].d.stops[0]).toMatchObject({next_time:'18:30',followup:'later_today'});
+ await denied(()=>call('19:00'),/otros datos/);
+ await actor(owner);expect((await db.query('select public.owner_followup_inbox($1) d',[tenant])).rows[0].d.items[0].next_time).toBe('18:30');
+ await actor(otherOwner);await denied(()=>call(),/acceso|aceptado/);
+});
+it('reprogramacion exige hora y no permite datos horarios en no compro',async()=>{
+ const v=await deliveryFixture();
+ await denied(()=>db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'absent','later_today',(now() at time zone 'America/Argentina/Buenos_Aires')::date,'',null)",[tenant,crypto.randomUUID(),v.trip,v.customer]),/hora/);
+ await denied(()=>db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'no_purchase',null,null,'','17:00')",[tenant,crypto.randomUUID(),v.trip,v.customer]),/reprograma/);
+});

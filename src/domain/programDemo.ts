@@ -14,7 +14,7 @@ export type Product = { fillingCostEnabled?:boolean; fillingCost?:number; id: st
 export type Rental = { id: string; productId: string; serial: string; monthly: number; mode?: 'rental' | 'loan' | 'customer_owned' };
 export type Client = { visitCycle?:{every_weeks:number;anchor_date:string|null}; promotionId?:string; phone?:string; usualItems?:Record<string,number>;usualCombos?:Record<string,number>; joinedOn?:string; visitDays?:number[]; id: string; name: string; address: string; locality: string; block: string; x: number; y: number; geo?: { lat: number; lng: number }; active: boolean; debt: number; held: Record<string, number>; rentals: Rental[]; usual: string; note: string; deactivatedOn?: string; deactivatedTripIds?: string[]; deactivationReason?: string };
 export type Member = { promotionAllowed?:boolean; id: string; name: string; role: 'owner' | 'driver'; active: boolean; email?: string };
-export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string };
+export type Stop = { extraVisitId?:string; clientId: string; status: 'pending' | 'visited' | 'later' | 'tomorrow' | 'next-week' | 'no-sale'; rescheduleDate?: string; rescheduleTime?:string };
 export type Trip = { acceptance?:'pending'|'accepted'|'rejected'; receipt?:DemoTripReceipt; plannedEquipment?:Record<string,number>;loadRecommendation?:Record<string,number>;loadPlan?:Record<string,number>;loadExtras?:Record<string,number>; date?:string; fillingCost?:FillingCostSnapshot; id: string; name: string; driverId: string; stops: Stop[]; stage: 'planned' | 'active' | 'submitted' | 'approved'; load: Record<string, number>; stock: Record<string, number>; empties: Record<string, number>; declared: Record<string, number>; closeNote: string };
 export type SaleItem = { productId: string; quantity: number; returned: number; price: number };
 export type Sale = { combos?:{name:string;quantity:number;price:number}[]; date?:string; id: string; clientId: string; tripId: string; actorId: string; items: SaleItem[]; rentalIds: string[]; rentalFee: number; total: number; paid: number; method: 'Efectivo' | 'Transferencia'; before: number; after: number; time: string; credit?: { amount: number; status: 'pending' | 'approved' | 'rejected' } };
@@ -243,12 +243,12 @@ export function approveClose(state: DemoProgramState, tripId: string) {
 }
 export const isDone = (s: Stop) => ['visited', 'no-sale', 'tomorrow', 'next-week'].includes(s.status);
 export function demoDateAfter(days: number) { const d = new Date(`${demoDay}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
-export function scheduleStop(state: DemoProgramState, tripId: string, clientId: string, actor: string, mode: 'later' | 'day' | 'week', date?: string) {
+export function scheduleStop(state: DemoProgramState, tripId: string, clientId: string, actor: string, mode: 'later' | 'day' | 'week', date?: string, time?:string) {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId), stop = trip?.stops.find(p => p.clientId === clientId);
   if (!trip || trip.stage !== 'active' || !stop || !['pending', 'later'].includes(stop.status) || !s.members.some(m => m.id === actor && m.active) || actor !== 'owner' && trip.driverId !== actor) throw new Error('No podés reprogramar esta parada.');
   const target = mode === 'later' ? demoDay : mode === 'week' ? demoDateAfter(7) : date || demoDateAfter(1);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(target) || !Number.isFinite(Date.parse(target)) || new Date(target).toISOString().slice(0, 10) !== target || mode !== 'later' && target <= demoDay) throw new Error('Elegí una fecha posterior al día de la demo.');
-  stop.status = mode === 'later' ? 'later' : mode === 'week' ? 'next-week' : 'tomorrow'; stop.rescheduleDate = target;
+  stop.status = mode === 'later' ? 'later' : mode === 'week' ? 'next-week' : 'tomorrow'; stop.rescheduleDate = target; if(time){if(!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(time))throw new Error('Hora invalida');stop.rescheduleTime=time;}else delete stop.rescheduleTime;
   notify(s, `Cliente ausente: ${s.clients.find(c => c.id === clientId)?.name}. ${mode === 'later' ? 'Volver más tarde' : `Pendiente para ${target}`}.`);
   return s;
 }

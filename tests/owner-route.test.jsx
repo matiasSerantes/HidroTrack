@@ -13,3 +13,10 @@ it('cierre retira recorrido de la lista y oculta clientes al actualizar',async()
  let closed=false;const client={rpc:vi.fn(async name=>({data:name==='owner_my_trips'?(closed?[]:[{id:'r',name:'Mi ruta',status:'active',date:'2026-10-24'}]):route,error:null}))};
  render(<OwnerRoutePanel client={client} tenantId="a" userId="u" disabled={false} onLock={()=>{}} onChanged={()=>{}}/>);fireEvent.click(await screen.findByRole('button',{name:'Abrir mi reparto'}));await screen.findByText('1. Cliente uno');closed=true;fireEvent.click(screen.getByRole('button',{name:'Actualizar mis repartos'}));await waitFor(()=>expect(screen.queryByText('1. Cliente uno')).toBe(null));expect(localStorage.getItem(ownerRouteKey('u','a'))).toBe(null);
 });
+
+it('reparto abierto oculta lista de apertura y volver sale a la pantalla anterior',async()=>{
+ const onExit=vi.fn(),client={rpc:vi.fn(async n=>({data:n==='owner_my_trips'?[{id:'r',name:'Mi ruta',status:'active',date:'2026-10-24'}]:route,error:null}))};
+ render(<OwnerRoutePanel client={client} tenantId="a" userId="u" tripId="r" disabled={false} onLock={()=>{}} onChanged={()=>{}} onExit={onExit}/>);
+ await screen.findByText('1. Cliente uno');expect(screen.queryByRole('button',{name:'Abrir mi reparto'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'Volver a mis repartos'}));expect(onExit).toHaveBeenCalledTimes(1);
+});
