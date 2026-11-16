@@ -13,3 +13,5 @@ Se muestra ?nicamente la pantalla del recorrido con paradas, mapa, atenci?n y re
 La demo permite guardar tambi?n una hora de regreso junto a la fecha, usando datos ficticios.
 
 Desde la planilla se pueden guardar hasta seis telefonos, sin obligacion de completarlos, y nombres para los contactos adicionales. La busqueda del domicilio prioriza calle y altura; si falta numeracion en el mapa, hay que ajustar el punto manualmente. Las condiciones de pruebas a prospectos son opcionales. En el historial se muestra el nombre del autor y empleado solo para un chofer.
+
+En Bidones y envases, cada tipo muestra su cantidad y Agregar/Corregir. Para pasar de solo 12 litros a incluir 20 litros, tocar Agregar Bidon 20 Litros e ingresar el total de 20 litros que tiene el cliente. La observacion es opcional. La diferencia sale del deposito elegido; no se crea una venta ni se aumenta el total propio. Disponible tambien en la demo.

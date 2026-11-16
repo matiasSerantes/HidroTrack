@@ -143,7 +143,7 @@ it('corrige total de bidones existentes sin repetir apertura',async()=>{
  const {client}=fixture();await screen.findByText('2 para devolver');
  fireEvent.click(screen.getByText('Corregir cantidad de bidones'));
  fireEvent.change(screen.getByLabelText('Total correcto en poder del cliente'),{target:{value:'4'}});
- fireEvent.change(screen.getByLabelText('Motivo de la correcci\u00f3n'),{target:{value:'Error de conteo'}});
+ fireEvent.change(screen.getByLabelText('Observaci\u00f3n de la correcci\u00f3n (opcional)'),{target:{value:'Error de conteo'}});
  fireEvent.click(screen.getByText('Guardar cantidad correcta'));
  await waitFor(()=>expect(logicalCalls(client)).toContainEqual(['inventory_correct_customer_containers',expect.objectContaining({p_customer:'client-a',p_product:'b20',p_expected:2,p_quantity:4,p_source:'depot_empty',p_note:'Error de conteo'})]));
 });
