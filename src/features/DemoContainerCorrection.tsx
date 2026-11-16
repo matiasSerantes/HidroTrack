@@ -1,7 +1,7 @@
 import {CustomerContainerCorrection} from './CustomerContainerCorrection';
 import type {Client,DemoProgramState} from '../domain/programDemo';
 export function DemoContainerCorrection({client,state,act}:{client:Client;state:DemoProgramState;act:(fn:(s:DemoProgramState)=>DemoProgramState,text?:string)=>boolean}){
- return <CustomerContainerCorrection products={state.products.map(p=>({...p,family:p.kind==='rental'?'dispenser':'article'}))} held={Object.entries(client.held).map(([product_id,quantity])=>({product_id,quantity}))} disabled={false} onSubmit={value=>act(s=>{
+ return <CustomerContainerCorrection balances={state.products.map(p=>({product_id:p.id,depot_ready:p.depot,depot_empty:state.depotEmpties[p.id]||0}))} products={state.products.map(p=>({...p,family:p.kind==='rental'?'dispenser':'article'}))} held={Object.entries(client.held).map(([product_id,quantity])=>({product_id,quantity}))} disabled={false} onSubmit={value=>act(s=>{
  const next=structuredClone(s),c=next.clients.find(c=>c.id===client.id),p=next.products.find(p=>p.id===value.product);
  if(!c||!p||!p.returnable||p.kind==='rental'||!c.active)throw new Error('Cliente o articulo no disponible');
  const current=c.held[p.id]||0,delta=value.quantity-current;

@@ -25,3 +25,9 @@ it('agrega bidon de 20 aun cuando el cliente solo tiene de 12 y no exige observa
  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({product:'b20',expected:0,quantity:3,source:'depot_empty',note:'Correccion desde planilla (sin observaciones)'}));
  fireEvent.click(screen.getByRole('button',{name:'Corregir Bidon 12 litros'}));expect(screen.getByLabelText('Total correcto en poder del cliente').value).toBe('2');
 });
+
+it('selecciona llenos si ese articulo no tiene vacios y muestra ambos saldos',()=>{
+ const onSubmit=vi.fn();render(<CustomerContainerCorrection balances={[{product_id:'b20',depot_ready:5,depot_empty:0}]} products={[{id:'b20',name:'Bidon 20',returnable:true,active:true}]} held={[]} disabled={false} onSubmit={onSubmit}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Agregar Bidon 20'}));expect(screen.getByLabelText('Deposito para la diferencia'.replace('Deposito','Depósito')).value).toBe('depot_ready');expect(screen.getByRole('option',{name:/5 disponibles/})).toBeTruthy();
+ fireEvent.change(screen.getByLabelText('Total correcto en poder del cliente'),{target:{value:'2'}});fireEvent.click(screen.getByText('Guardar cantidad correcta'));expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({source:'depot_ready',quantity:2,expected:0}));
+});
