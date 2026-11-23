@@ -1,0 +1,8 @@
+import {useState,type FormEvent} from 'react';
+import {parseMoney,currency} from '../domain/demo';
+import {uid,type Client,type DemoProgramState} from '../domain/programDemo';
+export function DemoDebtCorrection({client,act}:{client:Client;state:DemoProgramState;act:(fn:(s:DemoProgramState)=>DemoProgramState,text?:string)=>boolean}){
+ const [open,setOpen]=useState(false),[error,setError]=useState('');
+ function save(e:FormEvent<HTMLFormElement>){e.preventDefault();try{const f=new FormData(e.currentTarget),raw=String(f.get('total')),amount=/^0([,.]00)?$/.test(raw)?0:parseMoney(raw);if(amount<0)throw new Error('Importe invalido');if(act(s=>{const next=structuredClone(s),c=next.clients.find(c=>c.id===client.id)!;if(c.debt!==client.debt)throw new Error('El saldo cambio');const before=c.debt;c.debt=amount;next.notices.unshift({id:uid(),recipientId:'owner',read:false,text:`Correccion de saldo demo de ${c.name}: ${currency(before)} a ${currency(amount)}.`});return next;},'Saldo demo corregido sin modificar stock ni ventas.'))setOpen(false);}catch(e){setError((e as Error).message);}}
+ return <section className="customer-profile"><button type="button" className="hd-btn" onClick={()=>setOpen(v=>!v)}>Corregir deuda de la demo</button>{error&&<p role="alert">{error}</p>}{open&&<form onSubmit={save}><p>Ejemplo con saldo inicial ficticio. En la cuenta real se elige la deuda manual a corregir y se conservan sus pagos.</p><label>Saldo correcto de la demo ($)<input name="total" inputMode="decimal" required defaultValue={String(client.debt/100)}/></label><button className="hd-btn primary">Guardar saldo demo correcto</button></form>}</section>;
+}

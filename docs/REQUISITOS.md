@@ -560,3 +560,9 @@ Boton por articulo para editar llenos y vacios (disponibles en productos sin vac
 - Busqueda por calle/altura primero, con localidad para desambiguar; puerta ajustable si la cartografia no incluye numeracion.
 - Condiciones/precio pactado opcionales en promociones a personas que aun no son clientes.
 - Mostrar chofer en interfaz; movimientos con nombre del autor, sufijo empleado solo si es chofer, sin vos.
+
+## Planilla y stock (23/11/2026)
+- Elegir modelo de dispenser y cantidad a dejar, con asignacion atomica desde stock; equipos identificados individualmente siguen de a uno. Alquiler con cuota por equipo.
+- Mostrar direccion escrita en datos de planilla, conservando coordenadas para mapa/navegacion.
+- Descripcion de deuda y referencia inicial opcionales. Corregir deuda manual solo jefe, con historial, importe anterior/pagos esperados y sin borrar cobros. No bajar el total por debajo de lo pagado.
+- Los pedidos habituales no se modifican en este avance.

@@ -17,3 +17,5 @@ Desde la planilla se pueden guardar hasta seis telefonos, sin obligacion de comp
 En Bidones y envases, cada tipo muestra su cantidad y Agregar/Corregir. Para pasar de solo 12 litros a incluir 20 litros, tocar Agregar Bidon 20 Litros e ingresar el total de 20 litros que tiene el cliente. La observacion es opcional. La diferencia sale del deposito elegido; no se crea una venta ni se aumenta el total propio. Disponible tambien en la demo.
 
 El selector de deposito muestra llenos y vacios disponibles. Si no hay vacios y si hay llenos, propone Llenos automaticamente; se puede cambiar manualmente. Si el saldo no alcanza, no se aplica el ajuste ni se inventa stock.
+
+En Cuenta corriente, Corregir deuda permite elegir un cargo manual o una deuda inicial, ingresar su total correcto y una observacion opcional. Se conserva lo cobrado y queda historial. Para anular una carga sin pagos, poner total 0. Las entregas y cuotas de alquiler mantienen su circuito propio. La descripcion al agregar deuda tambien es opcional.

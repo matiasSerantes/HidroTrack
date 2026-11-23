@@ -26,7 +26,7 @@ it('reintenta deuda incierta con el mismo importe, fecha e identificador',async(
  render(<CustomerAccountEntries client={client} tenantId="t" customerId="c" total={10000} disabled={false} onLock={()=>{}} onSaved={saved}/>);
  fireEvent.click(screen.getByRole('button',{name:'Agregar deuda'}));
  fireEvent.change(screen.getByLabelText('Importe de la deuda ($)'),{target:{value:'1200'}});
- fireEvent.change(screen.getByLabelText('Descripción del movimiento'),{target:{value:'Bidones anteriores'}});
+ fireEvent.change(screen.getByLabelText('Descripción del movimiento (opcional)'),{target:{value:'Bidones anteriores'}});
  fireEvent.click(screen.getByRole('button',{name:'Guardar nueva deuda'}));
  await screen.findByRole('button',{name:'Reintentar mismo movimiento de cuenta'});
  fireEvent.click(screen.getByRole('button',{name:'Reintentar mismo movimiento de cuenta'}));
@@ -47,4 +47,8 @@ it('agrega hasta seis contactos, los conserva al quitar uno y no exige los resta
  expect(screen.queryByRole('button',{name:'Agregar otro número'})).toBeNull();
  const patch=readContactPatch(new FormData(document.querySelector('form')));expect(patch).toMatchObject({phone6:'666',phone6_name:'Persona 6'});
  fireEvent.click(screen.getByRole('button',{name:'Quitar número 4'}));expect(screen.getByLabelText('Teléfono 4').value).toBe('555');expect(screen.getByLabelText('Nombre del contacto 4').value).toBe('Persona 5');
+});
+
+it('permite deuda sin descripcion y conserva una referencia generica',async()=>{
+ const client={rpc:vi.fn(async(n,a)=>({data:a.p_id,error:null}))};render(<CustomerAccountEntries client={client} tenantId="t" customerId="c" total={0} disabled={false} onLock={()=>{}} onSaved={()=>{}}/>);fireEvent.click(screen.getByText('Agregar deuda'));fireEvent.change(screen.getByLabelText('Importe de la deuda ($)'),{target:{value:'7000'}});expect(screen.getByLabelText(/Descripci.n del movimiento/).required).toBe(false);fireEvent.click(screen.getByText('Guardar nueva deuda'));await waitFor(()=>expect(client.rpc).toHaveBeenCalled());expect(client.rpc.mock.calls[0][1].p_note).toBe('Deuda registrada sin observaciones');
 });

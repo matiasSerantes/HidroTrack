@@ -44,7 +44,7 @@ it('explica catálogo sin unidades y registra existencias antes de permitir asig
   expect(logicalCalls(client)).toContainEqual(['inventory_record_stock',expect.objectContaining({p_tenant:'tenant-a',p_kind:'receive',p_trip:null,p_customer:null,p_items:[{product_id:'model',quantity:3}]})]);
   fireEvent.click(screen.getByText('Asignar dispenser'));expect(screen.getByRole('option',{name:'Dispenser básico · 3 disponibles en depósito'})).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Dispenser disponible'),{target:{value:'model:model:depot'}});fireEvent.click(screen.getByText('Guardar dispenser del cliente'));
-  await screen.findByText('Dispenser asignado desde stock. Ya no figura disponible.');
+  await screen.findByText('Dispenser asignado al cliente. Se descontó 1 del stock disponible.');
   expect(logicalCalls(client).filter(([name])=>name==='inventory_record_stock')).toHaveLength(1);
   expect(records.inventory_owned_stock[0].depot_ready).toBe(2);
 });
@@ -82,7 +82,7 @@ it('asigna un dispenser del depósito conservando su identificación y el alquil
   expect(screen.queryByRole('option',{name:/Equipo de otro cliente/})).toBeNull();
   fireEvent.change(screen.getByLabelText('Dispenser disponible'),{target:{value:'available'}});
   fireEvent.change(screen.getByLabelText('Modalidad del dispenser'),{target:{value:'rental'}});
-  fireEvent.change(screen.getByLabelText('Cuota mensual ($)'),{target:{value:'12500'}});
+  fireEvent.change(screen.getByLabelText('Cuota mensual por dispenser ($)'),{target:{value:'12500'}});
   fireEvent.click(screen.getByText('Guardar dispenser del cliente'));
   await screen.findByText('Dispenser y acuerdo de alquiler guardados juntos.');
   expect(logicalCalls(client)).toContainEqual(['owner_assign_rental_agreement',expect.objectContaining({p_equipment:'available',p_product:null,p_customer:'client-a',p_trip:null,p_monthly:12500,p_terms:''})]);
@@ -114,7 +114,7 @@ it('el modelo con stock aparece disponible y asignarlo consume una unidad sin vo
     return {data:'assignment',error:null};
   });
   fireEvent.click(screen.getByText('Guardar dispenser del cliente'));
-  await screen.findByText('Dispenser asignado desde stock. Ya no figura disponible.');
+  await screen.findByText('Dispenser asignado al cliente. Se descontó 1 del stock disponible.');
   expect(logicalCalls(client)).toContainEqual(['inventory_assign_dispenser_model',expect.objectContaining({p_product:'model',p_customer:'client-a',p_mode:'loan',p_monthly:0,p_trip:null})]);
   expect(logicalCalls(client).filter(([name])=>name==='inventory_assign_dispenser_model')).toHaveLength(1);
   expect(screen.getByRole('button',{name:'Registrar devolución'})).toBeTruthy();
@@ -159,4 +159,9 @@ it('carga una promo anterior como articulos fisicos y captura reloj del disposit
  fireEvent.change(screen.getByLabelText('Promoci\u00f3n para el conteo inicial'),{target:{value:'promo-a'}});fireEvent.change(screen.getByLabelText('Cantidad de promos ya entregadas'),{target:{value:'2'}});fireEvent.click(screen.getByText('Guardar envases iniciales'));await screen.findByText(/Envases asignados desde el dep/);
  expect(logicalCalls(client)).toContainEqual(['inventory_assign_existing_containers',expect.objectContaining({p_items:[{product_id:'b20',quantity:4}],p_note:'Conteo inicial: 2 x Promo doble'})]);
  const [,wire]=client.rpc.mock.calls.find(([n])=>n==='owner_customer_sheet_command');expect(Number.isFinite(Date.parse(wire.p_device_at))).toBe(true);expect(wire.p_device_zone).toBeTruthy();
+});
+
+it('asigna cantidad de dispenser en un comando y confirma el identificador',async()=>{
+ const {client,records}=fixture(false,{model:true});await screen.findByText('2 para devolver');fireEvent.click(screen.getByText('Asignar dispenser'));fireEvent.change(screen.getByLabelText('Dispenser disponible'),{target:{value:'model:model:depot'}});fireEvent.change(screen.getByLabelText(/Cantidad de dispenser que le dej/),{target:{value:'2'}});
+ const initial=client.rpc.getMockImplementation();client.rpc.mockImplementation(async(name,args)=>{if(name==='owner_customer_sheet_command'&&args.p_action==='owner_assign_dispenser_quantity'){records.inventory_owned_stock[0].depot_ready=0;return {data:args.p_args.p_id,error:null};}return initial(name,args);});fireEvent.click(screen.getByText('Guardar dispenser del cliente'));await screen.findByText('2 dispenser asignados al cliente desde stock.');expect(logicalCalls(client)).toContainEqual(['owner_assign_dispenser_quantity',expect.objectContaining({p_quantity:2,p_product:'model',p_customer:'client-a',p_mode:'loan',p_trip:null})]);
 });

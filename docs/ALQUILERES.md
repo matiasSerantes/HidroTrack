@@ -27,3 +27,6 @@ Se muestran las ultimas 50 cuotas, incluidas las de contratos ya devueltos que s
 ## Verificacion
 
 Migracion `20261102131027_customer_rental_panel` aplicada mediante MCP: tabla de auditoria con RLS/solo lectura del jefe, comandos protegidos y recibos privados de asignacion. Ningun acuerdo ni cuota real se genero para QA. 141 pruebas relacionadas y build correctos; incluidos fin de mes, idempotencia, cambio de condiciones, aislamiento, precio anterior inmutable y rollback de stock si falla el acuerdo. Publicacion y revision visual autenticada se registran en ESTADO_REAL.md.
+
+## Cantidad de dispenser por modelo
+En la planilla, Asignar dispenser permite elegir un modelo del deposito o un camion activo e indicar cuantas unidades se dejan. No se registran nuevas existencias. La cantidad no supera lo disponible; si falla una unidad, se revierte el lote entero. Cada unidad conserva su devolucion y acuerdo de alquiler por separado. La cuota es por equipo, no por lote. Un equipo con numero de serie individual se asigna de a uno.

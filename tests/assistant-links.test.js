@@ -1214,3 +1214,18 @@ it('contactos adicionales llegan a la planilla autorizada y la promo permite con
  const v=await deliveryFixture();await actor(owner);await db.query("update public.customers set phone6='666',phone6_name='Contacto seis' where tenant_id=$1 and id=$2",[tenant,v.customer]);await actor(driver);expect((await visitDetail(v)).customer).toMatchObject({phone6:'666',phone6_name:'Contacto seis'});
  await actor(owner);const id=crypto.randomUUID();const offer=()=>db.query("select public.promotion_offer($1,$2,null,'Persona prueba','Calle 100','','',(now() at time zone 'America/Argentina/Buenos_Aires')::date,(now() at time zone 'America/Argentina/Buenos_Aires')::date,$3) id",[tenant,id,JSON.stringify([{product_id:v.product,quantity:1}])]);expect((await offer()).rows[0].id).toBe(id);await offer();
 });
+
+it('cantidad de dispenser es atomica, idempotente y genera acuerdo por unidad',async()=>{
+ const v=await dispenserContract();await db.query("select public.inventory_record_stock($1,$2,'receive',null,null,$3,'',current_date)",[tenant,crypto.randomUUID(),JSON.stringify([{product_id:v.replacement,quantity:3}])]);const id=crypto.randomUUID(),args=[tenant,id,v.customer,v.replacement,2,'rental',2000,'Condiciones'];
+ const assign=()=>db.query("select public.owner_assign_dispenser_quantity($1,$2,$3,$4,$5,$6,$7,current_date,null,$8) id",args);await assign();await assign();
+ const held=(await db.query("select count(*) n from public.dispenser_assignments where tenant_id=$1 and product_id=$2 and status='active'",[tenant,v.replacement])).rows[0].n;expect(Number(held)).toBe(2);expect(Number((await db.query('select depot_ready from public.inventory_owned_stock where tenant_id=$1 and product_id=$2',[tenant,v.replacement])).rows[0].depot_ready)).toBe(2);
+ const before=(await db.query('select count(*) n from public.dispenser_assignments where tenant_id=$1',[tenant])).rows[0].n;
+ await denied(()=>db.query("select public.owner_assign_dispenser_quantity($1,$2,$3,$4,3,'loan',0,current_date,null,'')",[tenant,crypto.randomUUID(),v.customer,v.replacement]),/disponibles/);expect((await db.query('select count(*) n from public.dispenser_assignments where tenant_id=$1',[tenant])).rows[0].n).toBe(before);
+ await actor(otherOwner);await denied(assign,/Solo el jefe/);
+});
+it('jefe corrige deuda manual con historial, pagos conservados y rechazo de saldo cambiado',async()=>{
+ await actor(owner);const customer=(await db.query('select id from public.customers where tenant_id=$1',[tenant])).rows[0].id,id=crypto.randomUUID(),clock=new Date().toISOString(),zone='America/Argentina/Buenos_Aires';
+ await db.query("select public.owner_add_customer_charge($1,$2,$3,100,current_date,'Deuda anterior',null,null,1,$4,$5)",[tenant,id,customer,clock,zone]);await db.query("select public.commerce_record_payment($1,$2,$3,20,'cash',current_date,null,'')",[tenant,crypto.randomUUID(),id]);
+ const fix=crypto.randomUUID(),correct=()=>db.query("select public.owner_correct_customer_charge($1,$2,$3,$4,100,20,70,'',$5,$6)",[tenant,fix,customer,id,clock,zone]);await correct();await correct();const balance=(await db.query('select total,paid,balance from public.customer_sale_balances where tenant_id=$1 and id=$2',[tenant,id])).rows[0];expect([Number(balance.total),Number(balance.paid),Number(balance.balance)]).toEqual([70,20,50]);
+ await denied(()=>db.query("select public.owner_correct_customer_charge($1,$2,$3,$4,70,20,10,'',$5,$6)",[tenant,crypto.randomUUID(),customer,id,clock,zone]),/menor/);await denied(()=>db.query("select public.owner_correct_customer_charge($1,$2,$3,$4,100,20,80,'',$5,$6)",[tenant,crypto.randomUUID(),customer,id,clock,zone]),/cambiaron/);await actor(otherOwner);await denied(correct,/Solo el jefe/);
+});
