@@ -167,7 +167,7 @@ export function recordVisit(state: DemoProgramState, input: { combos?:Record<str
   const unpaid = Math.max(total - paid, 0), approved = input.actorId === 'owner', saleId = uid();
   if(visit.extraVisitId){const extra=s.extraVisits?.find(v=>v.id===visit.extraVisitId);if(extra)extra.status='completed';}
   client.debt = before - Math.max(paid - total, 0) + (approved ? unpaid : 0); visit.status = 'visited'; delete visit.rescheduleDate;
-  const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' });
+  const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' ,hourCycle:'h23'});
   s.sales.unshift({ ...(chosen.length?{combos:chosen.map(c=>({name:c.name,price:c.price,quantity:input.combos![c.id]}))}:{}),date:trip.date||demoDay, id: saleId, clientId: client.id, tripId: trip.id, actorId: input.actorId, items, rentalIds, rentalFee, total, paid, method: input.method, before, after: client.debt, time, ...(unpaid ? { credit: { amount: unpaid, status: approved ? 'approved' as const : 'pending' as const } } : {}) });
   if (unpaid && !approved) {
     s.requests.unshift({ id: uid(), kind: 'credit', saleId, amount: unpaid, clientId: client.id, authorId: input.actorId, status: 'pending', title: `Deuda solicitada · ${client.name}` });

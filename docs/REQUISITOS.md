@@ -566,3 +566,6 @@ Boton por articulo para editar llenos y vacios (disponibles en productos sin vac
 - Mostrar direccion escrita en datos de planilla, conservando coordenadas para mapa/navegacion.
 - Descripcion de deuda y referencia inicial opcionales. Corregir deuda manual solo jefe, con historial, importe anterior/pagos esperados y sin borrar cobros. No bajar el total por debajo de lo pagado.
 - Los pedidos habituales no se modifican en este avance.
+
+## Horarios de 24 horas (23/11/2026)
+Usar horas 00-23 y minutos 00-59 tambien en celular, independientemente del selector nativo AM/PM. Mantener HH:mm al guardar y las zonas horarias de cada registro; no convertir datos existentes ni alterar fechas de visitas.

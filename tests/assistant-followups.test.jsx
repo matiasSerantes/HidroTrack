@@ -7,7 +7,7 @@ afterEach(cleanup);
 it('ausencia permite elegir fecha futura y conserva version e identificador en el comando',async()=>{
  const onDone=vi.fn();const client={rpc:vi.fn(async(name,args)=>({data:{id:args.p_id,outcome:'absent',next_date:args.p_next_date},error:null}))};
  render(<AssistantVisitActions client={client} tenantId="a" tripId="t" customerId="c" version={5} resolved={false} disabled={false} onLock={()=>{}} onDone={onDone}/>);
- fireEvent.click(screen.getByRole('button',{name:'No está / no compró'}));fireEvent.change(screen.getByLabelText('Cuándo volver'),{target:{value:'date'}});fireEvent.change(screen.getByLabelText('Fecha para volver'),{target:{value:'2099-01-01'}});fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'18:30'}});fireEvent.click(screen.getByRole('button',{name:'Guardar resultado de visita'}));
+ fireEvent.click(screen.getByRole('button',{name:'No está / no compró'}));fireEvent.change(screen.getByLabelText('Cuándo volver'),{target:{value:'date'}});fireEvent.change(screen.getByLabelText('Fecha para volver'),{target:{value:'2099-01-01'}});fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'18'}});fireEvent.change(screen.getByLabelText('Minutos · Hora para volver'),{target:{value:'30'}});fireEvent.click(screen.getByRole('button',{name:'Guardar resultado de visita'}));
  await waitFor(()=>expect(onDone).toHaveBeenCalled());expect(client.rpc.mock.calls[0]).toMatchObject(['assistant_record_visit_at',{p_version:5,p_outcome:'absent',p_followup:'date',p_next_date:'2099-01-01',p_next_time:'18:30',p_note:'',p_customer:'c'}]);
 });
 it('cobro previo reintenta mismo ID y saldo esperado sin volver a crear una venta',async()=>{
@@ -25,7 +25,7 @@ it('hoy conserva la hora de regreso y no obliga a escribir nota',async()=>{
  const onDone=vi.fn(),client={rpc:vi.fn(async(n,a)=>({data:{id:a.p_id,outcome:'absent'},error:null}))};
  render(<AssistantVisitActions client={client} tenantId="a" tripId="t" customerId="c" version={1} resolved={false} disabled={false} onLock={()=>{}} onDone={onDone}/>);
  fireEvent.click(screen.getByRole('button',{name:'No está / no compró'}));
- fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'17:15'}});
+ fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'17'}});fireEvent.change(screen.getByLabelText('Minutos · Hora para volver'),{target:{value:'15'}});
  expect(screen.getByLabelText('Nota de la visita (opcional)').required).toBe(false);
  fireEvent.click(screen.getByRole('button',{name:'Guardar resultado de visita'}));
  await waitFor(()=>expect(onDone).toHaveBeenCalled());expect(client.rpc.mock.calls[0][1]).toMatchObject({p_followup:'later_today',p_next_time:'17:15',p_note:''});

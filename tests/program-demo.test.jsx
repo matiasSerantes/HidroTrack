@@ -397,13 +397,13 @@ describe('recorridos navegables de la demo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Llegué al domicilio (demo)' }));
     expect(screen.getByText('Estás en la casa de Elena Duarte')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'No está', exact: true }));
-    fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'18:30'}});fireEvent.click(screen.getByRole('button', { name: 'Volver más tarde hoy' }));
+    fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'18'}});fireEvent.change(screen.getByLabelText('Minutos · Hora para volver'),{target:{value:'30'}});fireEvent.click(screen.getByRole('button', { name: 'Volver más tarde hoy' }));
     expect(screen.getByText('Volver después')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente pendiente' }));
     fireEvent.click(screen.getByRole('button', { name: 'Llegué al domicilio (demo)' }));
     expect(screen.getByText('Estás en la casa de Café La Esquina')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'No está', exact: true }));
-    fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'10:00'}});fireEvent.click(screen.getByRole('button', { name: 'Dejar para la próxima semana' }));
+    fireEvent.change(screen.getByLabelText('Hora para volver'),{target:{value:'10'}});fireEvent.change(screen.getByLabelText('Minutos · Hora para volver'),{target:{value:'00'}});fireEvent.click(screen.getByRole('button', { name: 'Dejar para la próxima semana' }));
     const saved = JSON.parse(localStorage.getItem(DEMO_KEY));
     expect(saved.trips[0].stops[0].status).toBe('later'); expect(saved.sales).toHaveLength(0);
     expect(saved.trips[0].stops[1]).toMatchObject({ status: 'next-week', rescheduleDate: '2026-10-26' });

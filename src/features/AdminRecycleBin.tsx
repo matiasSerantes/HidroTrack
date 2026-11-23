@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 type Item={id:string;kind:'customer'|'trip';label:string;company:string;deleted_at:string;expires_at:string;deleted_by:string;recoverable:boolean};
 const demoItems:Item[]=[{id:'demo-customer',kind:'customer',label:'Cliente de ejemplo',company:'Agua de ejemplo',deleted_at:new Date().toISOString(),expires_at:new Date(Date.now()+10*86400000).toISOString(),deleted_by:'Jefe de ejemplo',recoverable:true}];
-const date=(value:string)=>new Date(value).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'});
+const date=(value:string)=>new Date(value).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',hourCycle:'h23'});
 export function AdminRecycleBin({client,demo=false,onLock}:{client?:SupabaseClient;demo?:boolean;onLock?:(v:boolean)=>void}){
  const [rows,setRows]=useState<Item[]>([]),[total,setTotal]=useState(0),[offset,setOffset]=useState(0),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[demoRemoved,setDemoRemoved]=useState(false);
  useEffect(()=>{onLock?.(busy);return()=>onLock?.(false);},[busy,onLock]);
