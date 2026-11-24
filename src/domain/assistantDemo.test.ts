@@ -10,12 +10,14 @@ describe('cuenta de chofer y vínculo con el jefe · demo',()=>{
   const linked=linkAssistant(state,account.email,'owner');expect(linked.members.find(m=>m.id===account.id)?.active).toBe(true);
   expect(assignedAssistantTrips(linked,account.id)).toEqual([]);
  });
- it('aplica cupos 1, 3 e ilimitado contando vínculos en espera',()=>{
+ it('aplica cupos 1, 4 e ilimitado contando vínculos en espera',()=>{
   let s=seedProgram();s.trips=[];s=unlinkAssistant(s,'nico','owner');s=changeAssistantPlan(s,'basic','owner');
   expect(()=>linkAssistant(s,'sofia@example.com','owner')).toThrow('lugares');
   s=changeAssistantPlan(s,'intermediate','owner');s=linkAssistant(s,'sofia@example.com','owner');s=linkAssistant(s,'nico@example.com','owner');
-  const {state}=registerDemoAssistant(s,'Otra cuenta','otra@example.com');expect(()=>linkAssistant(state,'otra@example.com','owner')).toThrow('lugares');
-  expect(linkAssistant(changeAssistantPlan(state,'unlimited','owner'),'otra@example.com','owner').members.filter(m=>m.role==='driver'&&m.active)).toHaveLength(4);
+  const fourth=registerDemoAssistant(s,'Cuarta cuenta','cuarta@example.com');s=linkAssistant(fourth.state,'cuarta@example.com','owner');
+  expect(s.members.filter(m=>m.role==='driver'&&m.active)).toHaveLength(4);
+  const {state}=registerDemoAssistant(s,'Quinta cuenta','quinta@example.com');expect(()=>linkAssistant(state,'quinta@example.com','owner')).toThrow('lugares');
+  expect(linkAssistant(changeAssistantPlan(state,'unlimited','owner'),'quinta@example.com','owner').members.filter(m=>m.role==='driver'&&m.active)).toHaveLength(5);
   expect(()=>changeAssistantPlan(s,'basic','owner')).toThrow('menos lugares');
  });
  it('quitar conserva cuenta, otro jefe e historial y permite volver a agregar la misma identidad',()=>{

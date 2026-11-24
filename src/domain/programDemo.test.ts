@@ -169,13 +169,13 @@ describe('demo completa: operaciones conectadas', () => {
     expect(s.products[0].depot).toBe(225); expect(s.trips[1].stock.b20).toBe(15);
     expect(() => loadTrip(s, 't2', { b20: 15 })).toThrow(/todavía no comenzó/);
   });
-  it('bloquea otra carga hasta cerrar el anterior y nunca modifica su carga original', () => {
-    const original = seedProgram();
+  it('Basico bloquea otra carga hasta cerrar el anterior y nunca modifica su carga original', () => {
+    const original = seedProgram(); original.assistantPlan='basic'; original.members=original.members.map(m=>m.id==='nico'?{...m,active:false}:m);
     original.trips.push({ ...structuredClone(original.trips[1]), id: 'next', driverId: 'luz' });
-    expect(() => loadTrip(original, 'next', { b20: 5 })).toThrow(/anterior/);
+    expect(() => loadTrip(original, 'next', { b20: 5 })).toThrow(/Cupo/);
     const visited = resolved(recordVisit(original, input));
     const submitted = closeTrip(visited, 't1', visited.trips[0].stock, '');
-    expect(() => loadTrip(submitted, 'next', { b20: 5 })).toThrow(/anterior/);
+    expect(() => loadTrip(submitted, 'next', { b20: 5 })).toThrow(/Cupo/);
     const approved = approveClose(submitted, 't1');
     expect(() => loadTrip(approved, 't1', { b20: 5 })).toThrow(/todavía no comenzó/);
     const next = loadTrip(approved, 'next', { b20: 5 });
