@@ -1,0 +1,12 @@
+// @vitest-environment jsdom
+import React from 'react';
+import {it,expect,vi,afterEach} from 'vitest';
+import {render,screen,fireEvent,cleanup} from '@testing-library/react';
+import {OwnerPlanUsage} from '../src/features/OwnerPlanUsage';
+import {AdminPlanCatalog} from '../src/features/AdminPlanCatalog';
+import {licenseLimits,assertDemoPlanChange} from '../src/domain/licenseLimits';
+import {seedProgram,loadTrip,closeTrip,approveClose} from '../src/domain/programDemo';
+afterEach(cleanup);
+it('owner consulta cupos solo al pedirlos y falla sin presentar ceros como saldos confirmados',async()=>{const rpc=vi.fn(async()=>({data:{plan:'basic',name:'Basico',limits:licenseLimits.basic,usage:{clients:100,drivers:1,articles:3,dispensers:2,active_trips:1,planned_trips:5,promotions:2}},error:null}));render(<OwnerPlanUsage client={{rpc}} tenantId="company-test"/>);expect(rpc).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'Ver cupos de mi plan'}));expect(await screen.findByText('100 / 100')).toBeTruthy();expect(screen.getByText('5 / 5')).toBeTruthy();rpc.mockResolvedValue({data:null,error:{message:'offline'}});fireEvent.click(screen.getByRole('button',{name:'Actualizar cupos'}));await screen.findByRole('alert');expect(screen.queryByText('100 / 100')).toBeNull();});
+it('catalogo demo presenta cuatro choferes y modelos de productos separados de dispenser',async()=>{render(<AdminPlanCatalog demo/>);expect(await screen.findByText(/Intermedio.*4 choferes/)).toBeTruthy();expect(screen.getAllByText('Modelos de productos')).toHaveLength(3);expect(screen.getAllByText('Modelos de dispenser')).toHaveLength(3);expect(screen.getAllByText('Unidades por modelo: ilimitadas.',{exact:false}).length).toBe(3);});
+it('demo cuenta activos por empresa, libera al aprobar cierre y no limita cantidad fisica de modelos',()=>{const s=seedProgram();s.assistantPlan='basic';s.trips=[s.trips[0],{...structuredClone(s.trips[0]),id:'new',stage:'planned',driverId:'owner'}];expect(()=>loadTrip(s,'new',{b20:1})).toThrow(/Cupo/);const closed=approveClose(closeTrip(s,s.trips[0].id,s.trips[0].stock,'',true),s.trips[0].id);expect(loadTrip(closed,'new',{b20:1}).trips[1].stage).toBe('active');const more=structuredClone(s);more.products[0].depot=1200;expect(()=>assertDemoPlanChange(s,more)).not.toThrow();more.products.push({...more.products[0],id:'fourth-new'});expect(()=>assertDemoPlanChange(s,more)).toThrow(/modelos/i);});

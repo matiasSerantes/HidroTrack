@@ -22,8 +22,8 @@ function LicenseFields({ license, disabled }: { license?: License | null; disabl
  const [plan,setPlan]=useState(license?.driver_plan??'custom');
  return <><label>Tipo de licencia<select name="kind" value={kind} onChange={e=>setKind(e.target.value)} disabled={disabled}><option value="permanent">Permanente</option><option value="monthly">Mensual</option></select></label>
  {kind==='monthly'&&<label>Vigente hasta (Argentina)<input name="expires_at" type="date" required defaultValue={license?.expires_at?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(license.expires_at)):''} disabled={disabled}/></label>}
- {license&&<label>Plan de la cuenta<select name="driver_plan" value={plan} onChange={e=>setPlan(e.target.value)} disabled={disabled}><option value="custom">Personalizado / licencia actual</option><option value="basic">Básico - 1 chofer</option><option value="intermediate">Intermedio - 3 choferes</option><option value="unlimited">Superior - todo ilimitado</option></select></label>}
- {plan==='custom'?<label>Límite de choferes<input name="driver_limit" type="number" min="0" max="10000" required defaultValue={license?.driver_limit??0} disabled={disabled}/></label>:<><input type="hidden" name="driver_limit" value={plan==='basic'?1:plan==='intermediate'?3:0}/><p>Cupo: {plan==='unlimited'?'Ilimitado':plan==='basic'?1:3}</p></>}</>;
+ {license&&<label>Plan de la cuenta<select name="driver_plan" value={plan} onChange={e=>setPlan(e.target.value)} disabled={disabled}><option value="custom">Personalizado / licencia actual</option><option value="basic">Básico - 1 chofer</option><option value="intermediate">Intermedio - 4 choferes</option><option value="unlimited">Superior - todo ilimitado</option></select></label>}
+ {plan==='custom'?<label>Límite de choferes<input name="driver_limit" type="number" min="0" max="10000" required defaultValue={license?.driver_limit??0} disabled={disabled}/></label>:<><input type="hidden" name="driver_limit" value={plan==='basic'?1:plan==='intermediate'?4:0}/><p>Cupo: {plan==='unlimited'?'Ilimitado':plan==='basic'?1:4}</p></>}</>;
 }
 export function AdminWorkspace({ client, demo = false, onExit }: { client?: SupabaseClient; demo?: boolean; onExit?: () => void }) {
  const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -112,7 +112,7 @@ export function AdminWorkspace({ client, demo = false, onExit }: { client?: Supa
    const result = await client.from('licenses').update(values).eq('tenant_id', tenant.id).select('tenant_id').single();
    if (result.error) throw result.error;
    setEditing(null); setNotice('Licencia actualizada.'); setRefresh(v => v + 1);
-  } catch { setNotice('No se pudo actualizar la licencia. Revisá la conexión y tus permisos.'); }
+  } catch (err) { const message=(err as {message?:string}).message||'';setNotice(/^(La cuenta supera el cupo|El limite es menor|Primero cierra los repartos)/.test(message)?message:'No se pudo actualizar la licencia. Revisá la conexión y tus permisos.'); }
   finally { setBusy(false); }
  }
  async function signOut() {

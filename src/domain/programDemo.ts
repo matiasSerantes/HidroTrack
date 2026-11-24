@@ -1,3 +1,4 @@
+import {licenseLimits} from './licenseLimits';
 import {comboDelivery,type SaleCombo} from './saleCombos';
 import type { Promotion } from './promotionsDemo';
 import { buildDemoTripReceipt, type DemoTripReceipt } from './tripReceiptDemo';
@@ -179,7 +180,8 @@ export function recordVisit(state: DemoProgramState, input: { combos?:Record<str
 export function loadTrip(state: DemoProgramState, tripId: string, quantities: Record<string, number>,fillEmpties=false,actor='owner',breakdown?:{planned:Record<string,number>;extras:Record<string,number>}) {
   const s = structuredClone(state), trip = s.trips.find(t => t.id === tripId);
   if (!trip || trip.stage !== 'planned') throw new Error('Solo podés cargar un reparto que todavía no comenzó.');
-  if (s.trips.some(t => t.id !== trip.id && t.driverId === trip.driverId && ['active', 'submitted'].includes(t.stage))) throw new Error('Cerrá y aprobá el reparto anterior de este repartidor antes de iniciar otro.');
+  const capacity=licenseLimits[s.assistantPlan||'intermediate'].active_trips;
+  if (capacity!==null&&s.trips.filter(t=>t.id!==trip.id&&['active','submitted'].includes(t.stage)).length>=capacity) throw new Error('Cupo de repartos activos del plan alcanzado; finaliza uno antes de cargar otro.');
   if (!Object.values(quantities).some(q => q > 0)) throw new Error('Ingresá al menos un artículo para salir.');
   if(fillEmpties&&!s.members.some(m=>m.id===actor&&m.role==='owner'&&m.active))throw new Error('Solo el jefe puede rellenar y cargar.');
   const recommendation=routeLoadSuggestion(s,trip).quantities;

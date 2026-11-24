@@ -1,6 +1,6 @@
 import { uid, type DemoProgramState } from './programDemo';
 
-export const assistantPlans = {basic:{name:'Básica',limit:1},intermediate:{name:'Intermedia',limit:3},unlimited:{name:'Superior',limit:Infinity}} as const;
+export const assistantPlans = {basic:{name:'Básica',limit:1},intermediate:{name:'Intermedia',limit:4},unlimited:{name:'Superior',limit:Infinity}} as const;
 export const assistantPlan = (s:DemoProgramState) => s.assistantPlan || 'intermediate';
 export const assistantAccounts = (s:DemoProgramState) => s.assistantAccounts || [
   ...s.members.filter(m=>m.role==='driver').map(m=>({id:m.id,name:m.name,email:m.email||`${m.id}@example.com`})),

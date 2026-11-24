@@ -1,3 +1,4 @@
+import {assertDemoPlanChange} from '../domain/licenseLimits';
 import {Time24Field} from './Time24Field';
 import {DepotCountsEditor} from './DepotCountsEditor';
 import {setDemoDepotCounts} from '../domain/depotCountsDemo';
@@ -75,7 +76,7 @@ export function DemoProgram({ onExit }: { onExit: () => void }) {
   function dismiss() { setDialog(null); setTimeout(() => previousFocus.current?.focus(), 0); }
   function act(fn: (s: DemoProgramState) => DemoProgramState, text = 'Listo. Demo actualizada.') {
     try {
-      const next = fn(state); setState(next);
+      const next = fn(state); assertDemoPlanChange(state,next); setState(next);
       const accepted=assignedAssistantTrips(next,actor);if(actor!=='owner'&&accepted.length&&!accepted.some(t=>t.id===tripId))setTripId(accepted[0].id);
       if (actor && actor !== 'owner' && !next.members.some(m => m.id === actor && m.active)) { setPage('overview'); setDialog(null); }
       try { localStorage.setItem(DEMO_KEY, JSON.stringify(next)); setToast(text); }
@@ -234,7 +235,7 @@ function Team() {
   const { state: s, actor, open, act } = useDemo();
   const drivers=s.members.filter(m=>m.role==='driver'&&m.active),plan=assistantPlans[assistantPlan(s)];
   return <><Section title="Choferes y empleados" sub="Cada chofer usa su propia cuenta y puede trabajar con varios jefes." action={<button className="hd-btn primary" onClick={()=>open({type:'member'})}><Plus size={16}/> Agregar chofer o empleado</button>}>
-  <Field label="Licencia del jefe · simulación"><select value={assistantPlan(s)} onChange={e=>act(state=>changeAssistantPlan(state,e.target.value as keyof typeof assistantPlans,actor),'Plan de demostración actualizado.')}><option value="basic">Básica · 1 chofer</option><option value="intermediate">Intermedia · 3 choferes</option><option value="unlimited">Superior · choferes ilimitados</option></select></Field>
+  <Field label="Licencia del jefe · simulación"><select value={assistantPlan(s)} onChange={e=>act(state=>changeAssistantPlan(state,e.target.value as keyof typeof assistantPlans,actor),'Plan de demostración actualizado.')}><option value="basic">Básica · 1 chofer</option><option value="intermediate">Intermedia · 4 choferes</option><option value="unlimited">Superior · choferes ilimitados</option></select></Field>
   <p className="hd-help">{drivers.length} choferes vinculados ? {Number.isFinite(plan.limit)?`${Math.max(0,plan.limit-drivers.length)} lugares disponibles`:'Lugares ilimitados'}. El cupo pertenece al jefe; el chofer no necesita licencia propia. Incluye quienes esperan recorrido.</p>
   <div className="hd-team-grid">{drivers.map(m=><article className="hd-member" key={m.id}><span className="hd-avatar large lavender">{initials(m.name)}</span><h3>{m.name}</h3><Tag tone={assignedAssistantTrips(s,m.id).length?'mint':'neutral'}>{assignedAssistantTrips(s,m.id).length?'Con recorrido asignado':'En espera de recorrido'}</Tag><p>{assistantAccounts(s).find(a=>a.id===m.id)?.email}</p><p>ID: {assistantShareId(m)}</p>{s.trips.some(t=>t.driverId===m.id&&t.acceptance==='pending')&&<p>Invitación de reparto pendiente de aceptar</p>}{s.trips.some(t=>t.driverId===m.id&&t.acceptance==='rejected')&&<p>Hay una invitación rechazada; el chofer no tiene acceso a ella.</p>}<label className="promo-permission"><span><input type="checkbox" checked={m.promotionAllowed===true} onChange={e=>act(state=>setPromotionPermission(state,actor,m.id,e.target.checked),'Permiso de promociones actualizado.')}/> Permitir ofrecer promociones a {m.name}</span></label><button className="hd-btn small" onClick={()=>open({type:'trip',id:m.id})}>Asignar recorrido</button><button className="hd-btn small" onClick={()=>{if(window.confirm(`¿Quitar a ${m.name} de tu equipo? Su cuenta y su historial se conservan.`))act(state=>unlinkAssistant(state,m.id,actor),'Vínculo quitado; la cuenta y otros jefes se conservan.');}}>Quitar de mi equipo</button></article>)}</div>
   {!drivers.length&&<Empty>Agreg? una cuenta de chofer para asignarle recorridos.</Empty>}
