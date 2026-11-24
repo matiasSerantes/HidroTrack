@@ -1229,3 +1229,9 @@ it('jefe corrige deuda manual con historial, pagos conservados y rechazo de sald
  const fix=crypto.randomUUID(),correct=()=>db.query("select public.owner_correct_customer_charge($1,$2,$3,$4,100,20,70,'',$5,$6)",[tenant,fix,customer,id,clock,zone]);await correct();await correct();const balance=(await db.query('select total,paid,balance from public.customer_sale_balances where tenant_id=$1 and id=$2',[tenant,id])).rows[0];expect([Number(balance.total),Number(balance.paid),Number(balance.balance)]).toEqual([70,20,50]);
  await denied(()=>db.query("select public.owner_correct_customer_charge($1,$2,$3,$4,70,20,10,'',$5,$6)",[tenant,crypto.randomUUID(),customer,id,clock,zone]),/menor/);await denied(()=>db.query("select public.owner_correct_customer_charge($1,$2,$3,$4,100,20,80,'',$5,$6)",[tenant,crypto.randomUUID(),customer,id,clock,zone]),/cambiaron/);await actor(otherOwner);await denied(correct,/Solo el jefe/);
 });
+
+it('jefe asignado registra no compro por RPC con hora opcional y puede cerrar sin ventas ficticias',async()=>{
+ const v=await costLoadFixture();await confirmCostLoad(v);const id=crypto.randomUUID();
+ await db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'no_purchase',null,null,'',null)",[tenant,id,v.trip,v.customer]);expect((await ownerCloseQuote(v)).pending_visits).toBe(0);await finishOwner(v,await ownerCloseQuote(v));expect((await db.query('select count(*) n from public.sales where tenant_id=$1 and trip_id=$2',[tenant,v.trip])).rows[0].n).toBe(0);
+ await actor(otherOwner);await denied(()=>db.query("select public.assistant_record_visit_at($1,$2,$3,$4,1,'no_purchase',null,null,'',null)",[tenant,crypto.randomUUID(),v.trip,v.customer]),/acceso|aceptado/);
+});
