@@ -223,10 +223,10 @@ export function decideRequest(state: DemoProgramState, requestId: string, approv
   }
   r.status = approve ? 'approved' : 'rejected'; notify(s, `${r.title}: ${approve ? 'aprobada' : 'rechazada'} por el jefe.`); return s;
 }
-export function closeTrip(state: DemoProgramState, tripId: string, declared: Record<string, number>, note: string) {
+export function closeTrip(state: DemoProgramState, tripId: string, declared: Record<string, number>, note: string, confirmUnvisited = false) {
   const s = structuredClone(state), t = s.trips.find(x => x.id === tripId);
   if (!t || t.stage !== 'active') throw new Error('El reparto no está activo.');
-  if (t.stops.some(p => ['pending', 'later'].includes(p.status))) throw new Error('Resolvé las paradas pendientes antes de rendir. Podés pasarlas a otro día.');
+  if (!confirmUnvisited && t.stops.some(p => ['pending', 'later'].includes(p.status))) throw new Error('Resolvé las paradas pendientes antes de rendir. Podés pasarlas a otro día.');
   for (const p of s.products) integer(declared[p.id] || 0);
   const differs = s.products.some(p => (declared[p.id] || 0) !== (t.stock[p.id] || 0));
   if (differs && !note.trim()) throw new Error('Explicá la diferencia entre el regreso esperado y el declarado.');

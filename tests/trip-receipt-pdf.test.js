@@ -28,3 +28,5 @@ describe('comprobante PDF de cierre',()=>{
   expect(()=>approveClose(closed,'t1')).toThrow('pendiente');
  });
 });
+
+it('demo cierra pendientes solo con confirmacion y conserva estados sin ventas nuevas',()=>{const s=seedProgram(),trip=s.trips.find(t=>t.id==='t1');expect(()=>closeTrip(s,'t1',trip.stock,'')).toThrow();const result=closeTrip(s,'t1',trip.stock,'',true);expect(result.trips.find(t=>t.id==='t1').stops).toEqual(trip.stops);expect(result.sales).toEqual(s.sales);expect(result.trips.find(t=>t.id==='t1').stage).toBe('submitted');});

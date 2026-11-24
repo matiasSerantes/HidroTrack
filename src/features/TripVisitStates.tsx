@@ -1,0 +1,2 @@
+import {routeVisitLabel,type RouteVisitState} from '../domain/routeVisitStates';
+export function TripVisitStates({states}:{states?:RouteVisitState[]}){if(!states?.length)return null;return <section className="customer-profile"><h4>Estado de las paradas al cerrar</h4><p>Se conserva este estado en el historial. Cerrar no registra ventas ni simula visitas.</p><ol>{states.map(s=><li key={s.customer_id}><strong>{s.name}</strong>: {routeVisitLabel(s)}</li>)}</ol></section>;}
