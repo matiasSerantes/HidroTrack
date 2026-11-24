@@ -569,3 +569,6 @@ Boton por articulo para editar llenos y vacios (disponibles en productos sin vac
 
 ## Horarios de 24 horas (23/11/2026)
 Usar horas 00-23 y minutos 00-59 tambien en celular, independientemente del selector nativo AM/PM. Mantener HH:mm al guardar y las zonas horarias de cada registro; no convertir datos existentes ni alterar fechas de visitas.
+
+## Administracion y plan Superior (24/11/2026)
+Superior permite varios repartos cargados por chofer, sin limite comercial de repartos, choferes, clientes ni stock; cada camion conserva su saldo independiente. Otros planes mantienen una carga abierta por chofer. Superadmin: Repartos y stock permite seleccionar empresa, convertir una cantidad de vacios del deposito en llenos con saldo esperado, y revisar/finalizar repartos activos o rendidos con caja y stock coincidentes. Estados pendientes requieren confirmacion. Se conserva historial, deudas y cobros, sin ventas simuladas. Operaciones auditadas con actor administrador; no se suplanta al titular. Demo administrativa simula sin tocar cuentas reales. Empresas y licencias muestra los tres planes, nombres/precios/condiciones editables; precios pendientes, no genera cobros. Limites adicionales de Basico/Intermedio pendientes de definir.
