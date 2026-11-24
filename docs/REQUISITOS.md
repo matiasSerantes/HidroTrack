@@ -572,3 +572,13 @@ Usar horas 00-23 y minutos 00-59 tambien en celular, independientemente del sele
 
 ## Administracion y plan Superior (24/11/2026)
 Superior permite varios repartos cargados por chofer, sin limite comercial de repartos, choferes, clientes ni stock; cada camion conserva su saldo independiente. Otros planes mantienen una carga abierta por chofer. Superadmin: Repartos y stock permite seleccionar empresa, convertir una cantidad de vacios del deposito en llenos con saldo esperado, y revisar/finalizar repartos activos o rendidos con caja y stock coincidentes. Estados pendientes requieren confirmacion. Se conserva historial, deudas y cobros, sin ventas simuladas. Operaciones auditadas con actor administrador; no se suplanta al titular. Demo administrativa simula sin tocar cuentas reales. Empresas y licencias muestra los tres planes, nombres/precios/condiciones editables; precios pendientes, no genera cobros. Limites adicionales de Basico/Intermedio pendientes de definir.
+
+## Cupos propuestos (24/11/2026, sin aplicar)
+| Recurso | Basico | Intermedio | Superior |
+| --- | --- | --- | --- |
+| Clientes | 100 | 300 | Ilimitados |
+| Choferes | 1 | 4 | Ilimitados |
+| Repartos | 1 | 3 | Ilimitados |
+| Objetos de stock | 6 | 12 | Ilimitados |
+| Promociones creadas | 2 | 6 | Ilimitadas |
+Pendiente confirmar objetos como modelos del catalogo y alcance de repartos abiertos. Recomendacion aun no acordada: contar registros activos y preservar archivados/historial. Los cupos anteriores siguen vigentes hasta implementar y validar la definicion.
