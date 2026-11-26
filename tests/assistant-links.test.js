@@ -1327,3 +1327,13 @@ it('ingresos mensuales distinguen renovaciones, conservan importe y no duplican 
 it('anular y restaurar un cobro conserva historial y licencia y controla version',async()=>{
  await platformAdmin();const before=(await db.query('select public.admin_directory() d')).rows[0].d.find(t=>t.id===tenant).license,payment=crypto.randomUUID(),command=crypto.randomUUID();await db.query("select public.admin_record_license_payment($1,$2,'unlimited',5000,'purchase','cash','2020-01-01','')",[payment,tenant]);const cancel=()=>db.query('select public.admin_set_license_payment_void($1,$2,1,true) r',[command,payment]);await cancel();await cancel();let data=(await db.query("select public.admin_license_income('2020-01-01') d")).rows[0].d;expect(data).toMatchObject({total:0,purchases:0,count:1});expect(data.payments[0]).toMatchObject({voided:true,version:2});await denied(()=>db.query('select public.admin_set_license_payment_void($1,$2,1,false)',[crypto.randomUUID(),payment]),/cobro cambio/);await db.query('select public.admin_set_license_payment_void($1,$2,2,false)',[crypto.randomUUID(),payment]);expect((await db.query("select public.admin_license_income('2020-01-01') d")).rows[0].d.total).toBe(5000);expect((await db.query('select public.admin_directory() d')).rows[0].d.find(t=>t.id===tenant).license).toEqual(before);await actor(owner);await denied(()=>db.query("select public.admin_license_income('2020-01-01')"),/superadministracion/);await db.exec('reset role');expect((await db.query("select has_function_privilege('anon','public.admin_license_income(date,integer)','execute') allowed")).rows[0].allowed).toBe(false);
 });
+
+it('papelera filtra antes de paginar y protege acceso privado',async()=>{
+ await db.exec('reset role');
+ await db.query("insert into private.recycle_bin(tenant_id,kind,entity_id,label,payload) select $1,'customer',gen_random_uuid(),'Registro '||n,jsonb_build_object('row',jsonb_build_object('address',case when n=1 then 'Calle Especial 8771' else 'Otra calle' end)) from generate_series(1,55) n",[tenant]);
+ await actor(driver);await denied(()=>db.query('select public.admin_search_recycle_bin()'),/superadministracion/i);
+ await platformAdmin();const data=(await db.query("select public.admin_search_recycle_bin(0,$1,'customer','especial 8771',null,null,'available') d",[tenant])).rows[0].d;
+ expect(data.count).toBe(1);expect(data.total).toBe(55);expect(data.items[0].address).toBe('Calle Especial 8771');expect(data.items[0].payload).toBeUndefined();
+ expect((await db.query('select public.admin_search_recycle_bin(50) d')).rows[0].d.items).toHaveLength(5);
+ expect((await db.query("select public.admin_search_recycle_bin(0,null,'trip') d")).rows[0].d.count).toBe(0);
+});

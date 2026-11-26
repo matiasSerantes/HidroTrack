@@ -24,3 +24,7 @@ En Resumen o Empresas y licencias, consultar Ingresos por licencias y elegir el 
 Para un pago recibido, usar Registrar cobro de licencia: empresa, plan efectivamente comprado, importe, compra/cambio de plan o renovacion, fecha del cobro y medio. Opcionalmente usar el precio actual del plan como referencia. Confirmar que ya se recibio y no se registro antes. Registrar no cobra dinero ni activa/renueva la licencia; la asignacion sigue siendo manual. El importe y nombre del plan se conservan historicamente.
 
 Ante un error, Anular cobro lo excluye de ingresos/ranking conservando el historial; Restaurar cobro lo vuelve a incluir. No son reembolsos ni transferencias. Si se pierde la respuesta, Reintentar mismo registro mantiene el identificador y evita duplicar el ingreso. Los controles son solo para superadministracion y mantienen MFA.
+
+
+Papelera: seleccionar cuenta/empresa, buscar por nombre, calle, telefono o autor del borrado; filtrar clientes/recorridos, fecha de eliminacion y recuperabilidad. Buscar aplica filtros antes de paginar; Limpiar filtros vuelve a todos. Disponible tambien en demo ficticia.
+

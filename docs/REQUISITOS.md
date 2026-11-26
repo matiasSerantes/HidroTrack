@@ -590,3 +590,7 @@ Asignar licencia existente o faltante, renovar y suspender manualmente con confi
 
 ## Ingresos de licencias (26/11/2026)
 Resumen mensual por fecha efectiva del cobro en Argentina, ranking de compras separado de renovaciones y grafico de seis meses. Registro manual de pagos recibidos con importe/plan historicos; asignar licencias no genera ingresos ni cobros. Anulacion recuperable sin borrado, control de version e idempotencia; sin efectos sobre licencias, clientes o stock. Solo superadmin/MFA. Demo con pagos ficticios. Importes en ARS y brutos, sin representar ganancia neta.
+
+
+Papelera: seleccionar cuenta/empresa, buscar por nombre, calle, telefono o autor del borrado; filtrar clientes/recorridos, fecha de eliminacion y recuperabilidad. Buscar aplica filtros antes de paginar; Limpiar filtros vuelve a todos. Disponible tambien en demo ficticia.
+
