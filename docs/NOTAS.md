@@ -1262,3 +1262,5 @@ Usuario autoriza continuar hacia beta. Hallazgo al revisar recorrido: rendicion 
 26/11/2026 - Pedido: buscador y filtros de papelera para localizar rapido lo borrado por una cuenta. Implementar filtro empresa/titular, tipo cliente/recorrido, fecha de eliminacion y recuperabilidad; texto por nombre, direccion, telefonos y referencias del registro. Busqueda del servidor antes de paginar, sin exponer payload completo; conservar recuperacion/retencion de 10 dias y MFA superadmin. Demo equivalente, no borrar ni recuperar registros reales para QA. Estado: implementacion.
 
 26/11/2026 - Papelera implementada: filtros del servidor antes de paginar por empresa, tipo, fechas y estado; buscador por nombre, direccion, telefonos y autor. Demo sin datos reales. 230 pruebas seleccionadas y build correctos. Migracion instalada; publicacion en verificacion. No se eliminaron ni recuperaron registros reales.
+
+26/11/2026 - Publicacion de papelera confirmada: a0cbe6c, GitHub frontend y Cloudflare Workers correctos; paquete publico incluye admin_search_recycle_bin.
