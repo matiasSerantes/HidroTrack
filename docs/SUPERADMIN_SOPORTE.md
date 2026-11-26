@@ -17,3 +17,10 @@ Desde la empresa, tocar **Gestionar stock y repartos**. Tambien esta el menu **R
 Las operaciones registran fecha, usuario administrador y valores antes/despues; nunca usan la identidad del jefe. Si los datos cambiaron desde la consulta, se rechaza el comando y se pide actualizar. En **Ultimas operaciones administrativas**, abrir los valores registrados. Usar **Papelera** para recuperar eliminaciones dentro del plazo vigente; **Uso por cuenta** para revisar cantidades y actividad. Las herramientas no exponen ni cambian contrasenas de otros usuarios.
 
 En la demostracion administrativa todas las cantidades y empresas son ficticias. No se hacen correcciones reales para probar el sistema.
+
+## Ingresos por licencias
+En Resumen o Empresas y licencias, consultar Ingresos por licencias y elegir el mes. Muestra cobros registrados, compras, renovaciones, empresas que pagaron, grafico de seis meses y ranking mensual por compras. Son ingresos brutos en ARS, sin deducir gastos. Una asignacion manual o prueba gratuita no se supone pagada.
+
+Para un pago recibido, usar Registrar cobro de licencia: empresa, plan efectivamente comprado, importe, compra/cambio de plan o renovacion, fecha del cobro y medio. Opcionalmente usar el precio actual del plan como referencia. Confirmar que ya se recibio y no se registro antes. Registrar no cobra dinero ni activa/renueva la licencia; la asignacion sigue siendo manual. El importe y nombre del plan se conservan historicamente.
+
+Ante un error, Anular cobro lo excluye de ingresos/ranking conservando el historial; Restaurar cobro lo vuelve a incluir. No son reembolsos ni transferencias. Si se pierde la respuesta, Reintentar mismo registro mantiene el identificador y evita duplicar el ingreso. Los controles son solo para superadministracion y mantienen MFA.

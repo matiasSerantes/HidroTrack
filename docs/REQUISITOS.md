@@ -587,3 +587,6 @@ Cada modelo puede tener unidades fisicas ilimitadas. Iniciar libera lugar de pre
 
 ## Soporte superadmin (26/11/2026)
 Asignar licencia existente o faltante, renovar y suspender manualmente con confirmacion, saldo/version esperado, auditoria e idempotencia. Corregir conteos de deposito de productos/dispenser sin afectar clientes/camiones; impacto de patrimonio explicito. Corregir bidones de cliente con transferencia compensada desde/hacia deposito y total propio conservado. Busqueda paginada de clientes con deuda/equipos solo para consulta. Mantener MFA y contratos/rendiciones/historial, sin suplantar al titular ni ejecutar QA con datos reales. Guia: SUPERADMIN_SOPORTE.md.
+
+## Ingresos de licencias (26/11/2026)
+Resumen mensual por fecha efectiva del cobro en Argentina, ranking de compras separado de renovaciones y grafico de seis meses. Registro manual de pagos recibidos con importe/plan historicos; asignar licencias no genera ingresos ni cobros. Anulacion recuperable sin borrado, control de version e idempotencia; sin efectos sobre licencias, clientes o stock. Solo superadmin/MFA. Demo con pagos ficticios. Importes en ARS y brutos, sin representar ganancia neta.

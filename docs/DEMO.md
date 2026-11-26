@@ -569,3 +569,5 @@ Superior permite varios repartos cargados por chofer, sin limite comercial de re
 24/11/2026 - Demo de planes: Intermedio tiene 4 choferes; cupos por empresa tambien al dar altas/aceptar solicitudes y cargar. Productos/dispenser cuentan modelos, no unidades; editar cantidades no consume otro lugar. Real: Ver cupos de mi plan consulta uso de clientes, choferes, modelos, promociones y ambos estados de reparto; empresas/licencias de superadmin muestra la matriz confirmada.
 
 26/11/2026 - Administracion demo agrega confirmacion al asignar licencia, stock de dispenser y conteo final de deposito, y correccion de envases del cliente ficticio con movimiento de deposito. Las cuentas no se crean ni cambian en Supabase; las operaciones de soporte reales quedan separadas por permisos. Guia SUPERADMIN_SOPORTE.md.
+
+26/11/2026 - Demo administrativa de ingresos muestra cobros ficticios del mes, ranking por compras y grafico. Se pueden registrar, anular y restaurar cobros de ejemplo guardados en este navegador; nunca son pagos reales ni cambian licencias reales.
