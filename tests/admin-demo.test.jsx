@@ -40,6 +40,7 @@ it('filtra personas por correo, empresa, rol y acceso, y abre su empresa', async
 });
 
 it('gestiona la suspensión en demo sin modificar otros repartos ni llamar al servidor', async () => {
+ vi.spyOn(window,'confirm').mockReturnValue(true);
  const client = { rpc: vi.fn(), from: vi.fn() };
  render(<AdminWorkspace demo client={client}/>);
  const tenant = (await screen.findByRole('heading', { name: 'Sodería del Norte' })).closest('article');
